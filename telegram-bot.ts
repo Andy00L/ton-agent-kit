@@ -193,15 +193,38 @@ async function main() {
 
     switch (name) {
       case "get_balance": {
-        const addr = params.address
-          ? Address.parse(params.address)
-          : wallet.address;
-        const lb = await client.getLastBlock();
-        const state = await client.getAccount(lb.last.seqno, addr);
-        return JSON.stringify({
-          balance: fromNano(state.account.balance.coins) + " TON",
-          address: addr.toRawString(),
-        });
+        if (!params.address) {
+          const lb = await client.getLastBlock();
+          const state = await client.getAccount(lb.last.seqno, wallet.address);
+          return JSON.stringify({
+            balance: fromNano(state.account.balance.coins) + " TON",
+            address: wallet.address.toRawString(),
+          });
+        }
+        try {
+          const addr = Address.parse(params.address);
+          const lb = await client.getLastBlock();
+          const state = await client.getAccount(lb.last.seqno, addr);
+          return JSON.stringify({
+            balance: fromNano(state.account.balance.coins) + " TON",
+            address: addr.toRawString(),
+          });
+        } catch {}
+        const apiBase =
+          NETWORK === "testnet"
+            ? "https://testnet.tonapi.io/v2"
+            : "https://tonapi.io/v2";
+        const r = await fetch(
+          `${apiBase}/accounts/${encodeURIComponent(params.address)}`,
+        );
+        if (r.ok) {
+          const d = await r.json();
+          return JSON.stringify({
+            balance: (Number(d.balance) / 1e9).toString() + " TON",
+            address: d.address,
+          });
+        }
+        return JSON.stringify({ error: "Could not fetch balance" });
       }
 
       case "transfer_ton": {

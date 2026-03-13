@@ -72,21 +72,57 @@ const actions: Record<
     description:
       "Get the TON balance of a wallet address. If no address provided, returns agent's own balance.",
     schema: z.object({
-      address: z.string().optional().describe("TON address to check"),
+      address: z
+        .string()
+        .optional()
+        .describe("TON address to check (raw or user-friendly format)"),
     }),
     handler: async (agent, params) => {
-      const targetAddress = params.address
-        ? Address.parse(params.address)
-        : agent.wallet.address;
-      const lastBlock = await agent.connection.getLastBlock();
-      const state = await agent.connection.getAccount(
-        lastBlock.last.seqno,
-        targetAddress,
+      // If no address, use agent's own
+      if (!params.address) {
+        const lastBlock = await agent.connection.getLastBlock();
+        const state = await agent.connection.getAccount(
+          lastBlock.last.seqno,
+          agent.wallet.address,
+        );
+        return {
+          balance: fromNano(state.account.balance.coins),
+          address: agent.wallet.address.toRawString(),
+        };
+      }
+
+      // Try parsing directly first
+      try {
+        const addr = Address.parse(params.address);
+        const lastBlock = await agent.connection.getLastBlock();
+        const state = await agent.connection.getAccount(
+          lastBlock.last.seqno,
+          addr,
+        );
+        return {
+          balance: fromNano(state.account.balance.coins),
+          address: addr.toRawString(),
+        };
+      } catch {}
+
+      // Fallback to TONAPI (handles all address formats)
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+      const response = await fetch(
+        `${apiBase}/accounts/${encodeURIComponent(params.address)}`,
       );
-      return {
-        balance: fromNano(state.account.balance.coins),
-        address: targetAddress.toRawString(),
-      };
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          balance: (Number(data.balance) / 1e9).toString(),
+          address: data.address,
+          status: data.status,
+        };
+      }
+
+      throw new Error(`Could not fetch balance for: ${params.address}`);
     },
   },
 
