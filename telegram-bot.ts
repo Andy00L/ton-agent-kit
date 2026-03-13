@@ -228,6 +228,25 @@ async function main() {
       }
 
       case "transfer_ton": {
+        // Check balance before sending
+        const lb = await client.getLastBlock();
+        const state = await client.getAccount(lb.last.seqno, wallet.address);
+        const currentBalance = Number(fromNano(state.account.balance.coins));
+        const requestedAmount = parseFloat(params.amount);
+
+        if (requestedAmount <= 0) {
+          return JSON.stringify({ error: "Amount must be greater than 0" });
+        }
+
+        if (requestedAmount > currentBalance - 0.01) {
+          // Keep 0.01 TON for gas
+          return JSON.stringify({
+            error: `Insufficient balance. You have ${currentBalance.toFixed(4)} TON but tried to send ${requestedAmount} TON (+ ~0.01 TON gas fee).`,
+            balance: currentBalance.toFixed(4) + " TON",
+            requested: requestedAmount + " TON",
+          });
+        }
+
         const toAddr = Address.parse(params.to);
         let body = undefined;
         if (params.comment) {
@@ -267,6 +286,9 @@ async function main() {
           status: "sent",
           to: params.to,
           amount: params.amount + " TON",
+          remainingBalance:
+            (currentBalance - requestedAmount - 0.01).toFixed(4) +
+            " TON (estimated)",
         });
       }
 
@@ -580,7 +602,11 @@ Rules:
       // Send final response
       const reply = assistantMessage.content || "Done!";
       history.push({ role: "assistant", content: reply });
-      await ctx.reply(reply, { parse_mode: "Markdown" });
+      try {
+        await ctx.reply(reply, { parse_mode: "Markdown" });
+      } catch {
+        await ctx.reply(reply);
+      }
     } catch (err: any) {
       console.error("Error:", err.message);
       chatHistories.delete(chatId);

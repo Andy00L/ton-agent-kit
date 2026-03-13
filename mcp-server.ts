@@ -174,6 +174,24 @@ const actions: Record<
     handler: async (agent, params) => {
       const toAddress = Address.parse(params.to);
       let body = undefined;
+      // Check balance before sending
+      const lastBlock = await agent.connection.getLastBlock();
+      const state = await agent.connection.getAccount(
+        lastBlock.last.seqno,
+        agent.wallet.address,
+      );
+      const currentBalance = Number(fromNano(state.account.balance.coins));
+      const requestedAmount = parseFloat(params.amount);
+
+      if (requestedAmount <= 0) {
+        throw new Error("Amount must be greater than 0");
+      }
+
+      if (requestedAmount > currentBalance - 0.01) {
+        throw new Error(
+          `Insufficient balance: ${currentBalance.toFixed(4)} TON available, tried to send ${requestedAmount} TON`,
+        );
+      }
       if (params.comment) {
         body = beginCell()
           .storeUint(0, 32)
