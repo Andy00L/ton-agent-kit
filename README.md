@@ -23,13 +23,13 @@ TON Agent Kit gives any AI agent **20 autonomous actions** across 5 plugins, wit
 
 ### What makes TON special for AI agents?
 
-| Feature | TON | Solana | Ethereum |
-|---------|-----|--------|----------|
-| **Payment channels** (zero-fee micropayments) | ✅ Native | ❌ | ❌ |
-| **Actor model** (each contract = independent agent) | ✅ | ❌ | ❌ |
-| **900M users** via Telegram | ✅ | ❌ | ❌ |
-| **Native account abstraction** | ✅ | Partial | EIP-7702 |
-| **Agent toolkit** | ✅ **This project** | Solana Agent Kit | AgentKit (Coinbase) |
+| Feature                                             | TON                 | Solana           | Ethereum            |
+| --------------------------------------------------- | ------------------- | ---------------- | ------------------- |
+| **Payment channels** (zero-fee micropayments)       | ✅ Native           | ❌               | ❌                  |
+| **Actor model** (each contract = independent agent) | ✅                  | ❌               | ❌                  |
+| **900M users** via Telegram                         | ✅                  | ❌               | ❌                  |
+| **Native account abstraction**                      | ✅                  | Partial          | EIP-7702            |
+| **Agent toolkit**                                   | ✅ **This project** | Solana Agent Kit | AgentKit (Coinbase) |
 
 ---
 
@@ -84,48 +84,48 @@ TON Agent Kit uses a **modular plugin architecture**. Install only what you need
 
 ### 🪙 Token Plugin (`@ton-agent-kit/plugin-token`)
 
-| Action | Description |
-|--------|-------------|
-| `get_balance` | Get TON balance of any address |
-| `get_jetton_balance` | Get Jetton (token) balance |
-| `transfer_ton` | Send TON to an address |
-| `transfer_jetton` | Send Jettons (USDT, NOT, etc.) |
-| `deploy_jetton` | Deploy a new token |
-| `get_jetton_info` | Get token metadata |
+| Action               | Description                    |
+| -------------------- | ------------------------------ |
+| `get_balance`        | Get TON balance of any address |
+| `get_jetton_balance` | Get Jetton (token) balance     |
+| `transfer_ton`       | Send TON to an address         |
+| `transfer_jetton`    | Send Jettons (USDT, NOT, etc.) |
+| `deploy_jetton`      | Deploy a new token             |
+| `get_jetton_info`    | Get token metadata             |
 
 ### 📈 DeFi Plugin (`@ton-agent-kit/plugin-defi`)
 
-| Action | Description |
-|--------|-------------|
-| `swap_dedust` | Swap tokens on DeDust DEX |
-| `swap_stonfi` | Swap tokens on STON.fi DEX |
-| `get_price` | Get token price from DEX pools |
+| Action        | Description                    |
+| ------------- | ------------------------------ |
+| `swap_dedust` | Swap tokens on DeDust DEX      |
+| `swap_stonfi` | Swap tokens on STON.fi DEX     |
+| `get_price`   | Get token price from DEX pools |
 
 ### 🖼️ NFT Plugin (`@ton-agent-kit/plugin-nft`)
 
-| Action | Description |
-|--------|-------------|
-| `get_nft_info` | Get NFT metadata and owner |
-| `transfer_nft` | Transfer an NFT |
-| `get_collection` | Get collection info |
+| Action           | Description                |
+| ---------------- | -------------------------- |
+| `get_nft_info`   | Get NFT metadata and owner |
+| `transfer_nft`   | Transfer an NFT            |
+| `get_collection` | Get collection info        |
 
 ### 🌐 DNS Plugin (`@ton-agent-kit/plugin-dns`)
 
-| Action | Description |
-|--------|-------------|
-| `resolve_domain` | Resolve `.ton` domain → address |
-| `lookup_address` | Reverse lookup: address → domain |
-| `get_domain_info` | Domain registration details |
+| Action            | Description                      |
+| ----------------- | -------------------------------- |
+| `resolve_domain`  | Resolve `.ton` domain → address  |
+| `lookup_address`  | Reverse lookup: address → domain |
+| `get_domain_info` | Domain registration details      |
 
 ### ⚡ Payments Plugin (`@ton-agent-kit/plugin-payments`) — **TON Exclusive!**
 
-*Zero-fee agent-to-agent micropayments via TON payment channels.*
+_Zero-fee agent-to-agent micropayments via TON payment channels._
 
-| Action | Description |
-|--------|-------------|
-| `create_payment_channel` | Open channel (~0.1 TON one-time) |
-| `send_micropayment` | Send payment — **0 fees, instant** |
-| `close_payment_channel` | Settle and close channel |
+| Action                   | Description                        |
+| ------------------------ | ---------------------------------- |
+| `create_payment_channel` | Open channel (~0.1 TON one-time)   |
+| `send_micropayment`      | Send payment — **0 fees, instant** |
+| `close_payment_channel`  | Settle and close channel           |
 
 > **Why this matters:** On Solana, x402 costs $0.00025/transaction. On TON, payment channels enable **truly free** micropayments after opening. This is the killer feature for agent-to-agent economies.
 
@@ -156,13 +156,13 @@ Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly.
 ### What Claude can do with TON Agent Kit MCP:
 
 > **You:** "What's my TON balance?"
-> **Claude:** *calls `get_balance`* → "Your balance is 42.5 TON"
+> **Claude:** _calls `get_balance`_ → "Your balance is 42.5 TON"
 
 > **You:** "Swap 10 TON for USDT on DeDust"
-> **Claude:** *calls `swap_dedust`* → "Swapped 10 TON → 38.2 USDT. TX: tonscan.org/..."
+> **Claude:** _calls `swap_dedust`_ → "Swapped 10 TON → 38.2 USDT. TX: tonscan.org/..."
 
 > **You:** "Resolve alice.ton"
-> **Claude:** *calls `resolve_domain`* → "alice.ton → EQBx2..."
+> **Claude:** _calls `resolve_domain`_ → "alice.ton → EQBx2..."
 
 ---
 
@@ -252,16 +252,16 @@ ton-agent-kit/
 
 ## Comparison
 
-| Feature | TON Agent Kit | Solana Agent Kit | Coinbase AgentKit |
-|---------|--------------|-----------------|-------------------|
-| **Chain** | TON | Solana | Base/ETH |
-| **Actions** | 20 | 60+ | 50+ |
-| **MCP Server** | ✅ | ✅ | ✅ |
-| **LangChain** | ✅ | ✅ | ✅ |
-| **Payment Channels** | ✅ Zero-fee | ❌ | ❌ |
-| **DNS Integration** | ✅ .ton domains | ❌ | ❌ |
-| **Telegram Native** | ✅ 900M users | ❌ | ❌ |
-| **Plugin System** | ✅ `.use()` | ✅ `.use()` | ✅ |
+| Feature              | TON Agent Kit   | Solana Agent Kit | Coinbase AgentKit |
+| -------------------- | --------------- | ---------------- | ----------------- |
+| **Chain**            | TON             | Solana           | Base/ETH          |
+| **Actions**          | 20              | 60+              | 50+               |
+| **MCP Server**       | ✅              | ✅               | ✅                |
+| **LangChain**        | ✅              | ✅               | ✅                |
+| **Payment Channels** | ✅ Zero-fee     | ❌               | ❌                |
+| **DNS Integration**  | ✅ .ton domains | ❌               | ❌                |
+| **Telegram Native**  | ✅ 900M users   | ❌               | ❌                |
+| **Plugin System**    | ✅ `.use()`     | ✅ `.use()`      | ✅                |
 
 ---
 
@@ -306,6 +306,18 @@ const MyPlugin = definePlugin({
 
 export default MyPlugin;
 ```
+
+## Production Roadmap
+
+- [ ] Pluggable storage adapter for chat history (File / Redis / Custom)
+- [ ] Automatic escrow expiration and cleanup
+- [ ] Redis-backed anti-replay for x402 at scale
+- [ ] Session key smart contract deployment (Tact)
+- [ ] TON DNS subdomain registration for agent identity
+- [ ] ADNL agent-to-agent encrypted communication
+- [ ] npm package publishing (@ton-agent-kit/\*)
+- [ ] Unit tests with @ton/sandbox
+- [ ] Rate limiting and spending caps per session
 
 ---
 

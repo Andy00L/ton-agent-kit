@@ -9,3 +9,4 @@ coverage/
 .turbo/
 .escrow-store.json
 .x402-used-hashes.json
+.chat-histories.json
