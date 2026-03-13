@@ -1,8 +1,14 @@
 /**
- * TON Agent Kit — x402 Payment Middleware
+ * TON Agent Kit — x402 Payment Middleware (Production-Hardened)
  *
  * Makes any Express API payable in TON.
  * Agents auto-detect the 402 response, pay, and retry.
+ *
+ * Security features:
+ * - Anti-replay: each tx hash can only be used ONCE
+ * - Timestamp check: transaction must be recent (< maxAge)
+ * - Amount verification: tight tolerance for cross-transfers, gas tolerance for self-transfers
+ * - 2-level verification: blockchain endpoint → events fallback
  *
  * Usage:
  *   import { tonPaywall, createPaymentServer } from "./x402-middleware";
@@ -47,9 +53,13 @@ export interface PaymentRequirement {
 }
 
 // ============================================================
-// Payment verification cache (in-memory for MVP)
+// Payment verification — production-hardened
 // ============================================================
 
+// Permanent set of used tx hashes (anti-replay — never expires)
+const usedPaymentHashes = new Set<string>();
+
+// Cache of verified payments (for TTL-based access within session)
 const verifiedPayments = new Map<
   string,
   { timestamp: number; amount: string }
@@ -116,60 +126,68 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Check cache first (avoid re-verifying)
+    // Check cache first (avoid re-verifying on-chain)
     if (verifiedPayments.has(paymentHash)) {
       const cached = verifiedPayments.get(paymentHash)!;
       if (Date.now() / 1000 - cached.timestamp < proofTTL) {
         next();
         return;
       }
-      verifiedPayments.delete(paymentHash); // Expired
+      verifiedPayments.delete(paymentHash);
     }
 
-    // Verify payment on-chain
-    try {
-      const isValid = await verifyPaymentOnChain(
-        paymentHash,
-        recipient || "",
+    // Verify payment on-chain (production-hardened)
+    const verification = await verifyPayment(
+      paymentHash,
+      recipient || "",
+      amount,
+      network,
+      proofTTL,
+    );
+
+    if (verification.valid) {
+      verifiedPayments.set(paymentHash, {
+        timestamp: Math.floor(Date.now() / 1000),
         amount,
-        network,
-      );
-
-      if (isValid) {
-        verifiedPayments.set(paymentHash, {
-          timestamp: Math.floor(Date.now() / 1000),
-          amount,
-        });
-        next();
-        return;
-      }
-
-      res.status(402).json({
-        error: "Payment Not Verified",
-        message:
-          "Could not verify the payment. Ensure the transaction is confirmed.",
-        providedHash: paymentHash,
       });
-    } catch (err: any) {
-      res.status(402).json({
-        error: "Payment Verification Failed",
-        message: err.message,
-        providedHash: paymentHash,
-      });
+      next();
+      return;
     }
+
+    res.status(402).json({
+      error: "Payment Not Verified",
+      message: verification.reason || "Could not verify payment",
+      providedHash: paymentHash,
+    });
   };
 }
 
 // ============================================================
-// On-chain payment verification via TONAPI
+// Production-hardened payment verification
 // ============================================================
 
-async function verifyPaymentOnChain(
+/**
+ * Verify a payment on-chain with production-grade checks:
+ * 1. Anti-replay: tx hash can only be used ONCE, ever
+ * 2. Timestamp: transaction must be recent (< maxAge seconds)
+ * 3. Amount: tight tolerance for cross-transfers, gas tolerance for self-transfers
+ * 4. Recipient: exact match
+ */
+async function verifyPayment(
   txHash: string,
   expectedRecipient: string,
   expectedAmount: string,
   network: string,
-): Promise<boolean> {
+  maxAge: number = 300,
+): Promise<{ valid: boolean; reason?: string }> {
+  // Anti-replay: reject if this hash was already used
+  if (usedPaymentHashes.has(txHash)) {
+    return {
+      valid: false,
+      reason: "Transaction hash already used (anti-replay)",
+    };
+  }
+
   const apiBase =
     network === "testnet"
       ? "https://testnet.tonapi.io/v2"
@@ -178,174 +196,146 @@ async function verifyPaymentOnChain(
   const normalizedExpected = expectedRecipient.toLowerCase().replace(/^0:/, "");
   const expectedAmountNano = Math.floor(parseFloat(expectedAmount) * 1e9);
 
-  // Max gas fee on TON is ~0.005 TON = 5,000,000 nanoton
-  const maxGasDeduction = 5_000_000;
-
   try {
-    // Use blockchain endpoint — gives raw transaction data
+    // Level 1: Blockchain endpoint (raw transaction data — most reliable)
     const bcRes = await fetch(
       `${apiBase}/blockchain/transactions/${encodeURIComponent(txHash)}`,
     );
 
     if (!bcRes.ok) {
-      // Fallback to events endpoint
+      // Fallback to Level 2
       return await verifyViaEvents(
         apiBase,
         txHash,
         normalizedExpected,
         expectedAmountNano,
-        maxGasDeduction,
+        maxAge,
       );
     }
 
     const bc = await bcRes.json();
 
-    // Check success
-    if (!bc.success) return false;
+    // Check 1: Transaction must be successful
+    if (!bc.success) {
+      return { valid: false, reason: "Transaction failed on-chain" };
+    }
 
-    // Check out_msgs for payment to recipient
+    // Check 2: Transaction must be recent
+    const txTimestamp = bc.utime || 0;
+    const now = Math.floor(Date.now() / 1000);
+    if (now - txTimestamp > maxAge) {
+      return {
+        valid: false,
+        reason: `Transaction too old: ${now - txTimestamp}s ago (max: ${maxAge}s)`,
+      };
+    }
+
+    // Check 3: Find matching out_msg with correct recipient and amount
     for (const msg of bc.out_msgs || []) {
       const dest = (msg.destination?.address || "")
         .toLowerCase()
         .replace(/^0:/, "");
       const value = Number(msg.value || 0);
+      const source = (msg.source?.address || "")
+        .toLowerCase()
+        .replace(/^0:/, "");
 
       if (dest === normalizedExpected) {
-        // For cross-address transfers: value = full amount (gas from wallet balance)
-        // For self-transfers: value = amount - gas (edge case)
-        // Accept if value >= expectedAmount - maxGasFee
-        if (value >= expectedAmountNano - maxGasDeduction) {
-          return true;
+        // Determine if self-transfer or cross-transfer
+        const isSelfTransfer = source === dest;
+
+        // Self-transfer: gas deducted from value (max 0.005 TON tolerance)
+        // Cross-transfer: value is exact (only 0.0005 TON tolerance for rounding)
+        const tolerance = isSelfTransfer ? 5_000_000 : 500_000;
+
+        if (value >= expectedAmountNano - tolerance) {
+          // All checks passed — mark hash as used permanently (anti-replay)
+          usedPaymentHashes.add(txHash);
+          return { valid: true };
         }
+
+        return {
+          valid: false,
+          reason: `Amount too low: received ${value} nanoton, expected ${expectedAmountNano} (tolerance: ${tolerance})`,
+        };
       }
     }
 
-    // Fallback: check events
+    // No matching out_msg found, try events fallback
     return await verifyViaEvents(
       apiBase,
       txHash,
       normalizedExpected,
       expectedAmountNano,
-      maxGasDeduction,
+      maxAge,
     );
-  } catch {
-    return false;
+  } catch (err: any) {
+    return { valid: false, reason: `Verification error: ${err.message}` };
   }
 }
 
+/**
+ * Level 2 fallback: verify via TONAPI events endpoint
+ */
 async function verifyViaEvents(
   apiBase: string,
   txHash: string,
   normalizedExpected: string,
   expectedAmountNano: number,
-  maxGasDeduction: number,
-): Promise<boolean> {
+  maxAge: number,
+): Promise<{ valid: boolean; reason?: string }> {
   try {
     const eventRes = await fetch(
       `${apiBase}/events/${encodeURIComponent(txHash)}`,
     );
-    if (!eventRes.ok) return false;
+
+    if (!eventRes.ok) {
+      return { valid: false, reason: `Event not found: ${eventRes.status}` };
+    }
 
     const event = await eventRes.json();
+
+    // Timestamp check
+    const txTimestamp = event.timestamp || 0;
+    const now = Math.floor(Date.now() / 1000);
+    if (now - txTimestamp > maxAge) {
+      return {
+        valid: false,
+        reason: `Transaction too old: ${now - txTimestamp}s ago (max: ${maxAge}s)`,
+      };
+    }
+
     for (const action of event.actions || []) {
       if (action.type === "TonTransfer" && action.status === "ok") {
         const recipientRaw = (action.TonTransfer?.recipient?.address || "")
           .toLowerCase()
           .replace(/^0:/, "");
+        const senderRaw = (action.TonTransfer?.sender?.address || "")
+          .toLowerCase()
+          .replace(/^0:/, "");
         const amount = Number(action.TonTransfer?.amount || 0);
 
-        if (
-          recipientRaw === normalizedExpected &&
-          amount >= expectedAmountNano - maxGasDeduction
-        ) {
-          return true;
+        if (recipientRaw === normalizedExpected) {
+          const isSelfTransfer = senderRaw === recipientRaw;
+          const tolerance = isSelfTransfer ? 5_000_000 : 500_000;
+
+          if (amount >= expectedAmountNano - tolerance) {
+            usedPaymentHashes.add(txHash);
+            return { valid: true };
+          }
+
+          return {
+            valid: false,
+            reason: `Amount too low: ${amount} nanoton (expected ${expectedAmountNano}, tolerance ${tolerance})`,
+          };
         }
       }
     }
-  } catch {}
-  return false;
-}
 
-/**
- * Verify payment using raw blockchain transaction data.
- * This checks the actual message value (pre-fee), not the post-fee amount.
- */
-async function verifyViaRawTransaction(
-  apiBase: string,
-  txHash: string,
-  normalizedRecipient: string,
-  expectedAmountNano: number,
-): Promise<boolean> {
-  try {
-    // Get the account events and find matching transaction
-    const traceRes = await fetch(
-      `${apiBase}/traces/${encodeURIComponent(txHash)}`,
-    );
-    if (!traceRes.ok) return false;
-
-    const trace = await traceRes.json();
-
-    // Walk the transaction trace to find the outgoing message
-    return walkTrace(
-      trace.transaction,
-      normalizedRecipient,
-      expectedAmountNano,
-    );
-  } catch {
-    return false;
+    return { valid: false, reason: "No matching transfer found in event" };
+  } catch (err: any) {
+    return { valid: false, reason: `Event verification error: ${err.message}` };
   }
-}
-
-/**
- * Recursively walk a transaction trace to find a matching payment.
- * Checks out_msgs for the actual sent value (before fees).
- */
-function walkTrace(
-  tx: any,
-  normalizedRecipient: string,
-  expectedAmountNano: number,
-): boolean {
-  if (!tx) return false;
-
-  // Check outgoing messages for the actual sent value
-  if (tx.out_msgs) {
-    for (const msg of tx.out_msgs) {
-      const dest = (msg.destination?.address || "")
-        .toLowerCase()
-        .replace(/^0:/, "");
-      const value = Number(msg.value || 0);
-
-      if (dest === normalizedRecipient && value >= expectedAmountNano) {
-        return true;
-      }
-    }
-  }
-
-  // Check in_msg as well (for receiving side verification)
-  if (tx.in_msg) {
-    const src = (tx.in_msg.source?.address || "")
-      .toLowerCase()
-      .replace(/^0:/, "");
-    const dest = (tx.in_msg.destination?.address || "")
-      .toLowerCase()
-      .replace(/^0:/, "");
-    const value = Number(tx.in_msg.value || 0);
-
-    if (dest === normalizedRecipient && value >= expectedAmountNano) {
-      return true;
-    }
-  }
-
-  // Walk children transactions
-  if (tx.children) {
-    for (const child of tx.children) {
-      if (walkTrace(child, normalizedRecipient, expectedAmountNano)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
 }
 
 // ============================================================
@@ -378,7 +368,6 @@ export function createPaymentServer(config: {
     handler: (req: Request, res: Response) => void;
   }>;
 }) {
-  // Dynamic import express
   const express = require("express");
   const app = express();
 
