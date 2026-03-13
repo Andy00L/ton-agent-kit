@@ -1,0 +1,27 @@
+{
+  "name": "@ton-agent-kit/core",
+  "version": "1.0.0",
+  "description": "Core SDK for TON Agent Kit — plugin system, wallet abstraction, agent class",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@ton/ton": "^16.2.0",
+    "@ton/core": "^0.60.0",
+    "@ton/crypto": "^3.3.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@ton/sandbox": "^0.20.0"
+  },
+  "peerDependencies": {
+    "@ton/ton": ">=14.0.0",
+    "@ton/core": ">=0.56.0"
+  },
+  "keywords": ["ton", "agent", "ai", "sdk"],
+  "license": "MIT"
+}

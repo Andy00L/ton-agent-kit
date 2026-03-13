@@ -1,0 +1,29 @@
+{
+  "name": "ton-agent-kit-telegram-bot",
+  "version": "1.0.0",
+  "description": "Demo Telegram bot powered by TON Agent Kit",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "npx ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "@ton-agent-kit/plugin-token": "^1.0.0",
+    "@ton-agent-kit/plugin-defi": "^1.0.0",
+    "@ton-agent-kit/plugin-nft": "^1.0.0",
+    "@ton-agent-kit/plugin-dns": "^1.0.0",
+    "@ton-agent-kit/plugin-payments": "^1.0.0",
+    "@ton-agent-kit/langchain": "^1.0.0",
+    "grammy": "^1.25.0",
+    "@langchain/openai": "^0.3.0",
+    "langchain": "^0.3.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "ts-node": "^10.9.0"
+  },
+  "license": "MIT"
+}
