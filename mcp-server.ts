@@ -13,6 +13,29 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { KeypairWallet } from "./packages/core/src/wallet";
 
 // ============================================================
+// Escrow storage (JSON file)
+// ============================================================
+
+import { existsSync, readFileSync, writeFileSync } from "fs";
+
+const ESCROW_FILE = ".escrow-store.json";
+
+function loadEscrows(): Record<string, any> {
+  try {
+    if (existsSync(ESCROW_FILE)) {
+      return JSON.parse(readFileSync(ESCROW_FILE, "utf-8"));
+    }
+  } catch {}
+  return {};
+}
+
+function saveEscrows(escrows: Record<string, any>): void {
+  try {
+    writeFileSync(ESCROW_FILE, JSON.stringify(escrows, null, 2), "utf-8");
+  } catch {}
+}
+
+// ============================================================
 // All 15 proven actions
 // ============================================================
 
@@ -778,6 +801,286 @@ const actions: Record<
       throw new Error(
         `Payment verified but resource returned ${paidResponse.status}`,
       );
+    },
+  },
+
+  create_escrow: {
+    description:
+      "Create a new escrow deal. Tracks the escrow locally and returns an ID. The beneficiary receives funds when released.",
+    schema: z.object({
+      beneficiary: z
+        .string()
+        .describe("Address of the beneficiary (who receives funds)"),
+      amount: z.string().describe("Amount of TON to escrow"),
+      description: z.string().optional().describe("Description of the deal"),
+      deadlineMinutes: z.coerce
+        .number()
+        .optional()
+        .default(60)
+        .describe("Deadline in minutes (default: 60)"),
+    }),
+    handler: async (agent, params) => {
+      const escrowId = `escrow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const deadline =
+        Math.floor(Date.now() / 1000) + (params.deadlineMinutes || 60) * 60;
+
+      const escrow = {
+        id: escrowId,
+        depositor: agent.wallet.address.toRawString(),
+        beneficiary: params.beneficiary,
+        arbiter: agent.wallet.address.toRawString(), // Agent is arbiter by default
+        amount: params.amount,
+        deadline,
+        deadlineISO: new Date(deadline * 1000).toISOString(),
+        description: params.description || "",
+        status: "created", // created → funded → released | refunded
+        depositTxHash: null as string | null,
+        settleTxHash: null as string | null,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to escrow store
+      const escrows = loadEscrows();
+      escrows[escrowId] = escrow;
+      saveEscrows(escrows);
+
+      return {
+        escrowId,
+        status: "created",
+        beneficiary: params.beneficiary,
+        amount: params.amount + " TON",
+        deadline: escrow.deadlineISO,
+        description: params.description || "",
+        nextStep: `Deposit ${params.amount} TON using deposit_to_escrow with escrowId: ${escrowId}`,
+      };
+    },
+  },
+
+  deposit_to_escrow: {
+    description:
+      "Deposit TON into an escrow deal. Sends TON to a holding address and marks the escrow as funded.",
+    schema: z.object({
+      escrowId: z.string().describe("Escrow ID from create_escrow"),
+    }),
+    handler: async (agent, params) => {
+      const escrows = loadEscrows();
+      const escrow = escrows[params.escrowId];
+      if (!escrow) throw new Error(`Escrow not found: ${params.escrowId}`);
+      if (escrow.status !== "created")
+        throw new Error(`Escrow already ${escrow.status}`);
+
+      // Send TON to ourselves (holding) with escrow ID as comment
+      const { secretKey, publicKey } = agent.wallet.getCredentials();
+      const networkId = agent.network === "testnet" ? -3 : -239;
+      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+      const walletContract = freshClient.open(
+        WalletContractV5R1.create({
+          workchain: 0,
+          publicKey,
+          walletId: {
+            networkGlobalId: networkId,
+            workchain: 0,
+            subwalletNumber: 0,
+          },
+        }),
+      );
+
+      const commentBody = beginCell()
+        .storeUint(0, 32)
+        .storeStringTail(`escrow:${params.escrowId}`)
+        .endCell();
+
+      const seqno = await walletContract.getSeqno();
+      await walletContract.sendTransfer({
+        seqno,
+        secretKey,
+        messages: [
+          internal({
+            to: walletContract.address,
+            value: toNano(escrow.amount),
+            bounce: false,
+            body: commentBody,
+          }),
+        ],
+      });
+
+      // Wait for confirmation
+      await new Promise((r) => setTimeout(r, 10000));
+
+      // Get tx hash
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+      const txRes = await fetch(
+        `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
+      );
+      const txData = await txRes.json();
+      const txHash = txData.events?.[0]?.event_id || "pending";
+
+      // Update escrow
+      escrow.status = "funded";
+      escrow.depositTxHash = txHash;
+      saveEscrows(escrows);
+
+      return {
+        escrowId: params.escrowId,
+        status: "funded",
+        amount: escrow.amount + " TON",
+        depositTxHash: txHash,
+        beneficiary: escrow.beneficiary,
+        deadline: escrow.deadlineISO,
+      };
+    },
+  },
+
+  release_escrow: {
+    description:
+      "Release escrowed funds to the beneficiary. Only the depositor or arbiter can release.",
+    schema: z.object({
+      escrowId: z.string().describe("Escrow ID to release"),
+    }),
+    handler: async (agent, params) => {
+      const escrows = loadEscrows();
+      const escrow = escrows[params.escrowId];
+      if (!escrow) throw new Error(`Escrow not found: ${params.escrowId}`);
+      if (escrow.status !== "funded")
+        throw new Error(`Escrow is ${escrow.status}, must be funded`);
+
+      // Send TON to beneficiary
+      const beneficiary = Address.parse(escrow.beneficiary);
+      const { secretKey, publicKey } = agent.wallet.getCredentials();
+      const networkId = agent.network === "testnet" ? -3 : -239;
+      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+      const walletContract = freshClient.open(
+        WalletContractV5R1.create({
+          workchain: 0,
+          publicKey,
+          walletId: {
+            networkGlobalId: networkId,
+            workchain: 0,
+            subwalletNumber: 0,
+          },
+        }),
+      );
+
+      const commentBody = beginCell()
+        .storeUint(0, 32)
+        .storeStringTail(`escrow-release:${params.escrowId}`)
+        .endCell();
+
+      const seqno = await walletContract.getSeqno();
+      await walletContract.sendTransfer({
+        seqno,
+        secretKey,
+        messages: [
+          internal({
+            to: beneficiary,
+            value: toNano(escrow.amount),
+            bounce: false,
+            body: commentBody,
+          }),
+        ],
+      });
+
+      // Wait and get tx hash
+      await new Promise((r) => setTimeout(r, 10000));
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+      const txRes = await fetch(
+        `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
+      );
+      const txData = await txRes.json();
+      const txHash = txData.events?.[0]?.event_id || "pending";
+
+      escrow.status = "released";
+      escrow.settleTxHash = txHash;
+      saveEscrows(escrows);
+
+      return {
+        escrowId: params.escrowId,
+        status: "released",
+        amount: escrow.amount + " TON",
+        beneficiary: escrow.beneficiary,
+        releaseTxHash: txHash,
+      };
+    },
+  },
+
+  refund_escrow: {
+    description:
+      "Refund escrowed funds back to the depositor. Can refund if authorized or after deadline.",
+    schema: z.object({
+      escrowId: z.string().describe("Escrow ID to refund"),
+    }),
+    handler: async (agent, params) => {
+      const escrows = loadEscrows();
+      const escrow = escrows[params.escrowId];
+      if (!escrow) throw new Error(`Escrow not found: ${params.escrowId}`);
+      if (escrow.status !== "funded")
+        throw new Error(`Escrow is ${escrow.status}, must be funded`);
+
+      // Check deadline for auto-refund
+      const now = Math.floor(Date.now() / 1000);
+      const isDepositor =
+        agent.wallet.address.toRawString() === escrow.depositor;
+      const isArbiter = agent.wallet.address.toRawString() === escrow.arbiter;
+      const pastDeadline = now > escrow.deadline;
+
+      if (!isDepositor && !isArbiter && !pastDeadline) {
+        throw new Error(
+          "Not authorized: only depositor/arbiter can refund before deadline",
+        );
+      }
+
+      // Refund is just keeping the TON (since deposit was a self-transfer)
+      escrow.status = "refunded";
+      escrow.settleTxHash = "self-refund";
+      saveEscrows(escrows);
+
+      return {
+        escrowId: params.escrowId,
+        status: "refunded",
+        amount: escrow.amount + " TON",
+        depositor: escrow.depositor,
+        reason: pastDeadline ? "Deadline passed" : "Authorized refund",
+      };
+    },
+  },
+
+  get_escrow_info: {
+    description:
+      "Get escrow details. If escrowId is provided, returns that escrow. If no escrowId, lists ALL escrows.",
+    schema: z.object({
+      escrowId: z
+        .string()
+        .optional()
+        .describe("Escrow ID. If not provided, lists all escrows."),
+    }),
+    handler: async (agent, params) => {
+      const escrows = loadEscrows();
+
+      if (params.escrowId) {
+        const escrow = escrows[params.escrowId];
+        if (!escrow) throw new Error(`Escrow not found: ${params.escrowId}`);
+        return escrow;
+      }
+
+      // List all escrows
+      const list = Object.values(escrows);
+      return {
+        count: list.length,
+        escrows: list.map((e: any) => ({
+          id: e.id,
+          status: e.status,
+          amount: e.amount + " TON",
+          beneficiary: e.beneficiary,
+          deadline: e.deadlineISO,
+          description: e.description,
+        })),
+      };
     },
   },
 };

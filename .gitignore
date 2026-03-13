@@ -7,4 +7,5 @@ dist/
 .DS_Store
 coverage/
 .turbo/
+.escrow-store.json
 .x402-used-hashes.json
