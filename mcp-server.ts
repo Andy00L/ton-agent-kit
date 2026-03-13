@@ -1,20 +1,19 @@
 #!/usr/bin/env node
-import "dotenv/config";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { Address, beginCell, fromNano, internal, toNano } from "@ton/core";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
-import { Address, fromNano, toNano, beginCell, internal } from "@ton/core";
-import { mnemonicToPrivateKey } from "@ton/crypto";
+import "dotenv/config";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { KeypairWallet } from "./packages/core/src/wallet";
 
 // ============================================================
-// All 10 proven actions
+// All 15 proven actions
 // ============================================================
 
 const actions: Record<
@@ -465,6 +464,223 @@ const actions: Record<
       return { status: "sent", nftAddress: params.nftAddress, to: params.to };
     },
   },
+
+  get_transaction_history: {
+    description: "Get recent transaction history for a wallet address.",
+    schema: z.object({
+      address: z
+        .string()
+        .optional()
+        .describe("Wallet address. Defaults to agent's own."),
+      limit: z.coerce
+        .number()
+        .optional()
+        .default(10)
+        .describe("Number of transactions (default: 10)"),
+    }),
+    handler: async (agent, params) => {
+      const addr = params.address || agent.wallet.address.toRawString();
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+      const url = `${apiBase}/accounts/${encodeURIComponent(addr)}/events?limit=${params.limit || 10}`;
+      const response = await fetch(url);
+      if (!response.ok)
+        throw new Error(`Failed to fetch history: ${response.status}`);
+      const data = await response.json();
+      const events = (data.events || []).map((e: any) => ({
+        id: e.event_id,
+        timestamp: new Date(e.timestamp * 1000).toISOString(),
+        actions: (e.actions || []).map((a: any) => ({
+          type: a.type,
+          status: a.status,
+          amount: a.TonTransfer?.amount
+            ? (Number(a.TonTransfer.amount) / 1e9).toString()
+            : undefined,
+          sender: a.TonTransfer?.sender?.address,
+          recipient: a.TonTransfer?.recipient?.address,
+        })),
+      }));
+      return { address: addr, count: events.length, events };
+    },
+  },
+
+  get_wallet_info: {
+    description:
+      "Get detailed wallet information including status, balance, interfaces, and last activity.",
+    schema: z.object({
+      address: z
+        .string()
+        .optional()
+        .describe("Wallet address. Defaults to agent's own."),
+    }),
+    handler: async (agent, params) => {
+      const addr = params.address || agent.wallet.address.toRawString();
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+      const response = await fetch(
+        `${apiBase}/accounts/${encodeURIComponent(addr)}`,
+      );
+      if (!response.ok)
+        throw new Error(`Failed to fetch wallet info: ${response.status}`);
+      const data = await response.json();
+      return {
+        address: data.address,
+        balance: (Number(data.balance) / 1e9).toString() + " TON",
+        status: data.status,
+        interfaces: data.interfaces || [],
+        name: data.name || null,
+        lastActivity: data.last_activity
+          ? new Date(data.last_activity * 1000).toISOString()
+          : null,
+        isWallet: data.is_wallet,
+      };
+    },
+  },
+
+  get_staking_info: {
+    description: "Get staking pools and validator information on TON.",
+    schema: z.object({
+      address: z
+        .string()
+        .optional()
+        .describe("Wallet to check staking for. Defaults to agent's own."),
+    }),
+    handler: async (agent, params) => {
+      const addr = params.address || agent.wallet.address.toRawString();
+      const apiBase =
+        agent.network === "testnet"
+          ? "https://testnet.tonapi.io/v2"
+          : "https://tonapi.io/v2";
+
+      // Get staking info for this wallet
+      const response = await fetch(
+        `${apiBase}/staking/nominator/${encodeURIComponent(addr)}/pools`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          address: addr,
+          pools: (data.pools || []).map((p: any) => ({
+            pool: p.address,
+            name: p.name || "Unknown pool",
+            amount: (Number(p.amount) / 1e9).toString() + " TON",
+            readyWithdraw: (Number(p.ready_withdraw) / 1e9).toString() + " TON",
+            pendingDeposit:
+              (Number(p.pending_deposit) / 1e9).toString() + " TON",
+          })),
+        };
+      }
+
+      return {
+        address: addr,
+        pools: [],
+        message: "No staking positions found",
+      };
+    },
+  },
+
+  stake_ton: {
+    description:
+      "Stake TON with a validator pool. Sends TON to a staking pool contract.",
+    schema: z.object({
+      poolAddress: z.string().describe("Staking pool contract address"),
+      amount: z.string().describe("Amount of TON to stake"),
+    }),
+    handler: async (agent, params) => {
+      const poolAddr = Address.parse(params.poolAddress);
+      const { secretKey, publicKey } = agent.wallet.getCredentials();
+      const networkId = agent.network === "testnet" ? -3 : -239;
+      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+      const walletContract = freshClient.open(
+        WalletContractV5R1.create({
+          workchain: 0,
+          publicKey,
+          walletId: {
+            networkGlobalId: networkId,
+            workchain: 0,
+            subwalletNumber: 0,
+          },
+        }),
+      );
+      const seqno = await walletContract.getSeqno();
+
+      // Staking deposit message: send TON with a deposit op code
+      const depositBody = beginCell()
+        .storeUint(0x47d54391, 32) // deposit op
+        .storeUint(0, 64) // query_id
+        .endCell();
+
+      await walletContract.sendTransfer({
+        seqno,
+        secretKey,
+        messages: [
+          internal({
+            to: poolAddr,
+            value: toNano(params.amount),
+            bounce: true,
+            body: depositBody,
+          }),
+        ],
+      });
+
+      return {
+        status: "sent",
+        pool: params.poolAddress,
+        amount: params.amount,
+      };
+    },
+  },
+
+  unstake_ton: {
+    description:
+      "Unstake TON from a validator pool. Initiates withdrawal from a staking pool.",
+    schema: z.object({
+      poolAddress: z.string().describe("Staking pool contract address"),
+    }),
+    handler: async (agent, params) => {
+      const poolAddr = Address.parse(params.poolAddress);
+      const { secretKey, publicKey } = agent.wallet.getCredentials();
+      const networkId = agent.network === "testnet" ? -3 : -239;
+      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+      const walletContract = freshClient.open(
+        WalletContractV5R1.create({
+          workchain: 0,
+          publicKey,
+          walletId: {
+            networkGlobalId: networkId,
+            workchain: 0,
+            subwalletNumber: 0,
+          },
+        }),
+      );
+      const seqno = await walletContract.getSeqno();
+
+      // Withdraw op
+      const withdrawBody = beginCell()
+        .storeUint(0x47d54392, 32) // withdraw op
+        .storeUint(0, 64) // query_id
+        .endCell();
+
+      await walletContract.sendTransfer({
+        seqno,
+        secretKey,
+        messages: [
+          internal({
+            to: poolAddr,
+            value: toNano("0.1"),
+            bounce: true,
+            body: withdrawBody,
+          }),
+        ],
+      });
+
+      return { status: "sent", pool: params.poolAddress, action: "unstake" };
+    },
+  },
 };
 
 // ============================================================
@@ -522,7 +738,11 @@ async function main() {
       ...Object.entries(actions).map(([name, action]) => ({
         name,
         description: action.description,
-        inputSchema: zodToJsonSchema(action.schema),
+        inputSchema: (() => {
+          const schema = zodToJsonSchema(action.schema, { target: "openApi3" });
+          const { $schema, ...rest } = schema as any;
+          return { type: "object", properties: {}, ...rest };
+        })(),
       })),
     ],
   }));

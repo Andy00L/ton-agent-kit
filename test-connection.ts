@@ -155,7 +155,7 @@ const swapDedustAction = defineAction({
       .string()
       .describe("Destination token: 'TON' or Jetton master address"),
     amount: z.string().describe("Amount to swap in source token units"),
-    slippage: z
+    slippage: z.coerce
       .number()
       .optional()
       .default(1)
