@@ -1,0 +1,14 @@
+{
+  "name": "@ton-agent-kit/plugin-token",
+  "version": "1.0.0",
+  "description": "Token operations plugin for TON Agent Kit — TON transfers, Jetton operations",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc" },
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "@ton/ton": "^16.2.0",
+    "@ton/core": "^0.60.0"
+  },
+  "license": "MIT"
+}

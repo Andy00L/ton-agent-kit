@@ -1,0 +1,44 @@
+{
+  "name": "ton-agent-kit",
+  "version": "1.0.0",
+  "description": "Connect any AI agent to TON protocols — the Solana Agent Kit for TON",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:core": "npm run build -w packages/core",
+    "build:plugins": "npm run build -w packages/plugin-token -w packages/plugin-defi -w packages/plugin-nft -w packages/plugin-dns -w packages/plugin-payments",
+    "build:mcp": "npm run build -w packages/mcp-server",
+    "dev:bot": "npm run dev -w examples/telegram-bot",
+    "test": "npm test --workspaces --if-present",
+    "clean": "rm -rf packages/*/dist examples/*/dist node_modules"
+  },
+  "keywords": [
+    "ton",
+    "blockchain",
+    "ai",
+    "agent",
+    "mcp",
+    "langchain",
+    "telegram",
+    "defi",
+    "sdk"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.3.1"
+  },
+  "dependencies": {
+    "@ton/core": "^0.63.1",
+    "@ton/crypto": "^3.3.0",
+    "@ton/ton": "^16.2.2",
+    "zod": "^4.3.6"
+  }
+}

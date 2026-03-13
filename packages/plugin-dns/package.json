@@ -1,0 +1,13 @@
+{
+  "name": "@ton-agent-kit/plugin-dns",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc" },
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "@ton/ton": "^16.2.0",
+    "@ton/core": "^0.60.0"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@ton-agent-kit/ai-tools",
+  "version": "1.0.0",
+  "description": "Vercel AI SDK and OpenAI tools for TON Agent Kit",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc" },
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "ai": "^3.4.0",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "license": "MIT"
+}
