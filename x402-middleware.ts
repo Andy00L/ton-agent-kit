@@ -5,17 +5,27 @@
  * Agents auto-detect the 402 response, pay, and retry.
  *
  * Security features:
- * - Anti-replay: each tx hash can only be used ONCE
+ * - Anti-replay: each tx hash can only be used ONCE (pluggable store)
  * - Timestamp check: transaction must be recent (< maxAge)
  * - Amount verification: tight tolerance for cross-transfers, gas tolerance for self-transfers
  * - 2-level verification: blockchain endpoint → events fallback
  *
+ * Storage options:
+ * - FileReplayStore (default) — zero dependencies, JSON file on disk
+ * - RedisReplayStore — Upstash, Redis Cloud, or self-hosted Redis
+ * - MemoryReplayStore — for testing only
+ * - Custom — implement the ReplayStore interface
+ *
  * Usage:
  *   import { tonPaywall, createPaymentServer } from "./x402-middleware";
  *
- *   app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), (req, res) => {
- *     res.json({ data: "premium content" });
- *   });
+ *   // Default (file-based, zero config)
+ *   app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), handler);
+ *
+ *   // With Upstash Redis
+ *   import { Redis } from "@upstash/redis";
+ *   const store = new RedisReplayStore(new Redis({ url: "...", token: "..." }));
+ *   app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc...", replayStore: store }), handler);
  */
 
 import type { NextFunction, Request, Response } from "express";
@@ -35,6 +45,8 @@ export interface PaywallConfig {
   proofTTL?: number;
   /** Description of what the payment is for */
   description?: string;
+  /** Custom replay store (default: FileReplayStore) */
+  replayStore?: ReplayStore;
 }
 
 export interface PaymentRequirement {
@@ -53,13 +65,112 @@ export interface PaymentRequirement {
 }
 
 // ============================================================
-// Payment verification — production-hardened
+// Storage Adapter — pluggable anti-replay backend
 // ============================================================
 
-// Permanent set of used tx hashes (anti-replay — never expires)
-const usedPaymentHashes = new Set<string>();
+/**
+ * Interface for anti-replay storage.
+ * Implement this to use any backend (Redis, PostgreSQL, DynamoDB, etc.)
+ */
+export interface ReplayStore {
+  /** Check if a tx hash has been used */
+  has(hash: string): Promise<boolean>;
+  /** Mark a tx hash as used (must be permanent — anti-replay) */
+  add(hash: string): Promise<void>;
+}
 
-// Cache of verified payments (for TTL-based access within session)
+/**
+ * File-based store (default — zero dependencies)
+ * Persists used hashes to a JSON file on disk.
+ * Survives server restarts. Good for small-medium deployments.
+ */
+export class FileReplayStore implements ReplayStore {
+  private hashes: Set<string>;
+  private filePath: string;
+
+  constructor(filePath: string = ".x402-used-hashes.json") {
+    this.filePath = filePath;
+    this.hashes = new Set();
+    try {
+      const { existsSync, readFileSync } = require("fs");
+      if (existsSync(this.filePath)) {
+        this.hashes = new Set(JSON.parse(readFileSync(this.filePath, "utf-8")));
+      }
+    } catch {}
+  }
+
+  async has(hash: string): Promise<boolean> {
+    return this.hashes.has(hash);
+  }
+
+  async add(hash: string): Promise<void> {
+    this.hashes.add(hash);
+    try {
+      const { writeFileSync } = require("fs");
+      writeFileSync(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
+    } catch {}
+  }
+}
+
+/**
+ * Redis/Upstash store — for production scale.
+ * Works with @upstash/redis, ioredis, or any Redis client with get/set/exists.
+ *
+ * @example
+ * ```ts
+ * import { Redis } from "@upstash/redis";
+ *
+ * const store = new RedisReplayStore(new Redis({
+ *   url: "https://your-upstash-url",
+ *   token: "your-token",
+ * }));
+ *
+ * const app = createPaymentServer({
+ *   recipient: "0:abc...",
+ *   replayStore: store,
+ *   routes: [...]
+ * });
+ * ```
+ */
+export class RedisReplayStore implements ReplayStore {
+  private redis: any;
+  private prefix: string;
+
+  constructor(redisClient: any, prefix: string = "x402:used:") {
+    this.redis = redisClient;
+    this.prefix = prefix;
+  }
+
+  async has(hash: string): Promise<boolean> {
+    const exists = await this.redis.exists(this.prefix + hash);
+    return exists === 1 || exists === true;
+  }
+
+  async add(hash: string): Promise<void> {
+    await this.redis.set(this.prefix + hash, "1");
+  }
+}
+
+/**
+ * In-memory store — for testing only.
+ * Data is lost on server restart.
+ */
+export class MemoryReplayStore implements ReplayStore {
+  private hashes = new Set<string>();
+
+  async has(hash: string): Promise<boolean> {
+    return this.hashes.has(hash);
+  }
+
+  async add(hash: string): Promise<void> {
+    this.hashes.add(hash);
+  }
+}
+
+// ============================================================
+// Verified payment cache (TTL-based, in-memory)
+// ============================================================
+
 const verifiedPayments = new Map<
   string,
   { timestamp: number; amount: string }
@@ -97,6 +208,7 @@ export function tonPaywall(config: PaywallConfig) {
     network = "testnet",
     proofTTL = 300,
     description = "API access",
+    replayStore = new FileReplayStore(),
   } = config;
 
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -143,6 +255,7 @@ export function tonPaywall(config: PaywallConfig) {
       amount,
       network,
       proofTTL,
+      replayStore,
     );
 
     if (verification.valid) {
@@ -179,9 +292,10 @@ async function verifyPayment(
   expectedAmount: string,
   network: string,
   maxAge: number = 300,
+  store: ReplayStore,
 ): Promise<{ valid: boolean; reason?: string }> {
   // Anti-replay: reject if this hash was already used
-  if (usedPaymentHashes.has(txHash)) {
+  if (await store.has(txHash)) {
     return {
       valid: false,
       reason: "Transaction hash already used (anti-replay)",
@@ -210,6 +324,7 @@ async function verifyPayment(
         normalizedExpected,
         expectedAmountNano,
         maxAge,
+        store,
       );
     }
 
@@ -250,7 +365,7 @@ async function verifyPayment(
 
         if (value >= expectedAmountNano - tolerance) {
           // All checks passed — mark hash as used permanently (anti-replay)
-          usedPaymentHashes.add(txHash);
+          await store.add(txHash);
           return { valid: true };
         }
 
@@ -268,6 +383,7 @@ async function verifyPayment(
       normalizedExpected,
       expectedAmountNano,
       maxAge,
+      store,
     );
   } catch (err: any) {
     return { valid: false, reason: `Verification error: ${err.message}` };
@@ -275,7 +391,8 @@ async function verifyPayment(
 }
 
 /**
- * Level 2 fallback: verify via TONAPI events endpoint
+ * Level 2 fallback: verify via TONAPI events endpoint.
+ * Used when the blockchain endpoint is unavailable.
  */
 async function verifyViaEvents(
   apiBase: string,
@@ -283,6 +400,7 @@ async function verifyViaEvents(
   normalizedExpected: string,
   expectedAmountNano: number,
   maxAge: number,
+  store: ReplayStore,
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
     const eventRes = await fetch(
@@ -320,7 +438,7 @@ async function verifyViaEvents(
           const tolerance = isSelfTransfer ? 5_000_000 : 500_000;
 
           if (amount >= expectedAmountNano - tolerance) {
-            usedPaymentHashes.add(txHash);
+            await store.add(txHash);
             return { valid: true };
           }
 
@@ -347,20 +465,41 @@ async function verifyViaEvents(
  *
  * @example
  * ```ts
+ * // Default — file-based storage, zero config
  * const app = createPaymentServer({
  *   recipient: "0:abc...",
- *   network: "testnet",
  *   routes: [
  *     { path: "/api/price", amount: "0.001", handler: (req, res) => res.json({ ton: 3.85 }) },
- *     { path: "/api/analytics", amount: "0.01", handler: (req, res) => res.json({ users: 1000 }) },
  *   ],
  * });
- * app.listen(3000);
+ *
+ * // With Upstash Redis
+ * import { Redis } from "@upstash/redis";
+ * const app = createPaymentServer({
+ *   recipient: "0:abc...",
+ *   replayStore: new RedisReplayStore(new Redis({ url: "...", token: "..." })),
+ *   routes: [
+ *     { path: "/api/price", amount: "0.001", handler: (req, res) => res.json({ ton: 3.85 }) },
+ *   ],
+ * });
+ *
+ * // With custom backend
+ * class PostgresStore implements ReplayStore {
+ *   async has(hash: string) { return await db.query("SELECT 1 FROM used_hashes WHERE hash = $1", [hash]).then(r => r.rows.length > 0); }
+ *   async add(hash: string) { await db.query("INSERT INTO used_hashes (hash) VALUES ($1)", [hash]); }
+ * }
+ * const app = createPaymentServer({
+ *   recipient: "0:abc...",
+ *   replayStore: new PostgresStore(),
+ *   routes: [...],
+ * });
  * ```
  */
 export function createPaymentServer(config: {
   recipient: string;
   network?: "testnet" | "mainnet";
+  /** Custom replay store — FileReplayStore (default), RedisReplayStore, or your own */
+  replayStore?: ReplayStore;
   routes: Array<{
     path: string;
     amount: string;
@@ -395,6 +534,7 @@ export function createPaymentServer(config: {
         recipient: config.recipient,
         network: config.network || "testnet",
         description: route.description,
+        replayStore: config.replayStore,
       }),
       route.handler,
     );
