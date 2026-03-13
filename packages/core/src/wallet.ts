@@ -98,7 +98,7 @@ export class KeypairWallet implements WalletProvider {
           contract.address,
         );
         if (state.account.balance.coins > 0n) {
-          console.log(
+          console.error(
             `Auto-detected wallet: ${version} (${contract.address.toString({ testOnly: network === "testnet", bounceable: false })})`,
           );
           return new KeypairWallet(keyPair, config);
@@ -108,7 +108,7 @@ export class KeypairWallet implements WalletProvider {
       }
     }
 
-    console.log("No existing wallet found, defaulting to V5R1");
+    console.error("No existing wallet found, defaulting to V5R1");
     return new KeypairWallet(keyPair, { version: "V5R1", network });
   }
 
