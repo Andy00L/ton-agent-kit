@@ -36,6 +36,27 @@ function saveEscrows(escrows: Record<string, any>): void {
 }
 
 // ============================================================
+// Agent Registry storage (JSON file)
+// ============================================================
+
+const REGISTRY_FILE = ".agent-registry.json";
+
+function loadAgentRegistry(): Record<string, any> {
+  try {
+    if (existsSync(REGISTRY_FILE)) {
+      return JSON.parse(readFileSync(REGISTRY_FILE, "utf-8"));
+    }
+  } catch {}
+  return {};
+}
+
+function saveAgentRegistry(registry: Record<string, any>): void {
+  try {
+    writeFileSync(REGISTRY_FILE, JSON.stringify(registry, null, 2), "utf-8");
+  } catch {}
+}
+
+// ============================================================
 // All 15 proven actions
 // ============================================================
 
@@ -1080,6 +1101,155 @@ const actions: Record<
           deadline: e.deadlineISO,
           description: e.description,
         })),
+      };
+    },
+  },
+
+  register_agent: {
+    description:
+      "Register an AI agent in the local agent registry with its capabilities, name, and description. Other agents can discover it via discover_agent.",
+    schema: z.object({
+      name: z
+        .string()
+        .describe("Agent name (e.g., 'market-data', 'trading-bot')"),
+      capabilities: z
+        .union([
+          z.array(z.string()),
+          z.string().transform((s) => {
+            try {
+              return JSON.parse(s);
+            } catch {
+              return s.split(",").map((c: string) => c.trim());
+            }
+          }),
+        ])
+        .describe(
+          "List of capabilities (e.g., ['price_feed', 'analytics', 'trading'])",
+        ),
+      description: z
+        .string()
+        .optional()
+        .describe("Human-readable description of the agent"),
+      endpoint: z
+        .string()
+        .optional()
+        .describe("API endpoint where the agent can be reached"),
+    }),
+    handler: async (agent, params) => {
+      const agentId = `agent_${params.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+
+      const agentRecord = {
+        id: agentId,
+        name: params.name,
+        address: agent.wallet.address.toRawString(),
+        capabilities: params.capabilities,
+        description: params.description || "",
+        endpoint: params.endpoint || null,
+        network: agent.network,
+        registeredAt: new Date().toISOString(),
+        reputation: { score: 0, totalTasks: 0, successfulTasks: 0 },
+      };
+
+      const registry = loadAgentRegistry();
+      registry[agentId] = agentRecord;
+      saveAgentRegistry(registry);
+
+      return {
+        agentId,
+        name: params.name,
+        address: agent.wallet.address.toRawString(),
+        capabilities: params.capabilities,
+        description: params.description || "",
+        status: "registered",
+        dnsHint: `${params.name}.agents.ton (requires TON DNS domain)`,
+      };
+    },
+  },
+
+  discover_agent: {
+    description:
+      "Find registered agents by capability or name. Search the local agent registry to find agents that can perform specific tasks.",
+    schema: z.object({
+      capability: z
+        .string()
+        .optional()
+        .describe("Capability to search for (e.g., 'price_feed', 'trading')"),
+      name: z.string().optional().describe("Agent name to search for"),
+    }),
+    handler: async (agent, params) => {
+      const registry = loadAgentRegistry();
+      let results = Object.values(registry);
+
+      if (params.capability) {
+        const cap = params.capability.toLowerCase();
+        results = results.filter((a: any) =>
+          a.capabilities.some((c: string) => c.toLowerCase().includes(cap)),
+        );
+      }
+
+      if (params.name) {
+        const name = params.name.toLowerCase();
+        results = results.filter((a: any) =>
+          a.name.toLowerCase().includes(name),
+        );
+      }
+
+      return {
+        query: { capability: params.capability, name: params.name },
+        count: results.length,
+        agents: results.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          address: a.address,
+          capabilities: a.capabilities,
+          description: a.description,
+          endpoint: a.endpoint,
+          reputation: a.reputation,
+          registeredAt: a.registeredAt,
+        })),
+      };
+    },
+  },
+
+  get_agent_reputation: {
+    description:
+      "Get the reputation score of a registered agent. Set addTask=true and success=true to record a successful task. Set addTask=true and success=false to record a failed task.",
+    schema: z.object({
+      agentId: z.string().describe("Agent ID to check or update"),
+      addTask: z
+        .union([z.boolean(), z.string().transform((s) => s === "true")])
+        .optional()
+        .describe("Set to true to record a completed task"),
+      success: z
+        .union([z.boolean(), z.string().transform((s) => s === "true")])
+        .optional()
+        .describe("If addTask is true, whether the task was successful"),
+    }),
+    handler: async (agent, params) => {
+      const registry = loadAgentRegistry();
+      const agentRecord = registry[params.agentId];
+      if (!agentRecord) throw new Error(`Agent not found: ${params.agentId}`);
+
+      // Update reputation if recording a task
+      if (params.addTask) {
+        agentRecord.reputation.totalTasks += 1;
+        if (params.success !== false) {
+          agentRecord.reputation.successfulTasks += 1;
+        }
+        agentRecord.reputation.score = Math.round(
+          (agentRecord.reputation.successfulTasks /
+            agentRecord.reputation.totalTasks) *
+            100,
+        );
+        saveAgentRegistry(registry);
+      }
+
+      return {
+        agentId: params.agentId,
+        name: agentRecord.name,
+        address: agentRecord.address,
+        reputation: agentRecord.reputation,
+        registeredAt: agentRecord.registeredAt,
       };
     },
   },
