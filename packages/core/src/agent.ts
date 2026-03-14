@@ -19,6 +19,14 @@ export interface RunLoopOptions {
   apiKey?: string;
   baseURL?: string;
   verbose?: boolean;
+  /** Called at the start of each LLM iteration */
+  onIteration?: (iteration: number, maxIterations: number) => void;
+  /** Called before an action is executed */
+  onActionStart?: (actionName: string, params: any) => void;
+  /** Called after an action returns */
+  onActionResult?: (actionName: string, params: any, result: any) => void;
+  /** Called when the agent finishes (no more tool calls) */
+  onComplete?: () => void;
 }
 
 export interface RunLoopResult {
@@ -256,7 +264,9 @@ export class TonAgentKit {
     const steps: Array<{ action: string; params: any; result: any }> = [];
 
     for (let i = 0; i < maxIterations; i++) {
-      if (verbose) {
+      if (options?.onIteration) {
+        options.onIteration(i + 1, maxIterations);
+      } else if (verbose) {
         console.log(`\n🔄 Iteration ${i + 1}/${maxIterations}`);
       }
 
@@ -276,7 +286,9 @@ export class TonAgentKit {
         !choice.message.tool_calls ||
         choice.message.tool_calls.length === 0
       ) {
-        if (verbose) {
+        if (options?.onComplete) {
+          options.onComplete();
+        } else if (verbose) {
           console.log("✅ Agent finished reasoning");
         }
         return {
@@ -296,7 +308,9 @@ export class TonAgentKit {
           params = {};
         }
 
-        if (verbose) {
+        if (options?.onActionStart) {
+          options.onActionStart(actionName, params);
+        } else if (verbose) {
           console.log(`  ▶ ${actionName}(${JSON.stringify(params)})`);
         }
 
@@ -307,7 +321,9 @@ export class TonAgentKit {
           result = { error: (err as Error).message };
         }
 
-        if (verbose) {
+        if (options?.onActionResult) {
+          options.onActionResult(actionName, params, result);
+        } else if (verbose) {
           console.log(
             `  ◀ ${typeof result === "string" ? result : JSON.stringify(result)}`,
           );
