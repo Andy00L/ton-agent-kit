@@ -1,7 +1,7 @@
 /**
  * TON Agent Kit — Comprehensive Action Test Suite
  *
- * Tests ALL 32 actions through the plugin architecture.
+ * Tests ALL 29 actions through the plugin architecture.
  * Uses agent.runAction() for everything — validates the full pipeline.
  *
  * Run: bun run test-all-actions.ts
@@ -636,19 +636,6 @@ async function main() {
     maxAmount: "0.01",
   });
 
-  await testSchema("create_payment_channel", agent, {
-    counterparty: "0:abc123",
-    initialDeposit: "1.0",
-  });
-
-  await testSchema("send_micropayment", agent, {
-    channelId: "channel-123",
-    amount: "0.001",
-  });
-
-  await testSchema("close_payment_channel", agent, {
-    channelId: "channel-123",
-  });
 
   // ════════════════════════════════════════════════════════════
   // SECTION 9: Live Transfer Test (small amount)
