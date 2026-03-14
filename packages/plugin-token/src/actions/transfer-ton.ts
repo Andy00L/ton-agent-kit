@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address, toNano, fromNano, internal } from "@ton/core";
-import { defineAction, type TransactionResult, explorerUrl, sendTransaction, toFriendlyAddress } from "@ton-agent-kit/core";
+import { defineAction, type TransactionResult, sendTransaction, toFriendlyAddress } from "@ton-agent-kit/core";
 
 export const transferTonAction = defineAction<
   { to: string; amount: string; comment?: string },
@@ -46,12 +46,14 @@ export const transferTonAction = defineAction<
       }),
     ]);
 
+    const friendlyAddress = toFriendlyAddress(agent.wallet.address, agent.network);
+
     return {
       txHash: "pending",
       status: "sent",
       to: params.to,
       friendlyTo: toFriendlyAddress(toAddress, agent.network),
-      explorerUrl: explorerUrl("pending", agent.network),
+      explorerUrl: `https://${agent.network === 'testnet' ? 'testnet.' : ''}tonviewer.com/${friendlyAddress}`,
       fee: "~0.005 TON",
     };
   },

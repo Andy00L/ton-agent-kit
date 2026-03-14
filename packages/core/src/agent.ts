@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { toJSONSchema } from "zod";
 import { TonClient4 } from "@ton/ton";
 import { PluginRegistry } from "./plugin";
 import type {
@@ -202,6 +203,24 @@ export class TonAgentKit {
     return this.wallet.address.toString();
   }
 
+  /**
+   * Returns OpenAI-compatible function calling tools, ready to use with any LLM provider
+   * (OpenAI, Anthropic, Google, Groq, Mistral, OpenRouter, Together).
+   */
+  toAITools(): Array<{ type: "function"; function: { name: string; description: string; parameters: any } }> {
+    return this.getAvailableActions().map((action) => {
+      const { $schema, ...parameters } = toJSONSchema(action.schema);
+      return {
+        type: "function" as const,
+        function: {
+          name: action.name,
+          description: action.description,
+          parameters,
+        },
+      };
+    });
+  }
+
   // ============================================================
   // Autonomous Agent Loop
   // ============================================================
@@ -222,9 +241,8 @@ export class TonAgentKit {
       );
     }
 
-    // Dynamic imports so the SDK works without these deps installed
+    // Dynamic import so the SDK works without openai installed
     const { default: OpenAI } = await import("openai");
-    const { toJSONSchema } = await import("zod");
     const client = new OpenAI({ apiKey, baseURL });
 
     // Ensure plugins are initialized
