@@ -11,16 +11,7 @@ export const registerAgentAction = defineAction({
       .string()
       .describe("Agent name (e.g., 'market-data', 'trading-bot')"),
     capabilities: z
-      .union([
-        z.array(z.string()),
-        z.string().transform((s) => {
-          try {
-            return JSON.parse(s);
-          } catch {
-            return s.split(",").map((c: string) => c.trim());
-          }
-        }),
-      ])
+      .union([z.array(z.string()), z.string()])
       .describe(
         "List of capabilities (e.g., ['price_feed', 'analytics', 'trading'])",
       ),
@@ -36,11 +27,23 @@ export const registerAgentAction = defineAction({
   handler: async (agent, params) => {
     const agentId = `agent_${params.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
 
+    // Coerce string capabilities to array
+    let capabilities: string[];
+    if (typeof params.capabilities === "string") {
+      try {
+        capabilities = JSON.parse(params.capabilities);
+      } catch {
+        capabilities = params.capabilities.split(",").map((c: string) => c.trim());
+      }
+    } else {
+      capabilities = params.capabilities;
+    }
+
     const agentRecord = {
       id: agentId,
       name: params.name,
       address: agent.wallet.address.toRawString(),
-      capabilities: params.capabilities,
+      capabilities,
       description: params.description || "",
       endpoint: params.endpoint || null,
       network: agent.network,
@@ -57,7 +60,7 @@ export const registerAgentAction = defineAction({
       name: params.name,
       address: agent.wallet.address.toRawString(),
       friendlyAddress: toFriendlyAddress(agent.wallet.address, agent.network),
-      capabilities: params.capabilities,
+      capabilities,
       description: params.description || "",
       status: "registered",
       dnsHint: `${params.name}.agents.ton (requires TON DNS domain)`,

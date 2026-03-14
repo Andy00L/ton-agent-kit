@@ -41,14 +41,14 @@ export function createVercelAITools(
  * Create OpenAI-compatible function definitions for manual integration
  */
 export function createOpenAITools(agent: TonAgentKit) {
-  const { zodToJsonSchema } = require("zod-to-json-schema");
+  const { toJSONSchema } = require("zod");
 
   return agent.getAvailableActions().map((action) => ({
     type: "function" as const,
     function: {
       name: action.name,
       description: action.description,
-      parameters: zodToJsonSchema(action.schema),
+      parameters: toJSONSchema(action.schema),
     },
   }));
 }

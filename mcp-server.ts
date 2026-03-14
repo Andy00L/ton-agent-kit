@@ -7,7 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { TonClient4 } from "@ton/ton";
 import "dotenv/config";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { toJSONSchema } from "zod";
 import { TonAgentKit } from "./packages/core/src/agent";
 import { KeypairWallet } from "./packages/core/src/wallet";
 import TokenPlugin from "./packages/plugin-token/src/index";
@@ -79,7 +79,7 @@ async function main() {
         name: action.name,
         description: action.description,
         inputSchema: (() => {
-          const schema = zodToJsonSchema(action.schema, { target: "openApi3" });
+          const schema = toJSONSchema(action.schema);
           const { $schema, ...rest } = schema as any;
           return { type: "object", properties: {}, ...rest };
         })(),
