@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Address, toNano, fromNano, internal } from "@ton/core";
+import { Address, toNano, internal } from "@ton/core";
 import { defineAction, type SwapResult, sendTransaction } from "@ton-agent-kit/core";
 
 export const swapStonfiAction = defineAction<

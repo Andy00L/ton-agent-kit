@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { Address } from "@ton/core";
 import { defineAction, type JettonBalanceResult } from "@ton-agent-kit/core";
 
 export const getJettonBalanceAction = defineAction<

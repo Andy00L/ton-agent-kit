@@ -252,9 +252,13 @@ export class TonAgentKit {
 
     // Build system prompt
     const actionList = actions
-      .map((a) => `- ${a.name}: ${a.description}`)
+      .map((a) => {
+        const jsonSchema = zodToJsonSchema(a.schema, { target: "jsonSchema7" }) as any;
+        const paramNames = JSON.stringify(Object.keys(jsonSchema.properties || {}));
+        return `- ${a.name}: ${a.description}\n  Parameters: ${paramNames}`;
+      })
       .join("\n");
-    const systemPrompt = `You are an autonomous AI agent with a TON blockchain wallet. You have access to the following actions:\n${actionList}\nExecute the user's goal by calling the appropriate actions. When done, provide a summary of what you accomplished.`;
+    const systemPrompt = `You are an autonomous AI agent with a TON blockchain wallet. You have access to the following actions:\n${actionList}\n\nIMPORTANT: When calling functions, use EXACTLY the parameter names listed above. Do NOT rename parameters (e.g. use "to" not "destination", "token" not "token_address").\n\nExecute the user's goal by calling the appropriate actions. When done, provide a summary of what you accomplished.`;
 
     const messages: Array<any> = [
       { role: "system", content: systemPrompt },
@@ -306,6 +310,26 @@ export class TonAgentKit {
           params = JSON.parse(toolCall.function.arguments);
         } catch {
           params = {};
+        }
+
+        // Remap misnamed parameters to match the action schema
+        const matchedAction = actions.find((a) => a.name === actionName);
+        if (matchedAction) {
+          const expectedSchema = zodToJsonSchema(matchedAction.schema, { target: "jsonSchema7" }) as any;
+          const expectedKeys = new Set(Object.keys(expectedSchema.properties || {}));
+          const paramKeys = Object.keys(params);
+          for (const key of paramKeys) {
+            if (!expectedKeys.has(key)) {
+              // Find a matching expected key that isn't already provided
+              for (const expected of expectedKeys) {
+                if (!(expected in params) && key.toLowerCase().includes(expected.toLowerCase())) {
+                  params[expected] = params[key];
+                  delete params[key];
+                  break;
+                }
+              }
+            }
+          }
         }
 
         if (options?.onActionStart) {

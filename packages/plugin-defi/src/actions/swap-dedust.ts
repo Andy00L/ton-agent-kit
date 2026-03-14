@@ -2,9 +2,6 @@ import { z } from "zod";
 import { Address, toNano, internal } from "@ton/core";
 import { defineAction, type SwapResult, sendTransaction } from "@ton-agent-kit/core";
 
-// DeDust SDK imports (will be available after npm install)
-// import { Factory, MAINNET_FACTORY_ADDR, Asset, PoolType, VaultNative } from "@dedust/sdk";
-
 export const swapDedustAction = defineAction<
   { fromToken: string; toToken: string; amount: string; slippage?: number },
   SwapResult

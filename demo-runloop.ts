@@ -1,10 +1,13 @@
 /**
  * TON Agent Kit — Autonomous Agent Runtime Demo
  *
+ * Runs 3 demo scenarios in sequence, each fully autonomous.
  * The agent receives a natural-language goal, plans which actions to call,
- * executes them, and returns a summary — fully autonomous.
+ * executes them, and returns a summary.
  *
- * Usage: bun run demo-runloop.ts
+ * Usage:
+ *   bun run demo-runloop.ts              # run all 3 scenarios
+ *   bun run demo-runloop.ts "custom goal" # run a single custom goal
  */
 
 import { readFileSync } from "fs";
@@ -14,6 +17,9 @@ import TokenPlugin from "./packages/plugin-token/src/index";
 import DefiPlugin from "./packages/plugin-defi/src/index";
 import DnsPlugin from "./packages/plugin-dns/src/index";
 import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
+import EscrowPlugin from "./packages/plugin-escrow/src/index";
+import IdentityPlugin from "./packages/plugin-identity/src/index";
+import StakingPlugin from "./packages/plugin-staking/src/index";
 
 // Read .env manually (dotenv doesn't reliably load under bun)
 const envContent = readFileSync(".env", "utf-8");
@@ -26,6 +32,33 @@ const RPC_URL = getEnv("TON_RPC_URL") || "https://testnet-v4.tonhubapi.com";
 const apiKey = getEnv("OPENAI_API_KEY");
 const baseURL = getEnv("OPENAI_BASE_URL") || undefined;
 const model = getEnv("AI_MODEL") || "gpt-4.1-nano";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// ── Scenarios ────────────────────────────────────────────────
+
+interface Scenario {
+  name: string;
+  goal: string;
+  allPlugins?: boolean;
+}
+
+const SCENARIOS: Scenario[] = [
+  {
+    name: "Balance & Price Analysis",
+    goal: "Check my TON balance. Then get the price of USDT using token address EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs. Calculate how much my TON is worth in USDT.",
+  },
+  {
+    name: "Autonomous Transfer",
+    goal: "Send 0.001 TON to 0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3 with comment autonomous-agent-payment. Then check my balance to confirm.",
+    allPlugins: true,
+  },
+  {
+    name: "Multi-Step Research",
+    goal: 'Resolve the domain foundation.ton to get its address. Then check the balance of that address. Then get the USDT price. Give me a summary of all findings.',
+    allPlugins: true,
+  },
+];
 
 // ── Display Helpers ──────────────────────────────────────────
 
@@ -101,6 +134,102 @@ function wordWrap(text: string, indent: string = "  ", maxWidth: number = W - 4)
   return lines;
 }
 
+// ── Run a single scenario ────────────────────────────────────
+
+interface ScenarioResult {
+  name: string;
+  steps: number;
+  success: boolean;
+}
+
+async function runScenario(
+  scenario: Scenario,
+  index: number,
+  total: number,
+  wallet: KeypairWallet,
+): Promise<ScenarioResult> {
+  // ── Scenario Header ──
+  console.log(`\n${"═".repeat(W)}`);
+  console.log(`  📋 SCENARIO ${index}/${total} — ${scenario.name}`);
+  console.log(`${"═".repeat(W)}`);
+
+  // ── Init agent with appropriate plugins ──
+  const agent = new TonAgentKit(wallet, RPC_URL);
+
+  if (scenario.allPlugins) {
+    agent
+      .use(TokenPlugin)
+      .use(DefiPlugin)
+      .use(DnsPlugin)
+      .use(AnalyticsPlugin)
+      .use(EscrowPlugin)
+      .use(IdentityPlugin)
+      .use(StakingPlugin);
+    console.log(`\n  Plugins: Token, DeFi, DNS, Analytics, Escrow, Identity, Staking`);
+  } else {
+    agent
+      .use(TokenPlugin)
+      .use(DefiPlugin)
+      .use(DnsPlugin)
+      .use(AnalyticsPlugin);
+    console.log(`\n  Plugins: Token, DeFi, DNS, Analytics`);
+  }
+
+  console.log(`  Actions: ${agent.actionCount} available`);
+  console.log(`\n  🎯 GOAL:`);
+  console.log(`  "${scenario.goal}"\n`);
+
+  // ── Run Loop ──
+  let actionIndex = 0;
+  let hasError = false;
+
+  const result = await agent.runLoop(scenario.goal, {
+    apiKey,
+    baseURL,
+    model,
+    verbose: false,
+
+    onIteration: (iteration, maxIterations) => {
+      console.log(`\n${"─".repeat(W)}`);
+      console.log(`  🔄 ITERATION ${iteration}/${maxIterations} — Agent is thinking...`);
+      console.log(`${"─".repeat(W)}`);
+    },
+
+    onActionStart: (actionName, params) => {
+      actionIndex++;
+      const paramStr = !params || Object.keys(params).length === 0
+        ? "(none)"
+        : Object.entries(params).map(([k, v]) => `${k}: ${v}`).join(", ");
+      console.log(`\n  ▶ Action #${actionIndex}: ${actionName}`);
+      console.log(`    Params: ${paramStr}`);
+    },
+
+    onActionResult: (_actionName, _params, result) => {
+      if (result?.error) hasError = true;
+      console.log(`  ◀ Result:`);
+      for (const l of formatResult(result)) {
+        console.log(l);
+      }
+    },
+
+    onComplete: () => {
+      console.log(`\n  ✅ SCENARIO ${index} COMPLETED`);
+    },
+  });
+
+  // ── Summary ──
+  console.log(`\n  📝 Summary:`);
+  for (const l of wordWrap(result.summary)) {
+    console.log(l);
+  }
+
+  return {
+    name: scenario.name,
+    steps: result.steps.length,
+    success: !hasError && !result.steps.some((s: any) => s.result?.error),
+  };
+}
+
 // ── Main ─────────────────────────────────────────────────────
 
 async function main() {
@@ -118,108 +247,78 @@ async function main() {
   console.log(`  Network: ${NETWORK}`);
   console.log(`  Model:   ${model}`);
 
-  // ── Init ──
+  // ── Init wallet ──
   const mnemonic = MNEMONIC.split(" ");
   const wallet = await KeypairWallet.fromMnemonic(mnemonic, {
     version: "V5R1",
     network: NETWORK,
   });
 
-  const agent = new TonAgentKit(wallet, RPC_URL)
-    .use(TokenPlugin)
-    .use(DefiPlugin)
-    .use(DnsPlugin)
-    .use(AnalyticsPlugin);
-
   const viewer = NETWORK === "testnet"
     ? "https://testnet.tonviewer.com"
     : "https://tonviewer.com";
 
   // ── Wallet Info ──
+  const tempAgent = new TonAgentKit(wallet, RPC_URL)
+    .use(TokenPlugin).use(DefiPlugin).use(DnsPlugin).use(AnalyticsPlugin)
+    .use(EscrowPlugin).use(IdentityPlugin).use(StakingPlugin);
+
   console.log(`\n${"─".repeat(W)}`);
   console.log(`\n  📡 Agent Wallet:`);
-  console.log(`     Address: ${agent.address}`);
-  console.log(`     ${viewer}/${agent.address}`);
-  console.log(`     Actions: ${agent.actionCount} available`);
-  console.log(`     Plugins: Token, DeFi, DNS, Analytics`);
+  console.log(`     Address: ${tempAgent.address}`);
+  console.log(`     ${viewer}/${tempAgent.address}`);
+  console.log(`     Max Actions: ${tempAgent.actionCount} (full toolkit)`);
   console.log(`\n${"─".repeat(W)}`);
 
-  // ── Goal ──
-  const goal =
-    process.argv[2] ||
-    "Check my TON balance, then get the USDT price, and tell me how much my TON is worth in USDT";
+  // ── Check for custom goal via CLI arg ──
+  const customGoal = process.argv[2];
 
-  console.log(`\n  🎯 GOAL:`);
-  console.log(`  "${goal}"\n`);
+  if (customGoal) {
+    // Single custom goal — run with all plugins
+    const result = await runScenario(
+      { name: "Custom Goal", goal: customGoal, allPlugins: true },
+      1,
+      1,
+      wallet,
+    );
 
-  // ── Run Loop with formatted callbacks ──
-  let actionIndex = 0;
-
-  const result = await agent.runLoop(goal, {
-    apiKey,
-    baseURL,
-    model,
-    verbose: false,
-
-    onIteration: (iteration, maxIterations) => {
-      console.log(`\n${"═".repeat(W)}`);
-      console.log(`  🔄 ITERATION ${iteration}/${maxIterations} — Agent is thinking...`);
-      console.log(`${"═".repeat(W)}`);
-    },
-
-    onActionStart: (actionName, params) => {
-      actionIndex++;
-      const paramStr = !params || Object.keys(params).length === 0
-        ? "(none)"
-        : Object.entries(params).map(([k, v]) => `${k}: ${v}`).join(", ");
-      console.log(`\n  ▶ Action #${actionIndex}: ${actionName}`);
-      console.log(`    Params: ${paramStr}`);
-    },
-
-    onActionResult: (_actionName, _params, result) => {
-      console.log(`  ◀ Result:`);
-      for (const l of formatResult(result)) {
-        console.log(l);
-      }
-    },
-
-    onComplete: () => {
-      console.log(`\n${"═".repeat(W)}`);
-      console.log("  ✅ AGENT COMPLETED GOAL");
-      console.log(`${"═".repeat(W)}`);
-    },
-  });
-
-  // ── Summary ──
-  console.log(`\n  📝 Summary:`);
-  for (const l of wordWrap(result.summary)) {
-    console.log(l);
+    console.log(`\n  ┌${"─".repeat(W - 4)}┐`);
+    console.log(boxLine(`${result.success ? "✅" : "⚠️"}  ${result.name}: ${result.steps} steps`));
+    console.log(`  └${"─".repeat(W - 4)}┘\n`);
+    return;
   }
 
-  // ── Final Summary Box ──
-  const goalDisplay = goal.length > 40 ? goal.slice(0, 40) + "..." : goal;
-  const stepsLabel = `${result.steps.length} action${result.steps.length !== 1 ? "s" : ""} executed`;
-  const statusLabel = result.steps.some((s: any) => s.result?.error)
-    ? "Completed with errors"
-    : "Completed successfully";
+  // ── Run all 3 scenarios ──
+  console.log(`\n  📋 Running ${SCENARIOS.length} scenarios in sequence...\n`);
 
-  console.log(`\n  ┌${"─".repeat(W - 4)}┐`);
-  console.log(boxLine(`🎯 Goal:    ${goalDisplay}`));
-  console.log(boxLine(`📊 Steps:   ${stepsLabel}`));
-  console.log(boxLine(`✅ Status:  ${statusLabel}`));
-  console.log(`  └${"─".repeat(W - 4)}┘`);
+  const results: ScenarioResult[] = [];
 
-  // ── Steps Recap ──
-  if (result.steps.length > 0) {
-    console.log("\n  Steps executed:");
-    for (let i = 0; i < result.steps.length; i++) {
-      const step = result.steps[i];
-      const icon = step.result?.error ? "⚠️ " : "✅";
-      console.log(`     ${icon} ${i + 1}. ${step.action}`);
+  for (let i = 0; i < SCENARIOS.length; i++) {
+    const scenario = SCENARIOS[i];
+
+    const result = await runScenario(scenario, i + 1, SCENARIOS.length, wallet);
+    results.push(result);
+
+    // Separator between scenarios (not after the last one)
+    if (i < SCENARIOS.length - 1) {
+      console.log(`\n  ⏳ Next scenario in 3 seconds...`);
+      await sleep(3000);
     }
   }
 
-  console.log();
+  // ── Final Summary ──
+  const totalSteps = results.reduce((sum, r) => sum + r.steps, 0);
+
+  console.log(`\n\n  ┌${"─".repeat(W - 4)}┐`);
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    const icon = r.success ? "✅" : "⚠️";
+    const label = `Scenario ${i + 1}: ${icon} Completed (${r.steps} steps)`;
+    console.log(boxLine(label));
+  }
+  console.log(boxLine(``));
+  console.log(boxLine(`Total:      ${totalSteps} autonomous actions executed`));
+  console.log(`  └${"─".repeat(W - 4)}┘\n`);
 }
 
 main().catch(console.error);
