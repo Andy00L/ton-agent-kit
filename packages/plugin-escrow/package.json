@@ -10,5 +10,8 @@
     "@ton/ton": "^16.2.0",
     "@ton/core": "^0.63.1"
   },
-  "license": "MIT"
+  "keywords": ["ton", "blockchain", "ai", "agent", "sdk"],
+  "license": "MIT",
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "https://github.com/Andy00L/ton-agent-kit.git" }
 }
