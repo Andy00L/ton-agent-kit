@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
 import { JettonMaster, JettonWallet } from "@ton/ton";
-import { defineAction, type TransactionResult, sendTransaction } from "@ton-agent-kit/core";
+import { defineAction, type TransactionResult, sendTransaction, explorerUrl, toFriendlyAddress } from "@ton-agent-kit/core";
 
 export const transferJettonAction = defineAction<
   { to: string; amount: string; jettonAddress: string },
@@ -57,6 +57,9 @@ export const transferJettonAction = defineAction<
     return {
       txHash: "pending",
       status: "sent",
+      to: params.to,
+      friendlyTo: toFriendlyAddress(toAddress, agent.network),
+      explorerUrl: explorerUrl("pending", agent.network),
       fee: "~0.037 TON",
     };
   },

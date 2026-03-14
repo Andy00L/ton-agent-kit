@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
-import { definePlugin, defineAction, type NftInfo, type TransactionResult, sendTransaction } from "@ton-agent-kit/core";
+import { definePlugin, defineAction, type NftInfo, type TransactionResult, sendTransaction, toFriendlyAddress, explorerUrl } from "@ton-agent-kit/core";
 
 // ============================================================
 // get_nft_info — Get NFT metadata
@@ -30,10 +30,13 @@ const getNftInfoAction = defineAction<{ nftAddress: string }, NftInfo>({
     const content = stack.readCell();       // individual_content
 
     return {
-      address: nftAddr.toString(),
+      address: nftAddr.toRawString(),
+      friendlyAddress: toFriendlyAddress(nftAddr, agent.network),
       index: Number(index),
-      owner: owner.toString(),
-      collection: collection?.toString(),
+      owner: owner.toRawString(),
+      friendlyOwner: toFriendlyAddress(owner, agent.network),
+      collection: collection?.toRawString(),
+      friendlyCollection: collection ? toFriendlyAddress(collection, agent.network) : undefined,
       metadata: { initialized: init },
     };
   },
@@ -79,6 +82,9 @@ const transferNftAction = defineAction<
     return {
       txHash: "pending",
       status: "sent",
+      to: params.to,
+      friendlyTo: toFriendlyAddress(toAddr, agent.network),
+      explorerUrl: explorerUrl("pending", agent.network),
       fee: "~0.05 TON",
     };
   },
@@ -119,12 +125,15 @@ const getCollectionAction = defineAction<
 
     const data = await response.json();
 
+    const rawAddress = data.address || params.collectionAddress;
     return {
-      address: data.address || params.collectionAddress,
+      address: rawAddress,
+      friendlyAddress: toFriendlyAddress(Address.parse(rawAddress), agent.network),
       name: data.metadata?.name,
       description: data.metadata?.description,
       nextItemIndex: data.next_item_index,
       ownerAddress: data.owner?.address,
+      friendlyOwnerAddress: data.owner?.address ? toFriendlyAddress(Address.parse(data.owner.address), agent.network) : undefined,
     };
   },
 });

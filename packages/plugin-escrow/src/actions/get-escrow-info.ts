@@ -1,34 +1,73 @@
 import { z } from "zod";
-import { Address } from "@ton/core";
+import { Address, fromNano } from "@ton/core";
 import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
-import { loadEscrows } from "../utils";
+import { loadEscrows, getContractState } from "../utils";
 
-export const getEscrowInfoAction = defineAction({
+export const getEscrowInfoAction = defineAction<{ escrowId?: string }, any>({
   name: "get_escrow_info",
   description:
-    "Get escrow details. If escrowId is provided, returns that escrow. If no escrowId, lists ALL escrows.",
+    "Get escrow details. Reads on-chain contract state if available. " +
+    "If escrowId is provided, returns that escrow. If no escrowId, lists ALL escrows.",
   schema: z.object({
     escrowId: z
       .string()
       .optional()
       .describe("Escrow ID. If not provided, lists all escrows."),
-  }),
+  }) as any,
   handler: async (agent, params) => {
     const escrows = loadEscrows();
 
     if (params.escrowId) {
       const escrow = escrows[params.escrowId];
       if (!escrow) throw new Error(`Escrow not found: ${params.escrowId}`);
-      return escrow;
+
+      // Try to read on-chain state
+      try {
+        const contractAddress = Address.parse(escrow.contractAddress);
+        const onChain = await getContractState(agent, contractAddress);
+
+        return {
+          id: escrow.id,
+          contractAddress: escrow.contractAddress,
+          friendlyContract: toFriendlyAddress(Address.parse(escrow.contractAddress), agent.network),
+          description: escrow.description,
+          createdAt: escrow.createdAt,
+          onChain: {
+            depositor: toFriendlyAddress(onChain.depositor, agent.network),
+            beneficiary: toFriendlyAddress(onChain.beneficiary, agent.network),
+            arbiter: toFriendlyAddress(onChain.arbiter, agent.network),
+            amount: fromNano(onChain.amount) + " TON",
+            balance: fromNano(onChain.balance) + " TON",
+            deadline: new Date(Number(onChain.deadline) * 1000).toISOString(),
+            released: onChain.released,
+            refunded: onChain.refunded,
+            status: onChain.released
+              ? "released"
+              : onChain.refunded
+                ? "refunded"
+                : onChain.amount > BigInt(0)
+                  ? "funded"
+                  : "created",
+          },
+        };
+      } catch (e: any) {
+        // Contract not yet active or network error — fall back to index
+        return {
+          ...escrow,
+          onChainError: e.message || "Could not read contract state (may not be deployed yet)",
+        };
+      }
     }
 
-    // List all escrows
+    // List all escrows from index
     const list = Object.values(escrows);
     return {
       count: list.length,
-      escrows: list.map((e: any) => ({
+      escrows: list.map((e) => ({
         id: e.id,
         status: e.status,
+        contractAddress: e.contractAddress,
+        friendlyContract: toFriendlyAddress(Address.parse(e.contractAddress), agent.network),
         amount: e.amount + " TON",
         beneficiary: e.beneficiary,
         friendlyBeneficiary: toFriendlyAddress(Address.parse(e.beneficiary), agent.network),

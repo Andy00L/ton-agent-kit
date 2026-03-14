@@ -1,15 +1,21 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
 import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
-import { loadEscrows, saveEscrows } from "../utils";
+import {
+  loadEscrows,
+  saveEscrows,
+  refundContract,
+  getLatestTxHash,
+} from "../utils";
 
-export const refundEscrowAction = defineAction({
+export const refundEscrowAction = defineAction<{ escrowId: string }, any>({
   name: "refund_escrow",
   description:
-    "Refund escrowed funds back to the depositor. Can refund if authorized or after deadline.",
+    "Refund escrowed funds back to the depositor via the on-chain Escrow contract. " +
+    "Can refund if authorized (depositor/arbiter) or after deadline has passed.",
   schema: z.object({
     escrowId: z.string().describe("Escrow ID to refund"),
-  }),
+  }) as any,
   handler: async (agent, params) => {
     const escrows = loadEscrows();
     const escrow = escrows[params.escrowId];
@@ -17,31 +23,37 @@ export const refundEscrowAction = defineAction({
     if (escrow.status !== "funded")
       throw new Error(`Escrow is ${escrow.status}, must be funded`);
 
-    // Check deadline for auto-refund
+    const contractAddress = Address.parse(escrow.contractAddress);
+
+    // Send Refund message to the escrow contract
+    // The contract itself enforces authorization (depositor/arbiter/past deadline)
+    await refundContract(agent, contractAddress);
+
+    // Wait for confirmation
+    await new Promise((r) => setTimeout(r, 10000));
+
+    const txHash = await getLatestTxHash(
+      agent.wallet.address.toRawString(),
+      agent.network,
+    );
+
     const now = Math.floor(Date.now() / 1000);
-    const isDepositor =
-      agent.wallet.address.toRawString() === escrow.depositor;
-    const isArbiter = agent.wallet.address.toRawString() === escrow.arbiter;
     const pastDeadline = now > escrow.deadline;
 
-    if (!isDepositor && !isArbiter && !pastDeadline) {
-      throw new Error(
-        "Not authorized: only depositor/arbiter can refund before deadline",
-      );
-    }
-
-    // Refund is just keeping the TON (since deposit was a self-transfer)
+    // Update index
     escrow.status = "refunded";
-    escrow.settleTxHash = "self-refund";
     saveEscrows(escrows);
 
     return {
       escrowId: params.escrowId,
-      status: "refunded",
+      status: "refunded (on-chain)",
+      contractAddress: escrow.contractAddress,
+      friendlyContract: toFriendlyAddress(contractAddress, agent.network),
       amount: escrow.amount + " TON",
       depositor: escrow.depositor,
       friendlyDepositor: toFriendlyAddress(Address.parse(escrow.depositor), agent.network),
       reason: pastDeadline ? "Deadline passed" : "Authorized refund",
+      refundTxHash: txHash,
     };
   },
 });

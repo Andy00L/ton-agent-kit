@@ -33,7 +33,7 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 |---|---|---|---|---|
 | Agent SDK | Solana Agent Kit (60+) | Coinbase AgentKit (50+) | ❌ | ✅ **29 actions, 9 plugins** |
 | Agent Identity | SATI | ERC-8004 (123K agents) | ❌ | ✅ **Agent registry + reputation** |
-| Agent Payments | x402 ($0.00025/tx) | Virtuals ACP | ❌ | ✅ **x402 middleware ($0/tx via channels)** |
+| Agent Payments | x402 ($0.00025/tx) | Virtuals ACP | ❌ | ✅ **x402 middleware** |
 | Agent Security | Embedded wallets | Agentic Wallets (TEE) | ❌ | ✅ **Telegram HITL + balance guards** |
 | Escrow | — | — | ❌ | ✅ **Trustless escrow with deadlines** |
 | User Access | — | — | — | ✅ **1B Telegram users** |
@@ -106,7 +106,7 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_jetton_balance` | Get Jetton (USDT, NOT, etc.) balance via TONAPI | ✅ Live |
 | `transfer_ton` | Send TON with balance guard + comment support | ✅ Live (TX confirmed) |
 | `transfer_jetton` | Send Jettons | ✅ Schema validated |
-| `deploy_jetton` | Deploy a new token | ✅ Schema validated |
+| `deploy_jetton` | Deploy a new token | ✅ Live |
 | `get_jetton_info` | Get token metadata | ✅ Schema validated |
 
 ### 📈 DeFi Plugin (3 actions)
@@ -198,7 +198,7 @@ The plugins combine into a **complete agent economy**:
         ↓
 2. DISCOVERY — Other agents find it via discover_agent
         ↓
-3. PAYMENT — Auto-pay via x402 middleware (zero-fee with payment channels)
+3. PAYMENT — Auto-pay via x402 middleware
         ↓
 4. ESCROW — Trustless task verification via smart contract
         ↓
@@ -297,7 +297,7 @@ const app = createPaymentServer({
 AI agent bot with natural language, HITL approval, and 9 blockchain actions.
 
 ### Features:
-- Natural language understanding via GPT-4.1-nano
+- Natural language understanding via configurable LLM (default: GPT-4.1-nano)
 - **HITL approval** — transfers > 0.05 TON require Approve/Reject buttons
 - **Balance guard** — prevents sending more than available balance
 - Escrow management, DNS resolution, staking info
@@ -401,7 +401,6 @@ ton-agent-kit/
 | **MCP Server** | ✅ | ✅ | ✅ |
 | **LangChain** | ✅ | ✅ | ✅ |
 | **Multi-provider** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
-| **Zero-fee payments** | ✅ Payment channels | ❌ | ❌ |
 | **x402 Middleware** | ✅ Production-hardened | ❌ | ❌ |
 | **Agent identity** | ✅ Registry + reputation | ❌ | ❌ |
 | **Escrow** | ✅ Smart contract | ❌ | ❌ |
@@ -418,7 +417,7 @@ ton-agent-kit/
 - **@dedust/sdk** + **@ston-fi/sdk** — DEX integrations
 - **@modelcontextprotocol/sdk** — MCP server
 - **grammY** + **@grammyjs/runner** — Telegram bot
-- **OpenAI** (GPT-4.1-nano) — Natural language
+- **OpenAI** (configurable via AI_MODEL env var) — Natural language
 - **Express** — x402 payment server
 - **Tact** — Smart contracts (escrow)
 - **Zod** — Schema validation

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**TON Agent Kit** is the Agent Commerce Protocol for TON — a modular TypeScript SDK that lets AI agents discover each other, transact via zero-fee payment channels, manage trustless escrow, and operate safely under human control through Telegram.
+**TON Agent Kit** is the Agent Commerce Protocol for TON — a modular TypeScript SDK that lets AI agents discover each other, transact via x402 middleware, manage trustless escrow, and operate safely under human control through Telegram.
 
 **Tagline:** *"The infrastructure for the AI agent economy on TON."*
 
@@ -157,7 +157,7 @@ if (requestedAmount > currentBalance - 0.01) {
 | 2 | Token | `get_jetton_balance` | TONAPI | ✅ Live |
 | 3 | Token | `transfer_ton` | sendTransfer + balance guard | ✅ Live (TX confirmed) |
 | 4 | Token | `transfer_jetton` | sendTransfer | ✅ Schema validated |
-| 5 | Token | `deploy_jetton` | sendTransfer | ✅ Schema validated |
+| 5 | Token | `deploy_jetton` | sendTransfer | ✅ Live |
 | 6 | Token | `get_jetton_info` | TONAPI | ✅ Schema validated |
 | 7 | DeFi | `swap_dedust` | DeDust SDK | ✅ Schema validated |
 | 8 | DeFi | `swap_stonfi` | STON.fi SDK | ✅ Schema validated |
@@ -256,7 +256,7 @@ User (Telegram)          Bot                    OpenAI           TON
 ```
 
 ### Features:
-- GPT-4.1-nano for natural language parsing
+- Configurable LLM for natural language parsing (default: GPT-4.1-nano via AI_MODEL env var)
 - HITL: transfers > 0.05 TON require Approve/Reject buttons
 - Balance guard: prevents insufficient funds
 - @grammyjs/runner for concurrent processing (fixes HITL deadlock)
@@ -298,7 +298,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 
 | Project | What they built | What we add |
 |---------|----------------|-------------|
-| TON AI Framework | Generic framework | 32 concrete actions, MCP, bot, x402 |
+| TON AI Framework | Generic framework | 29 concrete actions, MCP, bot, x402 |
 | TON Security Agent | Scam detection | Full agent economy infrastructure |
 | Gold Standard | Vague concept | Working MVP with live transactions |
 
@@ -310,7 +310,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 | Agent identity | Registry + reputation (like ERC-8004 for TON) |
 | HITL | Telegram-native (1B users) vs custom UI |
 | Escrow | Tact smart contract + SDK plugin |
-| Payment channels | Zero-fee micropayments for agent-to-agent |
+| x402 Middleware | Production-hardened agent-to-agent payments |
 | User access | Telegram bot = zero friction |
 
 ---
@@ -324,7 +324,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 | Blockchain | @ton/ton, @ton/core, @ton/crypto |
 | DeFi | @dedust/sdk, @ston-fi/sdk |
 | AI/MCP | @modelcontextprotocol/sdk, zod-to-json-schema |
-| Bot | grammY, @grammyjs/runner, OpenAI (GPT-4.1-nano) |
+| Bot | grammY, @grammyjs/runner, OpenAI (configurable via AI_MODEL) |
 | HTTP | Express (x402 middleware) |
 | Contracts | Tact (escrow) |
 | Validation | Zod |

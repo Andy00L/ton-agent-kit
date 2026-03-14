@@ -1,6 +1,5 @@
 import { TonClient4 } from "@ton/ton";
 import "dotenv/config";
-import { readFileSync } from "fs";
 import { Bot, InlineKeyboard } from "grammy";
 import OpenAI from "openai";
 import { TonAgentKit } from "./packages/core/src/agent";
@@ -18,6 +17,8 @@ import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const OPENAI_KEY = process.env.OPENAI_API_KEY!;
+const OPENAI_BASE = process.env.OPENAI_BASE_URL;
+const AI_MODEL = process.env.AI_MODEL || AI_MODEL;
 const MNEMONIC = process.env.TON_MNEMONIC!;
 const NETWORK = (process.env.TON_NETWORK as "testnet" | "mainnet") || "testnet";
 const RPC_URL = process.env.TON_RPC_URL || "https://testnet-v4.tonhubapi.com";
@@ -65,12 +66,8 @@ async function main() {
 
   // Init OpenAI
   const openai = new OpenAI({
-    apiKey:
-      readFileSync(".env", "utf-8")
-        .split("\n")
-        .find((l) => l.startsWith("OPENAI_API_KEY="))
-        ?.replace("OPENAI_API_KEY=", "")
-        .trim() || "",
+    apiKey: OPENAI_KEY,
+    ...(OPENAI_BASE && { baseURL: OPENAI_BASE }),
   });
 
   // Init Telegram bot
@@ -200,6 +197,7 @@ async function main() {
   const friendlyWalletAddr = wallet.address.toString({ testOnly: NETWORK === "testnet", bounceable: false });
 
   const SYSTEM_PROMPT = `You are TON Agent Kit Bot — an AI agent that manages a TON blockchain wallet via Telegram.
+You have 9 blockchain actions available.
 
 Your wallet: ${friendlyWalletAddr}
 Network: ${NETWORK}
@@ -335,7 +333,7 @@ Rules:
     try {
       // Call OpenAI
       let response = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: AI_MODEL,
         messages: history,
         tools,
         tool_choice: "auto",
@@ -427,7 +425,7 @@ Rules:
 
         // Get next response
         response = await openai.chat.completions.create({
-          model: "gpt-4.1-nano",
+          model: AI_MODEL,
           messages: history,
           tools,
           tool_choice: "auto",

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { definePlugin, defineAction, type DnsInfo } from "@ton-agent-kit/core";
+import { definePlugin, defineAction, type DnsInfo, toFriendlyAddress } from "@ton-agent-kit/core";
 
 // ============================================================
 // resolve_domain — Resolve .ton domain to address
@@ -43,10 +43,11 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolve
       return {
         domain: fullDomain,
         address: walletAddress,
+        friendlyAddress: walletAddress ? toFriendlyAddress(Address.parse(walletAddress), agent.network) : undefined,
         resolved: !!walletAddress,
       };
     } catch {
-      return { domain: fullDomain, address: undefined, resolved: false };
+      return { domain: fullDomain, address: undefined, friendlyAddress: undefined, resolved: false };
     }
   },
 });
@@ -78,12 +79,14 @@ const lookupAddressAction = defineAction<
         );
         if (response.ok) {
           const data = await response.json();
-          return { address: params.address, domain: data.name };
+          return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: data.name };
         }
       }
-    } catch {}
+    } catch (err: any) {
+      console.error(`lookup_address TONAPI error: ${err.message}`);
+    }
 
-    return { address: params.address, domain: undefined };
+    return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: undefined };
   },
 });
 
@@ -111,19 +114,24 @@ const getDomainInfoAction = defineAction<
         );
         if (response.ok) {
           const data = await response.json();
+          const resolvedAddr = data.wallet?.address;
           return {
             domain: `${domain}.ton`,
-            address: data.wallet?.address,
+            address: resolvedAddr,
+            friendlyAddress: resolvedAddr ? toFriendlyAddress(Address.parse(resolvedAddr), agent.network) : undefined,
             expiresAt: data.expiring_at,
           };
         }
       }
-    } catch {}
+    } catch (err: any) {
+      console.error(`get_domain_info TONAPI error: ${err.message}`);
+    }
 
     // Fallback: resolve on-chain
     return {
       domain: `${domain}.ton`,
       address: undefined,
+      friendlyAddress: undefined,
       expiresAt: undefined,
     };
   },
