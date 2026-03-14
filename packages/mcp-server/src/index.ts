@@ -29,7 +29,7 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { toJSONSchema } from "zod";
 
 import { TonAgentKit, KeypairWallet } from "@ton-agent-kit/core";
 import TokenPlugin from "@ton-agent-kit/plugin-token";
@@ -90,7 +90,7 @@ function actionsToMcpTools(agent: TonAgentKit): Tool[] {
   return agent.getAvailableActions().map((action) => ({
     name: action.name,
     description: action.description,
-    inputSchema: zodToJsonSchema(action.schema) as Tool["inputSchema"],
+    inputSchema: toJSONSchema(action.schema) as Tool["inputSchema"],
   }));
 }
 

@@ -22,8 +22,7 @@
     "@ton-agent-kit/plugin-escrow": "^1.0.0",
     "@ton-agent-kit/plugin-identity": "^1.0.0",
     "@ton-agent-kit/plugin-analytics": "^1.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "zod-to-json-schema": "^3.23.0"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "license": "MIT"
 }

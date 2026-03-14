@@ -224,7 +224,7 @@ export class TonAgentKit {
 
     // Dynamic imports so the SDK works without these deps installed
     const { default: OpenAI } = await import("openai");
-    const { zodToJsonSchema } = await import("zod-to-json-schema");
+    const { toJSONSchema } = await import("zod");
     const client = new OpenAI({ apiKey, baseURL });
 
     // Ensure plugins are initialized
@@ -244,7 +244,7 @@ export class TonAgentKit {
         name: action.name,
         description: action.description,
         parameters: (() => {
-            const { $schema, ...schema } = zodToJsonSchema(action.schema, { target: "jsonSchema7" });
+            const { $schema, ...schema } = toJSONSchema(action.schema);
             return schema;
           })(),
       },
@@ -253,7 +253,7 @@ export class TonAgentKit {
     // Build system prompt
     const actionList = actions
       .map((a) => {
-        const jsonSchema = zodToJsonSchema(a.schema, { target: "jsonSchema7" }) as any;
+        const jsonSchema = toJSONSchema(a.schema) as any;
         const paramNames = JSON.stringify(Object.keys(jsonSchema.properties || {}));
         return `- ${a.name}: ${a.description}\n  Parameters: ${paramNames}`;
       })
@@ -315,7 +315,7 @@ export class TonAgentKit {
         // Remap misnamed parameters to match the action schema
         const matchedAction = actions.find((a) => a.name === actionName);
         if (matchedAction) {
-          const expectedSchema = zodToJsonSchema(matchedAction.schema, { target: "jsonSchema7" }) as any;
+          const expectedSchema = toJSONSchema(matchedAction.schema) as any;
           const expectedKeys = new Set(Object.keys(expectedSchema.properties || {}));
           const paramKeys = Object.keys(params);
           for (const key of paramKeys) {

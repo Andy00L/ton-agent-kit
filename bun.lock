@@ -15,7 +15,6 @@
         "grammy": "^1.41.1",
         "openai": "^6.28.0",
         "zod": "^4.3.6",
-        "zod-to-json-schema": "^3.25.1",
       },
       "devDependencies": {
         "dotenv": "^17.3.1",
@@ -61,7 +60,6 @@
       "dependencies": {
         "@ton-agent-kit/core": "^1.0.0",
         "ai": "^3.4.0",
-        "zod-to-json-schema": "^3.23.0",
       },
     },
     "packages/core": {
@@ -71,7 +69,7 @@
         "@ton/core": "^0.63.1",
         "@ton/crypto": "^3.3.0",
         "@ton/ton": "^16.2.0",
-        "zod": "^3.23.0",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@ton/sandbox": "^0.20.0",
@@ -108,7 +106,6 @@
         "@ton-agent-kit/plugin-payments": "^1.0.0",
         "@ton-agent-kit/plugin-staking": "^1.0.0",
         "@ton-agent-kit/plugin-token": "^1.0.0",
-        "zod-to-json-schema": "^3.23.0",
       },
     },
     "packages/plugin-analytics": {
@@ -907,8 +904,6 @@
     "@tact-lang/opcode/@ton/core": ["@ton/core@0.61.0", "", { "dependencies": { "symbol.inspect": "1.0.1" }, "peerDependencies": { "@ton/crypto": ">=3.2.0" } }, "sha512-0qyVfP2dDue2bq80ydXggo2MlufcmzuFk6G94qRrZxvyQ3NSe4UeBTeRf1gQmN7tywgTsX2gS61e4yvJrlUu4Q=="],
 
     "@tact-lang/opcode/@ton/sandbox": ["@ton/sandbox@0.32.2", "", { "dependencies": { "chalk": "^4.1.2", "table": "^6.9.0" }, "peerDependencies": { "@ton/core": ">=0.61.0", "@ton/crypto": ">=3.3.0", "@ton/test-utils": ">=0.7.0", "jest": "^29.5.0" }, "optionalPeers": ["@ton/test-utils", "jest"] }, "sha512-D+Yuyka3pMuoD1KPufRGzE3iFZ0QLyba/xC5mfrXoLtV111ubKxc7RscndOsggeru0bdDYm0i/iaWO5YQWqUfw=="],
-
-    "@ton-agent-kit/core/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@ton/ton/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 

@@ -10,11 +10,11 @@ export const getAgentReputationAction = defineAction({
   schema: z.object({
     agentId: z.string().describe("Agent ID to check or update"),
     addTask: z
-      .union([z.boolean(), z.string().transform((s) => s === "true")])
+      .union([z.boolean(), z.string()])
       .optional()
       .describe("Set to true to record a completed task"),
     success: z
-      .union([z.boolean(), z.string().transform((s) => s === "true")])
+      .union([z.boolean(), z.string()])
       .optional()
       .describe("If addTask is true, whether the task was successful"),
   }),
@@ -23,10 +23,14 @@ export const getAgentReputationAction = defineAction({
     const agentRecord = registry[params.agentId];
     if (!agentRecord) throw new Error(`Agent not found: ${params.agentId}`);
 
+    // Coerce string booleans
+    const addTask = typeof params.addTask === "string" ? params.addTask === "true" : params.addTask;
+    const success = typeof params.success === "string" ? params.success === "true" : params.success;
+
     // Update reputation if recording a task
-    if (params.addTask) {
+    if (addTask) {
       agentRecord.reputation.totalTasks += 1;
-      if (params.success !== false) {
+      if (success !== false) {
         agentRecord.reputation.successfulTasks += 1;
       }
       agentRecord.reputation.score = Math.round(
