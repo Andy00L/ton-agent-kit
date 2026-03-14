@@ -18,7 +18,7 @@ import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const OPENAI_KEY = process.env.OPENAI_API_KEY!;
 const OPENAI_BASE = process.env.OPENAI_BASE_URL;
-const AI_MODEL = process.env.AI_MODEL || AI_MODEL;
+const AI_MODEL = process.env.AI_MODEL || "gpt-4.1-nano";
 const MNEMONIC = process.env.TON_MNEMONIC!;
 const NETWORK = (process.env.TON_NETWORK as "testnet" | "mainnet") || "testnet";
 const RPC_URL = process.env.TON_RPC_URL || "https://testnet-v4.tonhubapi.com";

@@ -28,7 +28,7 @@ async function main() {
   // Init wallet + agent
   const mnemonic = process.env.TON_MNEMONIC;
   if (!mnemonic) {
-    console.error("Set TON_MNEMONIC in .env");
+    console.error("❌ Set TON_MNEMONIC in .env (24-word mnemonic phrase)");
     process.exit(1);
   }
 

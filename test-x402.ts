@@ -134,25 +134,6 @@ async function main() {
   console.log(`   Second paywall: ✅ (${analyticsRes.status})`);
   console.log(`${"═".repeat(50)}\n`);
 
-  // ── DEBUG: Check what TONAPI returns ──
-  console.log(`\n── DEBUG: Raw TONAPI response ──`);
-  const debugRes = await fetch(
-    `https://testnet.tonapi.io/v2/events/${encodeURIComponent(txHash)}`,
-  );
-  const debugData = await debugRes.json();
-  for (const action of debugData.actions || []) {
-    if (action.type === "TonTransfer") {
-      console.log(
-        `Recipient address: "${action.TonTransfer?.recipient?.address}"`,
-      );
-      console.log(`Expected address:  "${wallet.address.toRawString()}"`);
-      console.log(`Amount: ${action.TonTransfer?.amount}`);
-      console.log(
-        `Match: ${action.TonTransfer?.recipient?.address === wallet.address.toRawString()}`,
-      );
-    }
-  }
-
   server.close();
   process.exit(0);
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Address, fromNano } from "@ton/core";
+import { Address } from "@ton/core";
 import { JettonMaster } from "@ton/ton";
 import { defineAction, type JettonInfo, toFriendlyAddress } from "@ton-agent-kit/core";
 
@@ -21,30 +21,13 @@ export const getJettonInfoAction = defineAction<
 
     const data = await jettonMaster.getJettonData();
 
-    // Parse content cell for metadata (simplified)
-    let name = "Unknown";
-    let symbol = "???";
-    let description = "";
-    let image = "";
-
-    try {
-      // Try to parse on-chain or off-chain content
-      const content = data.content;
-      // In production: full TEP-64 content parsing
-      // For MVP: return raw data
-    } catch (err: any) {
-      console.error(`get_jetton_info content parsing error: ${err.message}`);
-    }
-
     return {
       address: jettonMasterAddr.toRawString(),
       friendlyAddress: toFriendlyAddress(jettonMasterAddr, agent.network),
-      name,
-      symbol,
+      name: "Unknown",
+      symbol: "???",
       decimals: 9,
-      totalSupply: fromNano(data.totalSupply),
-      description,
-      image,
+      totalSupply: data.totalSupply.toString(),
     };
   },
 });
