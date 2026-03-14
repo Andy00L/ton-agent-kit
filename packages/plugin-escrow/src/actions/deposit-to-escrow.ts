@@ -1,16 +1,20 @@
 import { z } from "zod";
-import { Address, beginCell, internal, toNano } from "@ton/core";
-import { TonClient4, WalletContractV5R1 } from "@ton/ton";
+import { Address } from "@ton/core";
 import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
-import { loadEscrows, saveEscrows } from "../utils";
+import {
+  loadEscrows,
+  saveEscrows,
+  depositToContract,
+  getLatestTxHash,
+} from "../utils";
 
-export const depositToEscrowAction = defineAction({
+export const depositToEscrowAction = defineAction<{ escrowId: string }, any>({
   name: "deposit_to_escrow",
   description:
-    "Deposit TON into an escrow deal. Sends TON to a holding address and marks the escrow as funded.",
+    "Deposit TON into an on-chain escrow contract. Sends TON to the deployed Escrow smart contract.",
   schema: z.object({
     escrowId: z.string().describe("Escrow ID from create_escrow"),
-  }),
+  }) as any,
   handler: async (agent, params) => {
     const escrows = loadEscrows();
     const escrow = escrows[params.escrowId];
@@ -18,63 +22,28 @@ export const depositToEscrowAction = defineAction({
     if (escrow.status !== "created")
       throw new Error(`Escrow already ${escrow.status}`);
 
-    // Send TON to ourselves (holding) with escrow ID as comment
-    const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
-    const networkId = agent.network === "testnet" ? -3 : -239;
-    const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-    const walletContract = freshClient.open(
-      WalletContractV5R1.create({
-        workchain: 0,
-        publicKey,
-        walletId: {
-          networkGlobalId: networkId,
-          workchain: 0,
-          subwalletNumber: 0,
-        },
-      }),
-    );
+    const contractAddress = Address.parse(escrow.contractAddress);
 
-    const commentBody = beginCell()
-      .storeUint(0, 32)
-      .storeStringTail(`escrow:${params.escrowId}`)
-      .endCell();
-
-    const seqno = await walletContract.getSeqno();
-    await walletContract.sendTransfer({
-      seqno,
-      secretKey,
-      messages: [
-        internal({
-          to: walletContract.address,
-          value: toNano(escrow.amount),
-          bounce: false,
-          body: commentBody,
-        }),
-      ],
-    });
+    // Send Deposit message with TON to the escrow contract
+    await depositToContract(agent, contractAddress, escrow.amount);
 
     // Wait for confirmation
     await new Promise((r) => setTimeout(r, 10000));
 
-    // Get tx hash
-    const apiBase =
-      agent.network === "testnet"
-        ? "https://testnet.tonapi.io/v2"
-        : "https://tonapi.io/v2";
-    const txRes = await fetch(
-      `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
+    const txHash = await getLatestTxHash(
+      agent.wallet.address.toRawString(),
+      agent.network,
     );
-    const txData = await txRes.json();
-    const txHash = txData.events?.[0]?.event_id || "pending";
 
-    // Update escrow
+    // Update index
     escrow.status = "funded";
-    escrow.depositTxHash = txHash;
     saveEscrows(escrows);
 
     return {
       escrowId: params.escrowId,
-      status: "funded",
+      status: "funded (on-chain)",
+      contractAddress: escrow.contractAddress,
+      friendlyContract: toFriendlyAddress(contractAddress, agent.network),
       amount: escrow.amount + " TON",
       depositTxHash: txHash,
       beneficiary: escrow.beneficiary,

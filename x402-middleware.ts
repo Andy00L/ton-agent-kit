@@ -96,7 +96,9 @@ export class FileReplayStore implements ReplayStore {
       if (existsSync(this.filePath)) {
         this.hashes = new Set(JSON.parse(readFileSync(this.filePath, "utf-8")));
       }
-    } catch {}
+    } catch (err: any) {
+      console.error(`Failed to load replay store: ${err.message}`);
+    }
   }
 
   async has(hash: string): Promise<boolean> {
@@ -108,7 +110,9 @@ export class FileReplayStore implements ReplayStore {
     try {
       const { writeFileSync } = require("fs");
       writeFileSync(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
-    } catch {}
+    } catch (err: any) {
+      console.error(`Failed to persist replay store: ${err.message}`);
+    }
   }
 }
 

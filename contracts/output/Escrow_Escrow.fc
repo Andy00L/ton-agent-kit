@@ -1,0 +1,537 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; Escrow_Escrow.headers.fc
+;;
+;; Header files for Escrow
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_context_get
+(int, slice, int, slice) __tact_context_get() inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; $DeployOk$_store
+builder $DeployOk$_store(builder build_0, (int) v) inline;
+
+;; $DeployOk$_store_cell
+cell $DeployOk$_store_cell((int) v, builder b) inline;
+
+;; $Escrow$_store
+builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int) v) inline;
+
+;; $Escrow$_load
+(slice, ((slice, slice, slice, int, int, int, int))) $Escrow$_load(slice sc_0) inline;
+
+;; $Context$_get_value
+_ $Context$_get_value((int, slice, int, slice) v) inline;
+
+;; $EscrowData$_to_external
+(slice, slice, slice, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int)) v) inline;
+
+;; $Escrow$init$_load
+(slice, ((slice, slice, slice, int))) $Escrow$init$_load(slice sc_0) inline;
+
+;; $Escrow$_contract_init
+(slice, slice, slice, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) impure inline;
+
+;; $Escrow$_contract_load
+(slice, slice, slice, int, int, int, int) $Escrow$_contract_load() impure inline;
+
+;; $Escrow$_contract_store
+() $Escrow$_contract_store((slice, slice, slice, int, int, int, int) v) impure inline;
+
+;; $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded
+((slice, slice, slice, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded(slice $depositor, slice $beneficiary, slice $arbiter, int $amount, int $deadline, int $released, int $refunded) inline;
+
+;; $Escrow$_fun_escrowData
+((slice, slice, slice, int, int, int, int), (slice, slice, slice, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int) $self) impure inline_ref;
+
+;; $Escrow$_fun_balance
+((slice, slice, slice, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int) $self) impure inline_ref;
+
+;; $MessageParameters$_constructor_bounce_to_value_mode_body
+((int, cell, int, slice, int)) $MessageParameters$_constructor_bounce_to_value_mode_body(int $bounce, slice $to, int $value, int $mode, cell $body) inline;
+
+;; $Escrow$_fun_notify
+((slice, slice, slice, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int) $self, cell $body) impure inline;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $DeployOk$_constructor_queryId
+((int)) $DeployOk$_constructor_queryId(int $queryId) inline;
+
+
+;; Escrow_Escrow.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+(int, slice, int, slice) __tact_context_get() inline {
+    return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+int $global_myBalance() impure asm """
+    BALANCE FIRST
+""";
+
+() $global_nativeReserve(int $amount, int $mode) impure asm """
+    RAWRESERVE
+""";
+
+() $global_message((int, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    106 PUSHINT         // 1 + 4 + 4 + 64 + 32 + 1
+    STZEROES
+    // → Stack state
+    // s0: Builder
+    // s1: `body`
+    // s2: `mode`
+    STDICT
+    ENDC
+    SWAP
+    SENDRAWMSG
+""";
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+int $global_now() impure asm """
+    NOW
+""";
+
+((slice, slice, slice, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int) $self, cell $body) impure inline {
+    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
+    slice $to = __tact_context_get_sender();
+    int $bounce = false;
+    if (false) {
+        int $balance = $global_myBalance();
+        int $balanceBeforeMessage = ($balance - $Context$_get_value(__tact_context_get()));
+        if (($balanceBeforeMessage < 0)) {
+            $global_nativeReserve(0, 0);
+            $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 130, $body));
+            return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), ());
+        }
+    }
+    $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 66, $body));
+    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), ());
+}
+
+;; Escrow_Escrow.constants.fc
+;; Cell 5qdGTaWVcdLAkiB4gPXT3FjSFN1EkfeitnQZYYDk4kA=
+cell __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e4e240() asm """
+    B{b5ee9c7241010101001500002600000000457363726f772072656c65617365643c272211} B>boc PUSHREF
+""";
+
+;; Cell NsPK790zn9WR7J8AKBntnq6iO1Wg5twdxOKC8FOoWjs=
+cell __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b() asm """
+    B{b5ee9c7241010101001500002600000000457363726f7720726566756e646564fc3c9cce} B>boc PUSHREF
+""";
+
+;; Escrow_Escrow.storage.fc
+;;
+;; Type: Context
+;; TLB: _ bounceable:bool sender:address value:int257 raw:^slice = Context
+;;
+
+_ $Context$_get_value((int, slice, int, slice) v) inline {
+    var (v'bounceable, v'sender, v'value, v'raw) = v;
+    return v'value;
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, $bounce);
+}
+
+;;
+;; Type: MessageParameters
+;; TLB: _ mode:int257 body:Maybe ^cell value:int257 to:address bounce:bool = MessageParameters
+;;
+
+((int, cell, int, slice, int)) $MessageParameters$_constructor_bounce_to_value_mode_body(int $bounce, slice $to, int $value, int $mode, cell $body) inline {
+    return ($mode, $body, $value, $to, $bounce);
+}
+
+;;
+;; Type: DeployOk
+;; Header: 0xaff90f57
+;; TLB: deploy_ok#aff90f57 queryId:uint64 = DeployOk
+;;
+
+builder $DeployOk$_store(builder build_0, (int) v) inline {
+    var (v'queryId) = v;
+    build_0 = store_uint(build_0, 2952335191, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    return build_0;
+}
+
+cell $DeployOk$_store_cell((int) v, builder b) inline {
+    return $DeployOk$_store(b, v).end_cell();
+}
+
+((int)) $DeployOk$_constructor_queryId(int $queryId) inline {
+    return ($queryId);
+}
+
+;;
+;; Type: EscrowData
+;; TLB: _ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = EscrowData
+;;
+
+(slice, slice, slice, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int)) v) inline {
+    var (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded) = v; 
+    return (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded);
+}
+
+((slice, slice, slice, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded(slice $depositor, slice $beneficiary, slice $arbiter, int $amount, int $deadline, int $released, int $refunded) inline {
+    return ($depositor, $beneficiary, $arbiter, $amount, $deadline, $released, $refunded);
+}
+
+;;
+;; Type: Escrow
+;; TLB: _ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = Escrow
+;;
+
+builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int) v) inline {
+    var (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded) = v;
+    build_0 = build_0.store_slice(v'depositor);
+    build_0 = build_0.store_slice(v'beneficiary);
+    build_0 = build_0.store_slice(v'arbiter);
+    build_0 = build_0.store_varuint16(v'amount);
+    build_0 = build_0.store_uint(v'deadline, 32);
+    build_0 = build_0.store_int(v'released, 1);
+    build_0 = build_0.store_int(v'refunded, 1);
+    return build_0;
+}
+
+(slice, ((slice, slice, slice, int, int, int, int))) $Escrow$_load(slice sc_0) inline {
+    var v'depositor = sc_0~load_msg_addr();
+    var v'beneficiary = sc_0~load_msg_addr();
+    var v'arbiter = sc_0~load_msg_addr();
+    var v'amount = sc_0~load_varuint16();
+    var v'deadline = sc_0~load_uint(32);
+    var v'released = sc_0~load_int(1);
+    var v'refunded = sc_0~load_int(1);
+    return (sc_0, (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded));
+}
+
+(slice, ((slice, slice, slice, int))) $Escrow$init$_load(slice sc_0) inline {
+    var v'depositor = sc_0~load_msg_addr();
+    var v'beneficiary = sc_0~load_msg_addr();
+    var v'arbiter = sc_0~load_msg_addr();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'deadline = sc_1~load_int(257);
+    return (sc_0, (v'depositor, v'beneficiary, v'arbiter, v'deadline));
+}
+
+(slice, slice, slice, int, int, int, int) $Escrow$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$Escrow$_load();
+    }
+    else {
+        (slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) = $sc~$Escrow$init$_load();
+        $sc.end_parse();
+        return $Escrow$_contract_init($depositor, $beneficiary, $arbiter, $deadline);
+    }
+}
+
+() $Escrow$_contract_store((slice, slice, slice, int, int, int, int) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $Escrow$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract Escrow functions
+;;
+
+(slice, slice, slice, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) impure inline {
+    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = (null(), null(), null(), null(), null(), null(), null());
+    $self'depositor = $depositor;
+    $self'beneficiary = $beneficiary;
+    $self'arbiter = $arbiter;
+    $self'amount = 0;
+    $self'deadline = $deadline;
+    $self'released = false;
+    $self'refunded = false;
+    return ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded);
+}
+
+((slice, slice, slice, int, int, int, int), (slice, slice, slice, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
+    var $fresh$ret_0 = $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded);
+    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), $fresh$ret_0);
+}
+
+((slice, slice, slice, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
+    var $fresh$ret_1 = $global_myBalance();
+    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), $fresh$ret_1);
+}
+
+;;
+;; Get methods of a Contract Escrow
+;;
+
+_ %escrowData() method_id(130770) {
+    var self = $Escrow$_contract_load();
+    var res = self~$Escrow$_fun_escrowData();
+    return $EscrowData$_to_external(res);
+}
+
+_ %balance() method_id(104128) {
+    var self = $Escrow$_contract_load();
+    var res = self~$Escrow$_fun_balance();
+    return res;
+}
+
+;;
+;; Routing of a Contract Escrow
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded) = $Escrow$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    var op = in_msg~load_opcode_internal();
+    ;; Receive Deposit message
+    if (op == 4171902866) {
+        var $msg'queryId = in_msg~load_uint(64);
+        throw_unless(9342, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        $self'amount = ($self'amount + $Context$_get_value(__tact_context_get()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        return ();
+    }
+    
+    ;; Receive Release message
+    if (op == 408342921) {
+        var $msg'queryId = in_msg~load_uint(64);
+        slice $sender = __tact_context_get_sender();
+        throw_unless(42435, ( (( equal_slices_bits($sender, $self'depositor) )) ? (true) : (( equal_slices_bits($sender, $self'arbiter) )) ));
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(41415, ($self'amount > 0));
+        $self'released = true;
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, ($self'amount - 10000000), 128, false, __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e4e240()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        return ();
+    }
+    
+    ;; Receive Refund message
+    if (op == 2214270485) {
+        var $msg'queryId = in_msg~load_uint(64);
+        slice $sender = __tact_context_get_sender();
+        int $pastDeadline = ($global_now() > $self'deadline);
+        throw_unless(9753, ( (( (( equal_slices_bits($sender, $self'depositor) )) ? (true) : (( equal_slices_bits($sender, $self'arbiter) )) )) ? (true) : ($pastDeadline) ));
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(41415, ($self'amount > 0));
+        $self'refunded = true;
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, ($self'amount - 10000000), 128, false, __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        return ();
+    }
+    
+    ;; Receive Deploy message
+    if (op == 0x946a98b6) {
+        var $deploy'queryId = in_msg~load_uint(64);
+        ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)~$Escrow$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId), begin_cell()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        return ();
+    }
+    
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}

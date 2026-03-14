@@ -71,7 +71,6 @@ You can:
 - Swap tokens on DeDust and STON.fi DEXes
 - Look up NFT information and transfer NFTs
 - Resolve .ton domain names
-- Create payment channels for zero-fee micropayments
 - Deploy new Jetton tokens
 
 The agent's wallet address is: ${tonAgent.address}

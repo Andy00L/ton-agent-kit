@@ -52,7 +52,7 @@ async function main() {
         `• Transfer TON & Jettons\n` +
         `• Resolve .ton domains\n` +
         `• NFT operations\n` +
-        `• Zero-fee payment channels\n\n` +
+        `• Escrow management\n\n` +
         `*Try saying:*\n` +
         `"What's my TON balance?"\n` +
         `"Swap 10 TON for USDT"\n` +
@@ -128,7 +128,7 @@ async function main() {
         `"Swap 5 TON to USDT on DeDust"\n` +
         `"Send 2 TON to EQBx2CfDE..."\n` +
         `"What's alice.ton address?"\n` +
-        `"Open payment channel with EQ..."`,
+        `"Create an escrow for 1 TON"`,
       { parse_mode: "Markdown" }
     );
   });

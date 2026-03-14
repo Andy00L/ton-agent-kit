@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address, fromNano } from "@ton/core";
-import { defineAction, type BalanceResult } from "@ton-agent-kit/core";
+import { defineAction, type BalanceResult, toFriendlyAddress } from "@ton-agent-kit/core";
 
 export const getBalanceAction = defineAction<{ address?: string }, BalanceResult>({
   name: "get_balance",
@@ -29,7 +29,8 @@ export const getBalanceAction = defineAction<{ address?: string }, BalanceResult
     return {
       balance,
       balanceRaw,
-      address: targetAddress.toString(),
+      address: targetAddress.toRawString(),
+      friendlyAddress: toFriendlyAddress(targetAddress, agent.network),
     };
   },
   examples: [

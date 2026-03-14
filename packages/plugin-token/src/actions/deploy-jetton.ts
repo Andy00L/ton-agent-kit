@@ -93,7 +93,8 @@ export const deployJettonAction = defineAction<
     return {
       txHash: "pending",
       status: "deployed",
-      jettonAddress: friendlyAddress,
+      jettonAddress: jettonMasterAddress.toRawString(),
+      friendlyJettonAddress: friendlyAddress,
       explorerUrl: explorerUrl("pending", agent.network),
       fee: "~0.25 TON",
       name: params.name,
