@@ -1,17 +1,33 @@
 {
   "name": "@ton-agent-kit/plugin-identity",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Identity plugin for TON Agent Kit — agent registry, discovery, and reputation",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "build": "tsc" },
+  "scripts": {
+    "build": "tsc"
+  },
   "dependencies": {
     "@ton-agent-kit/core": "^1.0.0",
     "@ton/ton": "^16.2.0",
     "@ton/core": "^0.63.1"
   },
-  "keywords": ["ton", "blockchain", "ai", "agent", "sdk"],
+  "peerDependencies": {
+    "zod": ">=4.0.0"
+  },
+  "keywords": [
+    "ton",
+    "blockchain",
+    "ai",
+    "agent",
+    "sdk"
+  ],
   "license": "MIT",
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/Andy00L/ton-agent-kit.git" }
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Andy00L/ton-agent-kit.git"
+  }
 }

@@ -95,6 +95,21 @@ await agent.methods.transfer_ton({
 });
 ```
 
+### LLM Tool Integration (`agent.toAITools()`)
+
+Works with any LLM provider — OpenAI, Anthropic, Google, Groq, Mistral, OpenRouter, Together.
+
+```typescript
+// Build AI-compatible tools — works with OpenAI, Anthropic, Google, Groq, Mistral
+const tools = agent.toAITools();
+
+const response = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Send 1 TON to alice.ton" }],
+  tools,
+});
+```
+
 ### Autonomous Runtime (`agent.runLoop()`)
 
 Give your agent a natural-language goal — the LLM decides which blockchain actions to execute, autonomously.
