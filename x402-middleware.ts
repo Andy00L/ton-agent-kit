@@ -174,15 +174,6 @@ export class MemoryReplayStore implements ReplayStore {
 }
 
 // ============================================================
-// Verified payment cache (TTL-based, in-memory)
-// ============================================================
-
-const verifiedPayments = new Map<
-  string,
-  { timestamp: number; amount: string }
->();
-
-// ============================================================
 // Middleware: tonPaywall
 // ============================================================
 
@@ -208,6 +199,9 @@ const verifiedPayments = new Map<
  * ```
  */
 export function tonPaywall(config: PaywallConfig) {
+  // Per-instance cache — each middleware instance has its own isolated cache
+  const verifiedPayments = new Map<string, { timestamp: number; amount: string }>();
+
   const {
     amount,
     recipient,
@@ -244,7 +238,16 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Check cache first (avoid re-verifying on-chain)
+    // Anti-replay: check store FIRST (before cache)
+    if (await replayStore.has(paymentHash)) {
+      res.status(402).json({
+        error: "Payment Already Used",
+        message: "This transaction hash has already been used (anti-replay)",
+      });
+      return;
+    }
+
+    // Then check cache (avoid re-verifying on-chain for valid, unused payments)
     if (verifiedPayments.has(paymentHash)) {
       const cached = verifiedPayments.get(paymentHash)!;
       if (Date.now() / 1000 - cached.timestamp < proofTTL) {
