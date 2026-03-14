@@ -10,3 +10,4 @@ coverage/
 .escrow-store.json
 .x402-used-hashes.json
 .chat-histories.json
+.agent-registry.json.claude/

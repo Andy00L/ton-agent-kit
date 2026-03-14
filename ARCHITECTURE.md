@@ -21,16 +21,17 @@
 │                   TON AGENT KIT SDK                          │
 │  ┌─────────────┐ ┌──────────────┐ ┌────────────────────┐    │
 │  │ Plugin System│ │ Wallet       │ │ Action Registry    │    │
-│  │  .use()     │ │ V3/V4/V5     │ │ 24 actions         │    │
+│  │  .use()     │ │ V3/V4/V5     │ │ 32 actions         │    │
 │  │  chain      │ │ auto-detect  │ │ Zod validated      │    │
 │  └─────────────┘ └──────────────┘ └────────────────────┘    │
+│  Multi-provider: OpenAI, OpenRouter, Groq, Together, Mistral │
 └──────────┬───────────────────────────────────────────────────┘
            │
            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                      PLUGINS (10)                            │
-│  Token(6) │ DeFi(3) │ NFT(3) │ DNS(1) │ Staking(3)        │
-│  Analytics(2) │ Escrow(5) │ Identity(3) │ x402(1)          │
+│                       PLUGINS (9)                            │
+│  Token(6) │ DeFi(3) │ NFT(3) │ DNS(3) │ Staking(3)        │
+│  Analytics(2) │ Escrow(5) │ Identity(3) │ Payments(4)      │
 └──────────┬───────────────────────────────────────────────────┘
            │
            ▼
@@ -59,12 +60,12 @@ ton-agent-kit/
 │   ├── plugin-token/             # 6 actions: balance, transfer, jetton, deploy
 │   ├── plugin-defi/              # 3 actions: swap DeDust, swap STON.fi, price
 │   ├── plugin-nft/               # 3 actions: info, collection, transfer
-│   ├── plugin-dns/               # 1 action: resolve domain
+│   ├── plugin-dns/               # 3 actions: resolve, lookup, domain info
 │   ├── plugin-staking/           # 3 actions: stake, unstake, info
 │   ├── plugin-analytics/         # 2 actions: tx history, wallet info
 │   ├── plugin-escrow/            # 5 actions: create, deposit, release, refund, info
 │   ├── plugin-identity/          # 3 actions: register, discover, reputation
-│   ├── plugin-payments/          # 1 action: pay_for_resource + x402 middleware
+│   ├── plugin-payments/          # 4 actions: create/send/close channels, pay_for_resource
 │   │
 │   ├── mcp-server/               # MCP Server for Claude/GPT/Cursor
 │   ├── langchain/                # LangChain tool wrappers
@@ -73,12 +74,14 @@ ton-agent-kit/
 ├── contracts/
 │   └── escrow.tact               # Escrow smart contract (Tact)
 │
-├── mcp-server.ts                 # Standalone MCP server (24 tools, proven)
+├── mcp-server.ts                 # Standalone MCP server (32 tools, proven)
 ├── telegram-bot.ts               # Telegram bot with HITL (9 actions, proven)
 ├── x402-middleware.ts             # x402 payment middleware (production-hardened)
-├── test-connection.ts            # Full test suite (15/15 passing)
+├── demo-agent-commerce.ts        # Agent Commerce Protocol demo
+├── test-all-actions.ts           # Full test suite (69/69 — 68 pass, 1 skip)
 ├── test-x402.ts                  # x402 end-to-end test (5/5 passing)
 │
+├── .env.example                  # Environment variable template
 ├── .env                          # Secrets (mnemonic, keys)
 ├── .escrow-store.json            # Escrow state (persisted)
 ├── .agent-registry.json          # Agent registry (persisted)
@@ -101,12 +104,14 @@ const agent = new TonAgentKit(wallet, rpcUrl)
   .use(TokenPlugin)
   .use(DefiPlugin)
   .use(EscrowPlugin)
-  .use(IdentityPlugin);
+  .use(IdentityPlugin)
+  .use(PaymentsPlugin);
 
-// 24 actions available via methods proxy
+// 32 actions available via methods proxy
 await agent.methods.get_balance({});
 await agent.methods.create_escrow({ beneficiary: "0:...", amount: "1" });
 await agent.methods.register_agent({ name: "bot", capabilities: ["trading"] });
+await agent.methods.create_payment_channel({ partner: "0:...", deposit: "1" });
 ```
 
 ### 2. Wallet Auto-detect (V3/V4/V5)
@@ -144,7 +149,7 @@ if (requestedAmount > currentBalance - 0.01) {
 
 ---
 
-## All 24 Actions — Status
+## All 32 Actions — Status
 
 | # | Plugin | Action | Method | Status |
 |---|--------|--------|--------|--------|
@@ -161,22 +166,25 @@ if (requestedAmount > currentBalance - 0.01) {
 | 11 | NFT | `get_nft_collection` | TONAPI | ✅ Live ("Telegram Usernames") |
 | 12 | NFT | `transfer_nft` | sendTransfer | ✅ Schema validated |
 | 13 | DNS | `resolve_domain` | TONAPI DNS | ✅ Live (foundation.ton) |
-| 14 | Staking | `stake_ton` | sendTransfer + op code | ✅ Schema validated |
-| 15 | Staking | `unstake_ton` | sendTransfer + op code | ✅ Schema validated |
-| 16 | Staking | `get_staking_info` | TONAPI staking | ✅ Live |
-| 17 | Analytics | `get_transaction_history` | TONAPI events | ✅ Live |
-| 18 | Analytics | `get_wallet_info` | TONAPI accounts | ✅ Live |
-| 19 | Escrow | `create_escrow` | JSON store | ✅ Live |
-| 20 | Escrow | `deposit_to_escrow` | sendTransfer + store | ✅ Live |
-| 21 | Escrow | `release_escrow` | sendTransfer + store | ✅ Live |
-| 22 | Escrow | `refund_escrow` | Store + deadline check | ✅ Live |
-| 23 | Escrow | `get_escrow_info` | JSON store | ✅ Live |
-| 24 | Identity | `register_agent` | JSON registry | ✅ Live |
-| 25 | Identity | `discover_agent` | Registry search | ✅ Live |
-| 26 | Identity | `get_agent_reputation` | Registry + scoring | ✅ Live |
-| 27 | x402 | `pay_for_resource` | HTTP + sendTransfer | ✅ Live |
-
-*Note: 24 unique action categories, 27 total including sub-variants*
+| 14 | DNS | `lookup_address` | TONAPI DNS | ✅ Live |
+| 15 | DNS | `get_domain_info` | TONAPI DNS | ✅ Live |
+| 16 | Staking | `stake_ton` | sendTransfer + op code | ✅ Schema validated |
+| 17 | Staking | `unstake_ton` | sendTransfer + op code | ✅ Schema validated |
+| 18 | Staking | `get_staking_info` | TONAPI staking | ✅ Live |
+| 19 | Analytics | `get_transaction_history` | TONAPI events | ✅ Live |
+| 20 | Analytics | `get_wallet_info` | TONAPI accounts | ✅ Live |
+| 21 | Escrow | `create_escrow` | JSON store | ✅ Live |
+| 22 | Escrow | `deposit_to_escrow` | sendTransfer + store | ✅ Live |
+| 23 | Escrow | `release_escrow` | sendTransfer + store | ✅ Live |
+| 24 | Escrow | `refund_escrow` | Store + deadline check | ✅ Live |
+| 25 | Escrow | `get_escrow_info` | JSON store | ✅ Live |
+| 26 | Identity | `register_agent` | JSON registry | ✅ Live |
+| 27 | Identity | `discover_agent` | Registry search | ✅ Live |
+| 28 | Identity | `get_agent_reputation` | Registry + scoring | ✅ Live |
+| 29 | Payments | `create_payment_channel` | Channel store | ✅ Live |
+| 30 | Payments | `send_micropayment` | Channel off-chain | ✅ Live |
+| 31 | Payments | `close_payment_channel` | sendTransfer + settle | ✅ Live |
+| 32 | Payments | `pay_for_resource` | HTTP + sendTransfer | ✅ Live |
 
 ---
 
@@ -283,6 +291,8 @@ User (Telegram)          Bot                    OpenAI           TON
 └──────────────┘                    └───────────────┘
 ```
 
+See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
+
 ---
 
 ## Differentiation
@@ -291,7 +301,7 @@ User (Telegram)          Bot                    OpenAI           TON
 
 | Project | What they built | What we add |
 |---------|----------------|-------------|
-| TON AI Framework | Generic framework | 24 concrete actions, MCP, bot, x402 |
+| TON AI Framework | Generic framework | 32 concrete actions, MCP, bot, x402 |
 | TON Security Agent | Scam detection | Full agent economy infrastructure |
 | Gold Standard | Vague concept | Working MVP with live transactions |
 
@@ -303,6 +313,7 @@ User (Telegram)          Bot                    OpenAI           TON
 | Agent identity | Registry + reputation (like ERC-8004 for TON) |
 | HITL | Telegram-native (1B users) vs custom UI |
 | Escrow | Tact smart contract + SDK plugin |
+| Payment channels | Zero-fee micropayments for agent-to-agent |
 | User access | Telegram bot = zero friction |
 
 ---
@@ -329,9 +340,9 @@ User (Telegram)          Bot                    OpenAI           TON
 
 | Criteria (25%) | How we score | Target |
 |----------------|-------------|--------|
-| **Product Quality** | 24 actions, MCP live in Claude Desktop, Telegram bot with HITL, x402 middleware | 9-10/10 |
-| **Technical Execution** | Plugin architecture, wallet auto-detect, escrow contract (Tact), production-hardened x402, balance guards | 9-10/10 |
+| **Product Quality** | 32 actions across 9 plugins, MCP live in Claude Desktop, Telegram bot with HITL, x402 middleware, agent commerce demo | 9-10/10 |
+| **Technical Execution** | Plugin architecture, wallet auto-detect, escrow contract (Tact), production-hardened x402, balance guards, payment channels | 9-10/10 |
 | **Ecosystem Value** | THE foundation for all TON AI agents — discovery, payments, trust, control | 10/10 |
-| **User Potential** | Claude/GPT integration, Telegram bot (1B users), x402 enables agent economy | 9-10/10 |
+| **User Potential** | Claude/GPT integration, Telegram bot (1B users), x402 enables agent economy, multi-provider support | 9-10/10 |
 
 **Estimated total: 37-40/40**

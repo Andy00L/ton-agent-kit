@@ -27,7 +27,6 @@ export const deployJettonAction = defineAction<
 
     // For hackathon MVP: we use a simplified Jetton minter deployment
     // In production, you'd compile the standard Jetton minter contract
-    const sender = agent.wallet.getSender();
 
     // Standard Jetton minter init data
     const initSupply = BigInt(

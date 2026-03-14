@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { Address, beginCell } from "@ton/core";
+import { Address } from "@ton/core";
 import { definePlugin, defineAction, type DnsInfo } from "@ton-agent-kit/core";
 
 // ============================================================
 // resolve_domain — Resolve .ton domain to address
 // ============================================================
-const resolveDomainAction = defineAction<{ domain: string }, DnsInfo>({
+const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolved: boolean }>({
   name: "resolve_domain",
   description:
     "Resolve a .ton domain name to its associated wallet address. For example, resolve 'alice.ton' to get the wallet address.",
@@ -13,49 +13,40 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo>({
     domain: z.string().describe("Domain name to resolve (e.g., 'alice.ton' or 'alice')"),
   }),
   handler: async (agent, params) => {
-    // TON DNS root contract address
-    const DNS_ROOT = Address.parse(
-      "EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz" // mainnet DNS root
-    );
-
     const domain = params.domain.replace(/\.ton$/i, ""); // strip .ton suffix
-    const domainBytes = Buffer.from(domain);
+    const fullDomain = `${domain}.ton`;
 
-    const lastBlock = await (agent.connection as any).getLastBlock();
+    // Use TONAPI for reliable DNS resolution
+    const apiBase =
+      agent.network === "testnet"
+        ? "https://testnet.tonapi.io/v2"
+        : "https://tonapi.io/v2";
 
-    // Call resolve on DNS root
-    // DNS uses a specific encoding: each label is prefixed with length byte, reversed
-    const domainCell = beginCell()
-      .storeBuffer(Buffer.from(domain.split("").reverse().join("") + "\0"))
-      .endCell();
+    const headers: Record<string, string> = {};
+    if (agent.config.TONAPI_KEY) {
+      headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
+    }
 
     try {
-      const result = await (agent.connection as any).runMethod(
-        lastBlock.last.seqno,
-        DNS_ROOT,
-        "dnsresolve",
-        [{ type: "slice", cell: domainCell }, { type: "int", value: 0n }]
+      const response = await fetch(
+        `${apiBase}/dns/${encodeURIComponent(fullDomain)}/resolve`,
+        { headers },
       );
 
-      const stack = result.reader;
-      const resolvedBits = stack.readBigNumber();
-      const resultCell = stack.readCell();
+      if (!response.ok) {
+        return { domain: fullDomain, address: undefined, resolved: false };
+      }
 
-      // Parse the result to extract the wallet address
-      const slice = resultCell.beginParse();
-      // DNS record format: prefix(16 bits) + address
-      const prefix = slice.loadUint(16);
-      const resolvedAddress = slice.loadAddress();
+      const data = await response.json();
+      const walletAddress = data.wallet?.address;
 
       return {
-        domain: `${domain}.ton`,
-        address: resolvedAddress?.toString(),
+        domain: fullDomain,
+        address: walletAddress,
+        resolved: !!walletAddress,
       };
     } catch {
-      return {
-        domain: `${domain}.ton`,
-        address: undefined,
-      };
+      return { domain: fullDomain, address: undefined, resolved: false };
     }
   },
 });

@@ -2,8 +2,8 @@
   "name": "@ton-agent-kit/mcp-server",
   "version": "1.0.0",
   "description": "MCP Server for TON Agent Kit — let Claude, GPT, and any AI interact with TON",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "bin": {
     "ton-agent-mcp": "./dist/index.js"
   },
@@ -18,6 +18,10 @@
     "@ton-agent-kit/plugin-nft": "^1.0.0",
     "@ton-agent-kit/plugin-dns": "^1.0.0",
     "@ton-agent-kit/plugin-payments": "^1.0.0",
+    "@ton-agent-kit/plugin-staking": "^1.0.0",
+    "@ton-agent-kit/plugin-escrow": "^1.0.0",
+    "@ton-agent-kit/plugin-identity": "^1.0.0",
+    "@ton-agent-kit/plugin-analytics": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod-to-json-schema": "^3.23.0"
   },

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Address, toNano, internal, SendMode } from "@ton/core";
-import { defineAction, type TransactionResult, explorerUrl } from "@ton-agent-kit/core";
+import { Address, toNano, fromNano, internal } from "@ton/core";
+import { defineAction, type TransactionResult, explorerUrl, sendTransaction, toFriendlyAddress } from "@ton-agent-kit/core";
 
 export const transferTonAction = defineAction<
   { to: string; amount: string; comment?: string },
@@ -18,21 +18,39 @@ export const transferTonAction = defineAction<
     const toAddress = Address.parse(params.to);
     const amountNano = toNano(params.amount);
 
-    const sender = agent.wallet.getSender();
+    // Validate amount
+    if (amountNano <= 0n) {
+      throw new Error("Amount must be greater than 0");
+    }
 
-    // Build the internal message
-    await sender.send({
-      to: toAddress,
-      value: amountNano,
-      bounce: true,
-      body: params.comment
-        ? buildCommentBody(params.comment)
-        : undefined,
-    });
+    // Check balance before sending
+    const lastBlock = await (agent.connection as any).getLastBlock();
+    const accountState = await (agent.connection as any).getAccount(
+      lastBlock.last.seqno,
+      agent.wallet.address,
+    );
+    const balanceNano = accountState.account.balance.coins;
+    if (amountNano > balanceNano) {
+      throw new Error(
+        `Insufficient balance: have ${fromNano(balanceNano)} TON, need ${params.amount} TON`,
+      );
+    }
+
+    // Build and send the internal message using proven V5R1 pattern
+    await sendTransaction(agent, [
+      internal({
+        to: toAddress,
+        value: amountNano,
+        bounce: false,
+        body: params.comment ? buildCommentBody(params.comment) : undefined,
+      }),
+    ]);
 
     return {
-      txHash: "pending", // TON doesn't return hash immediately from sender
+      txHash: "pending",
       status: "sent",
+      to: params.to,
+      friendlyTo: toFriendlyAddress(toAddress, agent.network),
       explorerUrl: explorerUrl("pending", agent.network),
       fee: "~0.005 TON",
     };

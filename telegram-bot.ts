@@ -1,10 +1,17 @@
-import { Address, beginCell, fromNano, internal, toNano } from "@ton/core";
-import { TonClient4, WalletContractV5R1 } from "@ton/ton";
+import { TonClient4 } from "@ton/ton";
 import "dotenv/config";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import { Bot, InlineKeyboard } from "grammy";
 import OpenAI from "openai";
+import { TonAgentKit } from "./packages/core/src/agent";
 import { KeypairWallet } from "./packages/core/src/wallet";
+import TokenPlugin from "./packages/plugin-token/src/index";
+import DefiPlugin from "./packages/plugin-defi/src/index";
+import DnsPlugin from "./packages/plugin-dns/src/index";
+import StakingPlugin from "./packages/plugin-staking/src/index";
+import EscrowPlugin from "./packages/plugin-escrow/src/index";
+import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
+
 // ============================================================
 // Config
 // ============================================================
@@ -39,7 +46,7 @@ const pendingApprovals = new Map<
 async function main() {
   console.log("🤖 Starting TON Agent Kit Telegram Bot...");
 
-  // Init wallet
+  // Init wallet + agent
   const client = new TonClient4({ endpoint: RPC_URL });
   const wallet = await KeypairWallet.autoDetect(
     MNEMONIC.split(" "),
@@ -48,13 +55,13 @@ async function main() {
   );
   console.log(`📍 Wallet: ${wallet.address.toRawString()}`);
 
-  const agentContext = {
-    connection: client,
-    wallet,
-    network: NETWORK,
-    rpcUrl: RPC_URL,
-    config: {},
-  };
+  const agent = new TonAgentKit(wallet, RPC_URL, {}, NETWORK)
+    .use(TokenPlugin)
+    .use(DefiPlugin)
+    .use(DnsPlugin)
+    .use(StakingPlugin)
+    .use(EscrowPlugin)
+    .use(AnalyticsPlugin);
 
   // Init OpenAI
   const openai = new OpenAI({
@@ -184,258 +191,31 @@ async function main() {
     },
   ];
 
-  // ── Action handlers ──
-  async function executeAction(name: string, params: any): Promise<string> {
-    const apiBase =
-      NETWORK === "testnet"
-        ? "https://testnet.tonapi.io/v2"
-        : "https://tonapi.io/v2";
-
-    switch (name) {
-      case "get_balance": {
-        if (!params.address) {
-          const lb = await client.getLastBlock();
-          const state = await client.getAccount(lb.last.seqno, wallet.address);
-          return JSON.stringify({
-            balance: fromNano(state.account.balance.coins) + " TON",
-            address: wallet.address.toRawString(),
-          });
-        }
-        try {
-          const addr = Address.parse(params.address);
-          const lb = await client.getLastBlock();
-          const state = await client.getAccount(lb.last.seqno, addr);
-          return JSON.stringify({
-            balance: fromNano(state.account.balance.coins) + " TON",
-            address: addr.toRawString(),
-          });
-        } catch {}
-        const apiBase =
-          NETWORK === "testnet"
-            ? "https://testnet.tonapi.io/v2"
-            : "https://tonapi.io/v2";
-        const r = await fetch(
-          `${apiBase}/accounts/${encodeURIComponent(params.address)}`,
-        );
-        if (r.ok) {
-          const d = await r.json();
-          return JSON.stringify({
-            balance: (Number(d.balance) / 1e9).toString() + " TON",
-            address: d.address,
-          });
-        }
-        return JSON.stringify({ error: "Could not fetch balance" });
-      }
-
-      case "transfer_ton": {
-        // Check balance before sending
-        const lb = await client.getLastBlock();
-        const state = await client.getAccount(lb.last.seqno, wallet.address);
-        const currentBalance = Number(fromNano(state.account.balance.coins));
-        const requestedAmount = parseFloat(params.amount);
-
-        if (requestedAmount <= 0) {
-          return JSON.stringify({ error: "Amount must be greater than 0" });
-        }
-
-        if (requestedAmount > currentBalance - 0.01) {
-          // Keep 0.01 TON for gas
-          return JSON.stringify({
-            error: `Insufficient balance. You have ${currentBalance.toFixed(4)} TON but tried to send ${requestedAmount} TON (+ ~0.01 TON gas fee).`,
-            balance: currentBalance.toFixed(4) + " TON",
-            requested: requestedAmount + " TON",
-          });
-        }
-
-        const toAddr = Address.parse(params.to);
-        let body = undefined;
-        if (params.comment) {
-          body = beginCell()
-            .storeUint(0, 32)
-            .storeStringTail(params.comment)
-            .endCell();
-        }
-        const { secretKey, publicKey } = wallet.getCredentials();
-        const networkId = NETWORK === "testnet" ? -3 : -239;
-        const freshClient = new TonClient4({ endpoint: RPC_URL });
-        const walletContract = freshClient.open(
-          WalletContractV5R1.create({
-            workchain: 0,
-            publicKey,
-            walletId: {
-              networkGlobalId: networkId,
-              workchain: 0,
-              subwalletNumber: 0,
-            },
-          }),
-        );
-        const seqno = await walletContract.getSeqno();
-        await walletContract.sendTransfer({
-          seqno,
-          secretKey,
-          messages: [
-            internal({
-              to: toAddr,
-              value: toNano(params.amount),
-              bounce: false,
-              body,
-            }),
-          ],
-        });
-        return JSON.stringify({
-          status: "sent",
-          to: params.to,
-          amount: params.amount + " TON",
-          remainingBalance:
-            (currentBalance - requestedAmount - 0.01).toFixed(4) +
-            " TON (estimated)",
-        });
-      }
-
-      case "get_wallet_info": {
-        const addr = params.address || wallet.address.toRawString();
-        const r = await fetch(
-          `${apiBase}/accounts/${encodeURIComponent(addr)}`,
-        );
-        const d = await r.json();
-        return JSON.stringify({
-          balance: (Number(d.balance) / 1e9).toFixed(4) + " TON",
-          status: d.status,
-          type: d.interfaces?.[0] || "wallet",
-        });
-      }
-
-      case "get_transaction_history": {
-        const r = await fetch(
-          `${apiBase}/accounts/${encodeURIComponent(wallet.address.toRawString())}/events?limit=${params.limit || 5}`,
-        );
-        const d = await r.json();
-        const txs = (d.events || []).map((e: any) => ({
-          time: new Date(e.timestamp * 1000).toLocaleString(),
-          type: e.actions?.[0]?.type || "unknown",
-          amount: e.actions?.[0]?.TonTransfer?.amount
-            ? (Number(e.actions[0].TonTransfer.amount) / 1e9).toFixed(4) +
-              " TON"
-            : "N/A",
-        }));
-        return JSON.stringify({ count: txs.length, transactions: txs });
-      }
-
-      case "resolve_domain": {
-        const domain = params.domain.replace(/\.ton$/i, "");
-        const r = await fetch(
-          `https://tonapi.io/v2/dns/${encodeURIComponent(domain + ".ton")}/resolve`,
-        );
-        if (r.ok) {
-          const d = await r.json();
-          return JSON.stringify({
-            domain: domain + ".ton",
-            address: d.wallet?.address || "not found",
-          });
-        }
-        return JSON.stringify({
-          domain: domain + ".ton",
-          address: "not found",
-        });
-      }
-
-      case "get_price": {
-        const r = await fetch(
-          `${apiBase}/rates?tokens=${encodeURIComponent(params.token)}&currencies=usd,ton`,
-        );
-        if (r.ok) {
-          const d = await r.json();
-          const rates = d.rates?.[params.token];
-          return JSON.stringify({
-            priceUSD: rates?.prices?.USD || "unknown",
-            priceTON: rates?.prices?.TON || "unknown",
-          });
-        }
-        return JSON.stringify({ priceUSD: "unknown" });
-      }
-
-      case "get_staking_info": {
-        const r = await fetch(
-          `${apiBase}/staking/nominator/${encodeURIComponent(wallet.address.toRawString())}/pools`,
-        );
-        if (r.ok) {
-          const d = await r.json();
-          return JSON.stringify({ pools: d.pools || [] });
-        }
-        return JSON.stringify({ pools: [], message: "No staking positions" });
-      }
-
-      case "create_escrow": {
-        const ESCROW_FILE = ".escrow-store.json";
-        let escrows: any = {};
-        try {
-          if (existsSync(ESCROW_FILE))
-            escrows = JSON.parse(readFileSync(ESCROW_FILE, "utf-8"));
-        } catch {}
-        const escrowId = `escrow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const deadline =
-          Math.floor(Date.now() / 1000) + (params.deadlineMinutes || 60) * 60;
-        escrows[escrowId] = {
-          id: escrowId,
-          depositor: wallet.address.toRawString(),
-          beneficiary: params.beneficiary,
-          amount: params.amount,
-          deadline,
-          status: "created",
-          description: params.description || "",
-          deadlineISO: new Date(deadline * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-        };
-        writeFileSync(ESCROW_FILE, JSON.stringify(escrows, null, 2));
-        return JSON.stringify({
-          escrowId,
-          status: "created",
-          amount: params.amount + " TON",
-          beneficiary: params.beneficiary,
-        });
-      }
-
-      case "get_escrow_info": {
-        const ESCROW_FILE = ".escrow-store.json";
-        let escrows: any = {};
-        try {
-          if (existsSync(ESCROW_FILE))
-            escrows = JSON.parse(readFileSync(ESCROW_FILE, "utf-8"));
-        } catch {}
-        if (params.escrowId)
-          return JSON.stringify(
-            escrows[params.escrowId] || { error: "Not found" },
-          );
-        return JSON.stringify({
-          count: Object.keys(escrows).length,
-          escrows: Object.values(escrows).map((e: any) => ({
-            id: e.id,
-            status: e.status,
-            amount: e.amount + " TON",
-          })),
-        });
-      }
-
-      default:
-        return JSON.stringify({ error: `Unknown action: ${name}` });
-    }
-  }
-
   // ── Chat history per user ──
   const chatHistories = new Map<number, OpenAI.ChatCompletionMessageParam[]>();
 
+  // ── Per-user TX mode: "auto" skips HITL, "confirm" (default) shows buttons ──
+  const userTxMode = new Map<number, "auto" | "confirm">();
+
+  const friendlyWalletAddr = wallet.address.toString({ testOnly: NETWORK === "testnet", bounceable: false });
+
   const SYSTEM_PROMPT = `You are TON Agent Kit Bot — an AI agent that manages a TON blockchain wallet via Telegram.
 
-Your wallet: ${wallet.address.toRawString()}
+Your wallet: ${friendlyWalletAddr}
 Network: ${NETWORK}
 
 You can check balances, send TON, resolve .ton domains, check prices, view transaction history, manage escrows, and more.
 
+CRITICAL: When the user asks to perform any action (transfer, escrow, etc.), call the function IMMEDIATELY. Do NOT ask "are you sure?", "would you like to proceed?", or any form of confirmation. The system automatically shows Approve/Reject buttons for transfers above ${AUTO_APPROVE_LIMIT} TON. Your job is to call the function, not to ask for permission.
+
+Users can type "TX auto" to skip approval buttons, or "TX confirm" to re-enable them.
+
+When displaying addresses to the user, always use the user-friendly format (like 0QClVWrj... or EQClVWrj...) instead of raw format (0:a5556...). Both formats refer to the same address — raw format is used internally by the blockchain, user-friendly format is what wallets like Tonkeeper display. If a function result includes both address and friendlyAddress fields, prefer showing friendlyAddress. If the user provides a raw address, accept it but display the user-friendly version back.
+
 Rules:
 - Be concise. Use emojis sparingly.
-- For transfers above ${AUTO_APPROVE_LIMIT} TON, always confirm with the user first.
 - Format TON amounts to 4 decimal places.
-- When showing addresses, truncate to first 6 and last 4 characters.
+- When showing addresses, use the user-friendly format and truncate to first 6 and last 4 characters.
 - Always show transaction results clearly.`;
 
   // ── HITL: Approval handler ──
@@ -507,6 +287,19 @@ Rules:
     const chatId = ctx.chat.id;
     const userMessage = ctx.message.text;
 
+    // ── Detect TX mode commands before sending to GPT ──
+    const msgLower = userMessage.toLowerCase().trim();
+    if (/\b(tx\s*auto|auto\s*approve|enable\s*auto\s*mode)\b/.test(msgLower)) {
+      userTxMode.set(chatId, "auto");
+      await ctx.reply("🔓 Auto mode enabled — transfers will execute without approval buttons.");
+      return;
+    }
+    if (/\b(tx\s*confirm|approval\s*on|enable\s*confirmation)\b/.test(msgLower)) {
+      userTxMode.set(chatId, "confirm");
+      await ctx.reply("🔒 Confirmation mode enabled — transfers above " + AUTO_APPROVE_LIMIT + " TON will require approval.");
+      return;
+    }
+
     // Skip commands
     if (userMessage.startsWith("/start")) {
       await ctx.reply(
@@ -518,7 +311,7 @@ Rules:
           `• "Resolve alice.ton"\n` +
           `• "Show my recent transactions"\n` +
           `• "Create an escrow for 1 TON"\n\n` +
-          `Wallet: \`${wallet.address.toRawString().slice(0, 10)}...${wallet.address.toRawString().slice(-6)}\`\n` +
+          `Wallet: \`${friendlyWalletAddr.slice(0, 10)}...${friendlyWalletAddr.slice(-6)}\`\n` +
           `Network: ${NETWORK}`,
         { parse_mode: "Markdown" },
       );
@@ -560,21 +353,64 @@ Rules:
           const fnName = toolCall.function.name;
           const fnParams = JSON.parse(toolCall.function.arguments);
 
-          // HITL check for write operations
+          // HITL: "confirm" mode → ALWAYS show buttons; "auto" mode → skip entirely
           let approved = true;
-          if (fnName === "transfer_ton") {
-            const amount = parseFloat(fnParams.amount);
-            if (amount > AUTO_APPROVE_LIMIT) {
-              await ctx.reply(
-                `⏳ Requesting approval for ${fnParams.amount} TON transfer...`,
-              );
-              approved = await requestApproval(chatId, fnName, fnParams);
-            }
+          const mode = userTxMode.get(chatId) || "confirm";
+          if (fnName === "transfer_ton" && mode === "confirm") {
+            await ctx.reply(
+              `⏳ Requesting approval for ${fnParams.amount} TON transfer...`,
+            );
+            approved = await requestApproval(chatId, fnName, fnParams);
           }
 
           let result: string;
           if (approved) {
-            result = await executeAction(fnName, fnParams);
+            try {
+              const actionResult = await agent.runAction(fnName, fnParams);
+              result = JSON.stringify(actionResult);
+
+              // TX confirmation — wait and verify on-chain, include explorer link
+              if (fnName === "transfer_ton") {
+                const walletAddr = wallet.address.toRawString();
+                const viewerBase = NETWORK === "mainnet"
+                  ? "https://tonviewer.com"
+                  : "https://testnet.tonviewer.com";
+                const fallbackLink = `${viewerBase}/${walletAddr}`;
+                const pluginExplorerUrl = (actionResult as any)?.explorerUrl;
+
+                await new Promise((r) => setTimeout(r, 10000));
+                try {
+                  const txHistory = await agent.runAction("get_transaction_history", { limit: 1 }) as any;
+                  // Extract real tx hash from history: events[0].id
+                  const realTxHash = txHistory?.events?.[0]?.id;
+                  const txLink = realTxHash
+                    ? `${viewerBase}/transaction/${realTxHash}`
+                    : fallbackLink;
+
+                  if (txHistory && Object.keys(txHistory).length > 0) {
+                    result = JSON.stringify({
+                      ...actionResult,
+                      confirmation: `✅ Transaction confirmed on-chain\n${txLink}`,
+                      ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
+                    });
+                  } else {
+                    result = JSON.stringify({
+                      ...actionResult,
+                      confirmation: `⏳ Transaction sent, awaiting confirmation\n${fallbackLink}`,
+                      ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
+                    });
+                  }
+                } catch {
+                  result = JSON.stringify({
+                    ...actionResult,
+                    confirmation: `⏳ Transaction sent, awaiting confirmation\n${fallbackLink}`,
+                    ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
+                  });
+                }
+              }
+            } catch (err: any) {
+              result = JSON.stringify({ error: err.message });
+            }
           } else {
             result = JSON.stringify({
               status: "rejected",

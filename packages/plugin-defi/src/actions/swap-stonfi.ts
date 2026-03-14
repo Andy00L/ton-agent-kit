@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Address, toNano, fromNano } from "@ton/core";
-import { defineAction, type SwapResult } from "@ton-agent-kit/core";
+import { Address, toNano, fromNano, internal } from "@ton/core";
+import { defineAction, type SwapResult, sendTransaction } from "@ton-agent-kit/core";
 
 export const swapStonfiAction = defineAction<
   { fromToken: string; toToken: string; amount: string; slippage?: number },
@@ -19,7 +19,6 @@ export const swapStonfiAction = defineAction<
     const { DEX, pTON } = await import("@ston-fi/sdk");
 
     const router = (agent.connection as any).open(new DEX.v1.Router());
-    const sender = agent.wallet.getSender();
 
     const amountIn = toNano(params.amount);
 
@@ -30,14 +29,12 @@ export const swapStonfiAction = defineAction<
         proxyTon: new pTON.v1(),
         offerAmount: amountIn,
         askJettonAddress: Address.parse(params.toToken),
-        minAskAmount: toNano("0"), // Will be refined with slippage
+        minAskAmount: toNano("0"),
       });
 
-      await sender.send({
-        to: txParams.to,
-        value: txParams.value,
-        body: txParams.body,
-      });
+      await sendTransaction(agent, [
+        internal({ to: txParams.to, value: txParams.value, bounce: true, body: txParams.body }),
+      ]);
     } else if (params.toToken.toUpperCase() === "TON") {
       // Swap Jetton -> TON
       const txParams = await router.getSwapJettonToTonTxParams({
@@ -48,11 +45,9 @@ export const swapStonfiAction = defineAction<
         minAskAmount: toNano("0"),
       });
 
-      await sender.send({
-        to: txParams.to,
-        value: txParams.value,
-        body: txParams.body,
-      });
+      await sendTransaction(agent, [
+        internal({ to: txParams.to, value: txParams.value, bounce: true, body: txParams.body }),
+      ]);
     } else {
       // Swap Jetton -> Jetton
       const txParams = await router.getSwapJettonToJettonTxParams({
@@ -63,11 +58,9 @@ export const swapStonfiAction = defineAction<
         minAskAmount: toNano("0"),
       });
 
-      await sender.send({
-        to: txParams.to,
-        value: txParams.value,
-        body: txParams.body,
-      });
+      await sendTransaction(agent, [
+        internal({ to: txParams.to, value: txParams.value, bounce: true, body: txParams.body }),
+      ]);
     }
 
     return {

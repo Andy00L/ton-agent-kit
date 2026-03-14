@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Address, toNano } from "@ton/core";
-import { defineAction, type SwapResult } from "@ton-agent-kit/core";
+import { Address, toNano, internal } from "@ton/core";
+import { defineAction, type SwapResult, sendTransaction } from "@ton-agent-kit/core";
 
 // DeDust SDK imports (will be available after npm install)
 // import { Factory, MAINNET_FACTORY_ADDR, Asset, PoolType, VaultNative } from "@dedust/sdk";
@@ -59,13 +59,22 @@ export const swapDedustAction = defineAction<
     // Apply slippage
     const minAmountOut = (amountOut * BigInt(100 - (params.slippage || 1))) / 100n;
 
+    // Build a sender shim compatible with DeDust SDK
+    const sender = {
+      address: agent.wallet.address,
+      async send(args: { to: Address; value: bigint; body?: any }) {
+        await sendTransaction(agent, [
+          internal({ to: args.to, value: args.value, bounce: true, body: args.body }),
+        ]);
+      },
+    };
+
     // Execute swap
     if (params.fromToken.toUpperCase() === "TON") {
       // Native TON swap
       const tonVault = (agent.connection as any).open(
         await factory.getNativeVault()
       );
-      const sender = agent.wallet.getSender();
       await tonVault.sendSwap(sender, {
         poolAddress: pool.address,
         amount: amountIn,
@@ -76,8 +85,6 @@ export const swapDedustAction = defineAction<
       const jettonVault = (agent.connection as any).open(
         await factory.getJettonVault(Address.parse(params.fromToken))
       );
-      const sender = agent.wallet.getSender();
-      // Build jetton transfer to vault with swap payload
       await jettonVault.sendSwap(sender, {
         poolAddress: pool.address,
         amount: amountIn,

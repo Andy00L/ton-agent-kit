@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { Address, toNano, beginCell } from "@ton/core";
+import { Address, toNano, beginCell, internal } from "@ton/core";
 import { JettonMaster, JettonWallet } from "@ton/ton";
-import { defineAction, type TransactionResult } from "@ton-agent-kit/core";
+import { defineAction, type TransactionResult, sendTransaction } from "@ton-agent-kit/core";
 
 export const transferJettonAction = defineAction<
   { to: string; amount: string; jettonAddress: string },
@@ -45,12 +45,14 @@ export const transferJettonAction = defineAction<
       .storeRef(forwardPayload)
       .endCell();
 
-    const sender = agent.wallet.getSender();
-    await sender.send({
-      to: jettonWalletAddress,
-      value: toNano("0.05"), // gas for Jetton transfer
-      body: transferBody,
-    });
+    await sendTransaction(agent, [
+      internal({
+        to: jettonWalletAddress,
+        value: toNano("0.05"),
+        bounce: true,
+        body: transferBody,
+      }),
+    ]);
 
     return {
       txHash: "pending",
