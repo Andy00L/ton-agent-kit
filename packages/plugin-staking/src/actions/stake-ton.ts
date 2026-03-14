@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { defineAction } from "@ton-agent-kit/core";
 import { Address, beginCell, internal, toNano } from "@ton/core";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
-import { defineAction } from "@ton-agent-kit/core";
+import { z } from "zod";
 
 export const stakeTonAction = defineAction({
   name: "stake_ton",

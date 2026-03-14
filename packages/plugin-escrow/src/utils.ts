@@ -8,7 +8,7 @@ import {
   storeDeposit,
   storeRelease,
   storeRefund,
-} from "../../../contracts/output/Escrow_Escrow";
+} from "./contracts/Escrow_Escrow";
 import { sendTransaction } from "@ton-agent-kit/core";
 
 const ESCROW_FILE = ".escrow-store.json";
