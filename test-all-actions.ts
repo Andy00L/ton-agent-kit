@@ -9,7 +9,6 @@
 
 import "dotenv/config";
 import { TonClient4 } from "@ton/ton";
-import { Address, fromNano } from "@ton/core";
 import { KeypairWallet } from "./packages/core/src/wallet";
 import { TonAgentKit } from "./packages/core/src/agent";
 
@@ -386,68 +385,121 @@ async function main() {
   );
 
   // ════════════════════════════════════════════════════════════
-  // SECTION 6: Escrow Plugin — Full Lifecycle
+  // SECTION 6: Escrow Plugin — On-Chain Lifecycle
   // ════════════════════════════════════════════════════════════
   await delay(2000);
-  console.log(`\n══ SECTION 6: Escrow Plugin (lifecycle) ══`);
+  console.log(`\n══ SECTION 6: Escrow Plugin (on-chain lifecycle) ══`);
+  console.log(`  ⚠️  This section deploys a real contract and spends ~0.3 TON in gas`);
 
-  // Create escrow
-  const escrowResult = await test("create_escrow", () =>
+  // 1. Create escrow — deploy a real contract on testnet
+  const escrowResult = await test("create_escrow (deploy contract)", () =>
     agent.runAction("create_escrow", {
       beneficiary: ownAddress,
-      amount: "0.5",
-      description: "Test escrow for validation",
-      deadlineMinutes: 30,
+      amount: "0.05",
+      description: "test escrow on-chain",
+      deadlineMinutes: 5,
     }),
-    (r) => r?.escrowId && r?.status === "created" ? true : `status is ${r?.status}`,
+    (r) => {
+      if (!r?.status?.includes("contract deployed")) return `status: ${r?.status}`;
+      if (!r?.contractAddress) return "missing contractAddress";
+      if (!r?.escrowId) return "missing escrowId";
+      return true;
+    },
   );
 
   const escrowId = escrowResult?.escrowId;
 
-  // Get escrow info by ID
+  // 2. Get escrow info by ID — read on-chain state after create
   if (escrowId) {
-    await test("get_escrow_info (by ID)", () =>
+    console.log(`  ⏳ Waiting 10s for contract deployment to finalize...`);
+    await new Promise((r) => setTimeout(r, 10000));
+    await delay(3000);
+    await test("get_escrow_info (on-chain state after create)", () =>
       agent.runAction("get_escrow_info", { escrowId }),
-      (r) => r?.status === "created" ? true : `status is ${r?.status}`,
+      (r) => {
+        const status = r?.onChain?.status;
+        if (status !== "created" && status !== "active")
+          return `onChain.status: ${status}`;
+        if (!r?.onChain?.depositor) return "missing onChain.depositor";
+        return true;
+      },
     );
   } else {
-    skip("get_escrow_info (by ID)", "no escrowId from create");
+    skip("get_escrow_info (on-chain state after create)", "no escrowId from create");
   }
 
-  // List all escrows
+  // 3. Deposit to escrow — send real TON to the contract
+  if (escrowId) {
+    await delay(3000);
+    await test("deposit_to_escrow (fund contract)", () =>
+      agent.runAction("deposit_to_escrow", { escrowId }),
+      (r) => {
+        if (!r?.status?.includes("funded")) return `status: ${r?.status}`;
+        if (!r?.depositTxHash) return "missing depositTxHash";
+        return true;
+      },
+    );
+
+    // 4. Wait for deposit confirmation
+    console.log(`  ⏳ Waiting 15s for deposit confirmation...`);
+    await new Promise((r) => setTimeout(r, 15000));
+
+    // 5. Get escrow info — verify funded on-chain
+    await delay(3000);
+    await test("get_escrow_info (verify funded on-chain)", () =>
+      agent.runAction("get_escrow_info", { escrowId }),
+      (r) => {
+        if (r?.onChain?.status !== "funded")
+          return `onChain.status: ${r?.onChain?.status}`;
+        const balance = parseFloat(r?.onChain?.balance || "0");
+        if (balance <= 0) return `onChain.balance: ${r?.onChain?.balance}`;
+        return true;
+      },
+    );
+
+    // 6. Release escrow — release funds to beneficiary on-chain
+    await delay(3000);
+    await test("release_escrow (release funds on-chain)", () =>
+      agent.runAction("release_escrow", { escrowId }),
+      (r) => {
+        if (!r?.status?.includes("released")) return `status: ${r?.status}`;
+        if (!r?.releaseTxHash) return "missing releaseTxHash";
+        return true;
+      },
+    );
+
+    // 7. Wait for release confirmation
+    console.log(`  ⏳ Waiting 15s for release confirmation...`);
+    await new Promise((r) => setTimeout(r, 15000));
+
+    // 8. Get escrow info — verify released on-chain
+    await delay(3000);
+    await test("get_escrow_info (verify released on-chain)", () =>
+      agent.runAction("get_escrow_info", { escrowId }),
+      (r) => {
+        if (r?.onChain?.released !== true)
+          return `onChain.released: ${r?.onChain?.released}`;
+        const balance = parseFloat(r?.onChain?.balance || "999");
+        if (balance >= 0.05)
+          return `onChain.balance still high: ${r?.onChain?.balance}`;
+        return true;
+      },
+    );
+  } else {
+    skip("deposit_to_escrow (fund contract)", "no escrowId from create");
+    skip("get_escrow_info (verify funded)", "no escrowId");
+    skip("release_escrow (release funds)", "no escrowId");
+    skip("get_escrow_info (verify released)", "no escrowId");
+  }
+
+  // 9. List all escrows — verify list still works
+  await delay(3000);
   await test("get_escrow_info (list all)", () =>
     agent.runAction("get_escrow_info", {}),
-    (r) => r?.count >= 0 ? true : `count is ${r?.count}`,
+    (r) => r?.count >= 1 ? true : `count is ${r?.count}`,
   );
 
-  // Get nonexistent escrow (edge case)
-  await test("get_escrow_info (nonexistent ID)", async () => {
-    try {
-      const r = await agent.runAction("get_escrow_info", { escrowId: "fake-id-12345" });
-      return r;
-    } catch (err: any) {
-      return { caught: true, message: err.message };
-    }
-  });
-
-  // Create second escrow (different params)
-  await test("create_escrow (second — different params)", () =>
-    agent.runAction("create_escrow", {
-      beneficiary: ownAddress,
-      amount: "1.0",
-      description: "Second test escrow",
-      deadlineMinutes: 5,
-    }),
-    (r) => r?.escrowId ? true : "missing escrowId",
-  );
-
-  // Verify list now has at least 2
-  await test("get_escrow_info (list — should have >= 2)", () =>
-    agent.runAction("get_escrow_info", {}),
-    (r) => r?.count >= 2 ? true : `count is ${r?.count}, expected >= 2`,
-  );
-
-  // Create escrow with missing beneficiary (edge case — should fail)
+  // 10. Create escrow with no beneficiary — should error
   await test("create_escrow (no beneficiary — should error)", async () => {
     try {
       await agent.runAction("create_escrow", { amount: "0.1" });
@@ -725,22 +777,6 @@ async function main() {
   } else {
     skip("transfer_ton (3 tests)", "balance too low for live transfer");
     skip("post-transfer checks (3 tests)", "skipped due to low balance");
-  }
-
-  // ════════════════════════════════════════════════════════════
-  // SECTION 10: Deposit/Release/Refund Escrow (Schema Only)
-  // ════════════════════════════════════════════════════════════
-  await delay(2000);
-  console.log(`\n══ SECTION 10: Escrow Write Operations (schema only) ══`);
-
-  if (escrowId) {
-    await testSchema("deposit_to_escrow", agent, { escrowId, amount: "0.5" });
-    await testSchema("release_escrow", agent, { escrowId });
-    await testSchema("refund_escrow", agent, { escrowId });
-  } else {
-    skip("deposit_to_escrow", "no escrowId");
-    skip("release_escrow", "no escrowId");
-    skip("refund_escrow", "no escrowId");
   }
 
   // ════════════════════════════════════════════════════════════

@@ -66,11 +66,15 @@ export const getEscrowInfoAction = defineAction<{ escrowId?: string }, any>({
       escrows: list.map((e) => ({
         id: e.id,
         status: e.status,
-        contractAddress: e.contractAddress,
-        friendlyContract: toFriendlyAddress(Address.parse(e.contractAddress), agent.network),
+        contractAddress: e.contractAddress || null,
+        friendlyContract: e.contractAddress
+          ? toFriendlyAddress(Address.parse(e.contractAddress), agent.network)
+          : null,
         amount: e.amount + " TON",
         beneficiary: e.beneficiary,
-        friendlyBeneficiary: toFriendlyAddress(Address.parse(e.beneficiary), agent.network),
+        friendlyBeneficiary: e.beneficiary
+          ? toFriendlyAddress(Address.parse(e.beneficiary), agent.network)
+          : null,
         deadline: e.deadlineISO,
         description: e.description,
       })),
