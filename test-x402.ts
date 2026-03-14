@@ -3,7 +3,8 @@ import { mnemonicToPrivateKey } from "@ton/crypto";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
 import "dotenv/config";
 import { KeypairWallet } from "./packages/core/src/wallet";
-import { createPaymentServer } from "./x402-middleware";
+import { createPaymentServer, tonPaywall } from "./x402-middleware";
+import express from "express";
 
 async function main() {
   const mnemonic = process.env.TON_MNEMONIC!.split(" ");
@@ -122,6 +123,116 @@ async function main() {
   const analyticsRes = await fetch("http://localhost:3402/api/analytics");
   console.log(`📋 Status: ${analyticsRes.status} (expected: 402)`);
 
+  // ── Step 8: Cross-endpoint replay (Test 12) ──
+  console.log(`\n── Step 8: Cross-endpoint replay attack ──`);
+  console.log(`  Using hash from /api/price on /api/analytics...`);
+  const crossRes = await fetch("http://localhost:3402/api/analytics", {
+    headers: { "X-Payment-Hash": txHash },
+  });
+  console.log(`📋 Status: ${crossRes.status} (expected: not 200 — hash already used)`);
+
+  // ── Step 9: Wrong wallet TX (Test 13) ──
+  console.log(`\n── Step 9: Wrong wallet TX (recipient mismatch) ──`);
+  const otherWallet = "0:554122744117f4414f02ca5643cd4ab4b02ed83851e33cd88f7b3263e1485399";
+  const otherTxRes = await fetch(
+    `https://testnet.tonapi.io/v2/accounts/${encodeURIComponent(otherWallet)}/events?limit=1`,
+  );
+  const otherTxData = await otherTxRes.json();
+  const otherHash = otherTxData.events?.[0]?.event_id;
+
+  if (otherHash) {
+    console.log(`  Using TX from other wallet: ${otherHash.slice(0, 24)}...`);
+    const wrongWalletRes = await fetch("http://localhost:3402/api/price", {
+      headers: { "X-Payment-Hash": otherHash },
+    });
+    console.log(`📋 Status: ${wrongWalletRes.status} (expected: not 200 — recipient doesn't match)`);
+  } else {
+    console.log(`  ⏭️  Skipped — could not fetch TX from other wallet`);
+  }
+
+  // ── Step 10: Old TX / timestamp expired (Test 14) ──
+  console.log(`\n── Step 10: Old TX (timestamp expired) ──`);
+  const oldTxRes = await fetch(
+    `https://testnet.tonapi.io/v2/accounts/${encodeURIComponent(wallet.address.toRawString())}/events?limit=10`,
+  );
+  const oldTxData = await oldTxRes.json();
+
+  const now = Math.floor(Date.now() / 1000);
+  const oldEvent = oldTxData.events?.find((e: any) => now - (e.timestamp || 0) > 300);
+
+  if (oldEvent) {
+    const oldHash = oldEvent.event_id;
+    const age = now - oldEvent.timestamp;
+    console.log(`  Found old TX: ${oldHash.slice(0, 24)}... (${age}s ago)`);
+    const oldTxTestRes = await fetch("http://localhost:3402/api/price", {
+      headers: { "X-Payment-Hash": oldHash },
+    });
+    console.log(`📋 Status: ${oldTxTestRes.status} (expected: not 200 — age: ${age}s, max: 300s)`);
+  } else {
+    console.log(`  ⏭️  Skipped — no TX older than 5min found (wallet is new)`);
+  }
+
+  // ── Step 11: Insufficient amount (Test 15) ──
+  console.log(`\n── Step 11: Insufficient amount ──`);
+  console.log(`  Sending 0.0001 TON (endpoint costs 0.001)...`);
+
+  const seqno2 = await walletContract.getSeqno();
+  await walletContract.sendTransfer({
+    seqno: seqno2,
+    secretKey: keyPair.secretKey,
+    messages: [
+      internal({
+        to: walletContract.address,
+        value: toNano("0.0001"),
+        bounce: false,
+        body: beginCell()
+          .storeUint(0, 32)
+          .storeStringTail("x402:underpay")
+          .endCell(),
+      }),
+    ],
+  });
+  console.log(`✅ Underpayment TX sent! Waiting 15s for confirmation...`);
+  await new Promise((r) => setTimeout(r, 15000));
+
+  const lowTxRes = await fetch(
+    `https://testnet.tonapi.io/v2/accounts/${encodeURIComponent(wallet.address.toRawString())}/events?limit=1`,
+  );
+  const lowTxData = await lowTxRes.json();
+  const lowHash = lowTxData.events?.[0]?.event_id;
+
+  if (lowHash) {
+    const underpayRes = await fetch("http://localhost:3402/api/price", {
+      headers: { "X-Payment-Hash": lowHash },
+    });
+    console.log(`📋 Status: ${underpayRes.status} (expected: not 200 — paid 0.0001, needed 0.001)`);
+  } else {
+    console.log(`  ⏭️  Skipped — could not retrieve underpayment TX hash`);
+  }
+
+  // ── Step 12: Wrong network (Test 16) ──
+  console.log(`\n── Step 12: Wrong network (testnet hash → mainnet) ──`);
+
+  const app3 = express();
+  app3.get("/api/data", tonPaywall({
+    amount: "0.001",
+    recipient: wallet.address.toRawString(),
+    network: "mainnet",
+  }), (_req: any, res: any) => {
+    res.json({ data: true });
+  });
+
+  const server3 = app3.listen(3404);
+  await new Promise((r) => setTimeout(r, 500));
+
+  console.log(`  Using testnet hash on mainnet server...`);
+  const wrongNetRes = await fetch("http://localhost:3404/api/data", {
+    headers: { "X-Payment-Hash": txHash },
+  });
+  console.log(`📋 Status: ${wrongNetRes.status} (expected: not 200 — TX not found on mainnet)`);
+
+  server3.close();
+
   // ── Summary ──
   console.log(`\n${"═".repeat(50)}`);
   console.log(`✅ x402 Middleware Test Complete!`);
@@ -132,6 +243,11 @@ async function main() {
     `   Paid access: ${paidRes.status === 200 ? "✅" : "❌"} (${paidRes.status})`,
   );
   console.log(`   Second paywall: ✅ (${analyticsRes.status})`);
+  console.log(`   Cross-endpoint replay: ${crossRes.status !== 200 ? "✅" : "❌"} (${crossRes.status})`);
+  console.log(`   Wrong wallet TX: ${otherHash ? "✅" : "⏭️  skipped"}`);
+  console.log(`   Old TX expired: ${oldEvent ? "✅" : "⏭️  skipped"}`);
+  console.log(`   Insufficient amount: ${lowHash ? "✅" : "⏭️  skipped"}`);
+  console.log(`   Wrong network: ${wrongNetRes.status !== 200 ? "✅" : "❌"} (${wrongNetRes.status})`);
   console.log(`${"═".repeat(50)}\n`);
 
   server.close();

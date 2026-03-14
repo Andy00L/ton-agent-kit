@@ -6,17 +6,21 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@ton-agent-kit/core"><img src="https://img.shields.io/npm/v/@ton-agent-kit/core?label=%40ton-agent-kit%2Fcore" alt="npm"></a>
-  <a href="https://www.npmjs.com/search?q=%40ton-agent-kit"><img src="https://img.shields.io/badge/npm-13%20packages-blue" alt="npm packages"></a>
+  <a href="https://www.npmjs.com/search?q=%40ton-agent-kit"><img src="https://img.shields.io/badge/npm-14%20packages-blue" alt="npm packages"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> •
+  <a href="#available-packages">Packages</a> •
   <a href="#plugins--actions">Plugins</a> •
   <a href="#agent-commerce-protocol">Agent Commerce</a> •
   <a href="#mcp-server">MCP Server</a> •
   <a href="#x402-payment-middleware">x402 Payments</a> •
-  <a href="#telegram-bot">Telegram Bot</a>
+  <a href="#telegram-bot">Telegram Bot</a> •
+  <a href="#autonomous-runtime">Autonomous Runtime</a> •
+  <a href="#examples">Examples</a> •
+  <a href="#test-results">Tests</a>
 </p>
 
 ---
@@ -25,15 +29,15 @@
 
 TON Agent Kit is more than an SDK — it's the **infrastructure for an AI agent economy on TON**.
 
-Agents discover each other via **agent registry**. They pay each other via **x402 middleware**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 29 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral. Agents can run fully autonomously via **`agent.runLoop()`** — give a natural-language goal, the LLM decides which on-chain actions to execute.
+The toolkit ships as **14 npm packages** with **29 actions** across **9 plugins**. Call `agent.toAITools()` to get OpenAI-compatible function definitions that work with any LLM provider — OpenAI, Anthropic, Google, Groq, Mistral, OpenRouter, Together. Call `agent.runLoop("goal")` to hand a natural-language objective to the LLM and let it autonomously plan and execute on-chain actions. Agents discover each other via an **agent registry** with reputation scoring. They pay each other through **x402 middleware** — production-hardened with anti-replay protection, timestamp verification, and 2-level on-chain validation. Trustless task payment flows through an **on-chain Tact escrow smart contract** deployed per deal. Users control agents safely from **Telegram with human-in-the-loop approval buttons**. And any AI — Claude Desktop, Cursor, GPT — can interact with TON through a single **MCP server** exposing all 29 tools. The [multi-agent commerce demo](demo-agent-commerce.ts) runs the full protocol with **2 real wallets** and **8 on-chain steps**.
 
-### The problem
+### The Problem
 
 On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit) (1,600+ stars) gave agents blockchain access. On Base, [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) registered 123,000+ agents in 2 months. On Ethereum, x402 processed 162M+ transactions for agent-to-agent payments.
 
 **On TON? Nothing.** Despite having the best architecture for AI agents — native payment channels, encrypted P2P networking (ADNL), decentralized DNS, and 1 billion Telegram users.
 
-### The solution
+### The Solution
 
 | Capability | Solana | Base/ETH | TON (before) | TON Agent Kit |
 |---|---|---|---|---|
@@ -55,7 +59,7 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 npm install @ton-agent-kit/core @ton-agent-kit/plugin-token @ton-agent-kit/plugin-defi zod
 ```
 
-> **Peer Dependencies:** All `@ton-agent-kit/*` packages require `zod` (>=4.0.0) as a peer dependency. You must install it explicitly alongside the SDK.
+> **Peer Dependencies:** All `@ton-agent-kit/*` packages require `zod` (>=4.0.0) as a peer dependency. You must install it explicitly alongside the SDK. This ensures a single Zod instance is shared across the SDK, which is critical for `toAITools()` — Zod v4's `toJSONSchema()` only works when schemas are created by the same Zod instance that generates the JSON schema.
 
 > **Contributing?** Clone the repo instead:
 > ```bash
@@ -156,7 +160,7 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ## Available Packages
 
-All 13 packages are published on npm under the `@ton-agent-kit` scope. Install only what you need.
+All 14 packages are published on npm under the `@ton-agent-kit` scope. Install only what you need.
 
 | Package | Description | npm |
 |---------|-------------|-----|
@@ -261,7 +265,7 @@ npm install @ton-agent-kit/plugin-analytics zod
 npm install @ton-agent-kit/plugin-escrow zod
 ```
 
-*On-chain trustless escrow — each deal deploys a Tact smart contract to TON. All state (deposit, release, refund) is on-chain.*
+*On-chain trustless escrow — each deal deploys a [Tact smart contract](contracts/escrow.tact) to TON. All state (deposit, release, refund) is on-chain and verifiable on [tonviewer.com](https://tonviewer.com).*
 
 | Action | Description | Status |
 |--------|-------------|--------|
@@ -285,26 +289,17 @@ npm install @ton-agent-kit/plugin-identity zod
 | `discover_agent` | Find agents by capability or name | ✅ Live |
 | `get_agent_reputation` | Read + update reputation scores | ✅ Live |
 
-### ⚡ Payments Plugin (1 action: pay_for_resource + x402 middleware)
+### ⚡ Payments Plugin (1 action)
 
 ```bash
 npm install @ton-agent-kit/plugin-payments zod
 ```
 
-*Production-hardened HTTP payment middleware for agent-to-agent commerce.*
+*Client-side x402 payment — auto-detects 402 responses, pays, and retries.*
 
 | Action | Description | Status |
 |--------|-------------|--------|
 | `pay_for_resource` | Auto-pay for x402-gated APIs | ✅ Live |
-
-```typescript
-// Make any API payable in TON — 3 lines
-import { tonPaywall } from "./x402-middleware";
-
-app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), (req, res) => {
-  res.json({ price: 3.85 });
-});
-```
 
 ---
 
@@ -312,18 +307,27 @@ app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), (re
 
 The plugins combine into a **complete agent economy**:
 
+```mermaid
+flowchart LR
+    A[🆔 Identity] --> B[🔍 Discovery]
+    B --> C[💳 Payment x402]
+    C --> D[🔒 Escrow On-chain]
+    D --> E[⭐ Reputation]
+    E --> F[🎮 Control HITL]
 ```
-1. IDENTITY — Agent registers as trading-bot with capabilities
-        ↓
-2. DISCOVERY — Other agents find it via discover_agent
-        ↓
-3. PAYMENT — Auto-pay via x402 middleware
-        ↓
-4. ESCROW — Trustless task verification via on-chain Tact smart contract
-        ↓
-5. REPUTATION — Completed tasks build reputation score
-        ↓
-6. CONTROL — Users approve high-value actions via Telegram HITL
+
+```
+1. IDENTITY    — Agent registers as trading-bot with capabilities
+       ↓
+2. DISCOVERY   — Other agents find it via discover_agent
+       ↓
+3. PAYMENT     — Auto-pay via x402 middleware (HTTP 402 → pay → retry)
+       ↓
+4. ESCROW      — Trustless task verification via on-chain Tact smart contract
+       ↓
+5. REPUTATION  — Completed tasks build reputation score
+       ↓
+6. CONTROL     — Users approve high-value actions via Telegram HITL
 ```
 
 This is the **first Agent Commerce Protocol on TON** — agents discover, pay, trust, and rate each other autonomously.
@@ -337,26 +341,17 @@ Two AI agents with **separate wallets** execute **real on-chain commerce** — e
 bun run demo-agent-commerce.ts
 ```
 
-**Full flow:**
-1. **Identity** — Both agents register with capabilities
-2. **Discovery** — Agent B discovers Agent A by capability
-3. **Escrow** — Agent B deploys an on-chain Tact escrow contract
+**Full 8-step flow:**
+1. **Identity** — Both agents register with capabilities (separate wallets)
+2. **Discovery** — Agent B discovers Agent A by `price_feed` capability
+3. **Escrow** — Agent B deploys an on-chain Tact escrow contract (0.05 TON, 10 min deadline)
 4. **Deposit** — Agent B locks TON in the escrow contract
-5. **Service** — Agent A delivers market data
+5. **Service** — Agent A delivers market data (USDT price)
 6. **Release** — Agent B releases funds to Agent A via the contract
-7. **Reputation** — Both agents rate each other
-8. **Verify** — All transactions visible on tonviewer.com
+7. **Reputation** — Both agents rate each other (100/100)
+8. **Verify** — Agent A balance confirmed increased, all TXs on tonviewer.com
 
 See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full source.
-
-### Autonomous Runtime Demo
-
-```bash
-bun run demo-runloop.ts                # run 3 built-in scenarios
-bun run demo-runloop.ts "custom goal"  # run a custom goal
-```
-
-The agent receives a natural-language goal and autonomously plans + executes blockchain actions. See [demo-runloop.ts](demo-runloop.ts) for 3 demo scenarios (balance analysis, autonomous transfer, multi-step research).
 
 ---
 
@@ -365,6 +360,24 @@ The agent receives a natural-language goal and autonomously plans + executes blo
 Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **29 tools available.**
 
 ### Setup (Claude Desktop)
+
+```json
+{
+  "mcpServers": {
+    "ton-agent-kit": {
+      "command": "npx",
+      "args": ["@ton-agent-kit/mcp-server"],
+      "env": {
+        "TON_PRIVATE_KEY": "your-base64-private-key",
+        "TON_NETWORK": "mainnet",
+        "TON_RPC_URL": "https://mainnet-v4.tonhubapi.com"
+      }
+    }
+  }
+}
+```
+
+Or run from source:
 
 ```json
 {
@@ -399,50 +412,69 @@ Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **
 
 ## x402 Payment Middleware
 
-Production-hardened HTTP payment middleware for TON.
+Production-hardened HTTP payment middleware for TON. Available as [`@ton-agent-kit/x402-middleware`](https://www.npmjs.com/package/@ton-agent-kit/x402-middleware) on npm.
+
+### Make any API payable in 3 lines:
+
+```typescript
+import { tonPaywall } from "@ton-agent-kit/x402-middleware";
+
+app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), (req, res) => {
+  res.json({ price: 3.85 });
+});
+```
+
+### How it works:
+
+1. Agent requests `GET /api/data` → receives `402 Payment Required` with payment instructions
+2. Agent pays via `transfer_ton` on-chain
+3. Agent retries with `X-Payment-Hash` header → middleware verifies on-chain → `200 OK`
 
 ### Security:
-- **Anti-replay** — each tx hash used only once (pluggable: FileStore, RedisStore, Custom)
-- **Timestamp check** — transactions must be < 5 min old
-- **Smart tolerance** — 0.0005 TON cross-transfer, 0.005 TON self-transfer
-- **2-level verification** — blockchain endpoint → events fallback
+
+- **Anti-replay** — each tx hash used only once (per-instance cache + pluggable `ReplayStore`)
+- **Replay store checked first** — store is queried before in-memory cache to prevent race conditions
+- **Timestamp check** — transactions must be < 5 min old (configurable `proofTTL`)
+- **Amount verification** — smart tolerance (0.0005 TON cross-transfer, 0.005 TON self-transfer for gas)
+- **2-level on-chain verification** — blockchain endpoint → events fallback
+- **Recipient validation** — normalized address matching
 
 ### Storage options:
+
 ```typescript
-// Default — file-based, zero dependencies
-const app = createPaymentServer({ recipient: "0:abc...", routes: [...] });
+import { tonPaywall, FileReplayStore, RedisReplayStore, MemoryReplayStore } from "@ton-agent-kit/x402-middleware";
+
+// Default — file-based, zero dependencies, survives restarts
+tonPaywall({ amount: "0.001", recipient: "0:abc..." })
 
 // Upstash Redis — production scale
-const app = createPaymentServer({
-  recipient: "0:abc...",
-  replayStore: new RedisReplayStore(new Redis({ url: "...", token: "..." })),
-  routes: [...],
-});
+tonPaywall({ amount: "0.001", recipient: "0:abc...", replayStore: new RedisReplayStore(redis) })
 
-// Custom — implement ReplayStore interface (PostgreSQL, MongoDB, DynamoDB...)
-```
+// Memory — testing only (data lost on restart)
+tonPaywall({ amount: "0.001", recipient: "0:abc...", replayStore: new MemoryReplayStore() })
 
-### Test results (5/5):
-```
-✅ Free endpoint (200)    ✅ 402 Payment Required
-✅ Payment sent on-chain  ✅ Paid access (200)
-✅ Second paywall (402)
+// Custom — implement the ReplayStore interface (PostgreSQL, MongoDB, DynamoDB...)
+tonPaywall({ amount: "0.001", recipient: "0:abc...", replayStore: myCustomStore })
 ```
 
 ---
 
 ## Telegram Bot
 
-AI agent bot with natural language, HITL approval, and 9 blockchain actions.
+AI agent bot with natural language, HITL approval, and **29 blockchain actions** via `toAITools()`.
 
 ### Features:
-- Natural language understanding via configurable LLM (default: GPT-4.1-nano)
-- **HITL approval** — transfers > 0.05 TON require Approve/Reject buttons
+
+- 29 actions via natural language using `toAITools()` for proper LLM schemas
+- **HITL approval** — transfers > 0.05 TON require Approve/Reject inline buttons
+- **TX mode control** — `TX auto` (skip buttons) / `TX confirm` (require approval)
 - **Balance guard** — prevents sending more than available balance
-- Escrow management, DNS resolution, staking info
-- Per-user chat history
-- Error recovery with Markdown fallback
+- **HTML formatting** — bold, monospace, explorer links, shortened addresses
+- **Typing indicators** — shows "typing..." during processing
+- Per-user chat history with error recovery
 - Concurrent processing via @grammyjs/runner
+- Multi-provider LLM support via `OPENAI_BASE_URL` and `AI_MODEL` env vars
+- Bot commands: `/start` (onboarding), `/help` (command reference), `/wallet` (quick balance)
 
 ### Demo:
 
@@ -464,95 +496,266 @@ Bot:  Insufficient balance. You have approximately 2.93 TON.
 ```
 
 ### Run:
+
 ```bash
-# Add to .env: TELEGRAM_BOT_TOKEN, OPENAI_API_KEY
+# Add to .env: TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, AI_MODEL
 bun run telegram-bot.ts
+```
+
+---
+
+## Autonomous Runtime
+
+`agent.runLoop()` gives an LLM a natural-language goal and lets it autonomously decide which on-chain actions to execute. The LLM plans, calls tools, reads results, and iterates until the goal is achieved.
+
+```typescript
+const result = await agent.runLoop(
+  "Register an agent, check my balance, get USDT price, resolve foundation.ton, and give me a full report",
+  {
+    model: "gpt-4.1-nano",
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL,
+    maxIterations: 10,
+    onActionStart: (name, params) => console.log(`▶ ${name}`, params),
+    onActionResult: (name, params, result) => console.log(`◀ ${name}`, result),
+  },
+);
+
+console.log(result.summary); // Natural language summary
+console.log(result.steps);   // [{action, params, result}, ...]
+```
+
+### demo-runloop.ts — 5 Scenarios
+
+```bash
+bun run demo-runloop.ts                # run all 5 scenarios
+bun run demo-runloop.ts "custom goal"  # run a single custom goal
+```
+
+| # | Scenario | Actions Used |
+|---|----------|-------------|
+| 1 | Balance & Price Analysis | `get_balance`, `get_price` |
+| 2 | Autonomous Transfer | `transfer_ton`, `get_balance` |
+| 3 | Multi-Step Research | `resolve_domain`, `get_balance`, `get_price` |
+| 4 | Full Agent Workflow | `register_agent`, `get_balance`, `get_price`, `resolve_domain`, `discover_agent` |
+| 5 | Autonomous Escrow | `create_escrow`, `get_escrow_info` |
+
+---
+
+## Examples
+
+Four ready-to-run examples in the `examples/` directory:
+
+### 📦 [Simple Agent](examples/simple-agent/) — SDK Hello World
+
+```typescript
+import { TonAgentKit, KeypairWallet } from "@ton-agent-kit/core";
+import TokenPlugin from "@ton-agent-kit/plugin-token";
+import DefiPlugin from "@ton-agent-kit/plugin-defi";
+import DnsPlugin from "@ton-agent-kit/plugin-dns";
+
+const wallet = await KeypairWallet.fromMnemonic(mnemonic);
+const agent = new TonAgentKit(wallet, "https://testnet-v4.tonhubapi.com", {}, "testnet")
+  .use(TokenPlugin)
+  .use(DefiPlugin)
+  .use(DnsPlugin);
+
+const balance = await agent.runAction("get_balance", {});
+const dns = await agent.runAction("resolve_domain", { domain: "foundation.ton" });
+```
+
+```bash
+cd examples/simple-agent && npm install && npx ts-node index.ts
+```
+
+### 🤖 [Telegram Bot](examples/telegram-bot/) — Full Bot with npm Imports
+
+Full Telegram bot using `@ton-agent-kit/*` npm packages with HITL approval, 7 plugins, and multi-provider LLM support.
+
+```bash
+cd examples/telegram-bot && npm install && npx ts-node src/index.ts
+```
+
+### 🔌 [MCP Server](examples/mcp-server/) — Claude Desktop Integration
+
+MCP server using `@ton-agent-kit/mcp-server` npm package for Claude Desktop, Cursor, or any MCP client. Supports both mnemonic and private key authentication.
+
+```bash
+cd examples/mcp-server && npm install && npm run build && npm start
+```
+
+### 💳 [x402 Server](examples/x402-server/) — Paywall Any API
+
+Express server using `@ton-agent-kit/x402-middleware` with tiered pricing:
+
+| Endpoint | Price | Data |
+|----------|-------|------|
+| `GET /` | Free | Server info |
+| `GET /api/price` | 0.001 TON | Price data |
+| `GET /api/analytics` | 0.01 TON | Wallet analytics |
+| `GET /api/premium` | 0.05 TON | Research report |
+
+```bash
+cd examples/x402-server && npm install && npm run dev
 ```
 
 ---
 
 ## Architecture
 
+```mermaid
+graph TD
+    subgraph "AI Frameworks"
+        CD[Claude Desktop MCP]
+        LC[LangChain]
+        VA[Vercel AI SDK]
+        OA[OpenAI / GPT]
+    end
+
+    subgraph "TON Agent Kit SDK"
+        PS[Plugin System .use chain]
+        WA[Wallet V3/V4/V5 auto-detect]
+        AR[Action Registry 29 actions]
+        AT[toAITools - Zod v4 schemas]
+        RL[runLoop - autonomous runtime]
+    end
+
+    subgraph "Plugins 9"
+        TK[Token 6]
+        DF[DeFi 3]
+        NF[NFT 3]
+        DN[DNS 3]
+        ST[Staking 3]
+        AN[Analytics 2]
+        ES[Escrow 5]
+        ID[Identity 3]
+        PM[Payments 1]
+    end
+
+    subgraph "TON Blockchain"
+        TC[TonClient4 RPC]
+        TA[TONAPI indexed data]
+        SC[Smart Contracts Tact]
+    end
+
+    CD --> PS
+    LC --> PS
+    VA --> PS
+    OA --> PS
+
+    PS --> TK
+    PS --> DF
+    PS --> NF
+    PS --> DN
+    PS --> ST
+    PS --> AN
+    PS --> ES
+    PS --> ID
+    PS --> PM
+
+    TK --> TC
+    DF --> TC
+    ES --> SC
+    AN --> TA
+    DN --> TA
+```
+
+### Monorepo Structure
+
 ```
 ton-agent-kit/
 ├── packages/
-│   ├── core/               # TonAgentKit, plugin system, wallet (V3/V4/V5 auto-detect)
-│   ├── plugin-token/       # TON & Jetton operations (6 actions)
-│   ├── plugin-defi/        # DeDust & STON.fi (3 actions)
-│   ├── plugin-nft/         # NFT operations (3 actions)
-│   ├── plugin-dns/         # TON DNS: resolve, lookup, info (3 actions)
-│   ├── plugin-staking/     # TON staking (3 actions)
-│   ├── plugin-analytics/   # Wallet analytics (2 actions)
-│   ├── plugin-escrow/      # Trustless escrow (5 actions)
-│   ├── plugin-identity/    # Agent registry + reputation (3 actions)
-│   ├── plugin-payments/    # x402 pay_for_resource (1 action)
-│   ├── mcp-server/         # MCP server for Claude/GPT
-│   ├── langchain/          # LangChain tool wrappers
-│   └── ai-tools/           # Vercel AI SDK tools
+│   ├── core/                     # TonAgentKit, plugin system, wallet (V3/V4/V5 auto-detect)
+│   ├── plugin-token/             # TON & Jetton operations (6 actions)
+│   ├── plugin-defi/              # DeDust & STON.fi (3 actions)
+│   ├── plugin-nft/               # NFT operations (3 actions)
+│   ├── plugin-dns/               # TON DNS: resolve, lookup, info (3 actions)
+│   ├── plugin-staking/           # TON staking (3 actions)
+│   ├── plugin-analytics/         # Wallet analytics (2 actions)
+│   ├── plugin-escrow/            # Trustless escrow — on-chain Tact (5 actions)
+│   ├── plugin-identity/          # Agent registry + reputation (3 actions)
+│   ├── plugin-payments/          # x402 pay_for_resource (1 action)
+│   ├── mcp-server/               # MCP server npm package
+│   ├── langchain/                # LangChain tool wrappers
+│   ├── ai-tools/                 # Vercel AI SDK tools
+│   └── x402-middleware/          # x402 payment middleware npm package
 ├── contracts/
-│   └── escrow.tact         # Escrow smart contract (Tact — on-chain)
-├── mcp-server.ts           # Standalone MCP server (29 tools)
-├── telegram-bot.ts         # Telegram bot with HITL
-├── x402-middleware.ts       # x402 payment middleware (production-hardened)
-├── demo-agent-commerce.ts  # Multi-agent commerce demo (2 wallets, on-chain escrow)
-├── demo-runloop.ts         # Autonomous agent runtime demo (3 scenarios)
-├── test-npm-exhaustive.ts  # npm install test suite (75/75 passing, 1 skip)
-├── test-toaitools.ts       # toAITools() schema test (458/462 passing)
-├── test-all-actions.ts     # Full test suite (63/64 passing, 1 skip)
-├── test-x402.ts            # x402 end-to-end test (5/5 passing)
-├── .env.example            # Environment variable template
-└── ARCHITECTURE.md
+│   └── escrow.tact               # Escrow smart contract (Tact — on-chain)
+├── examples/
+│   ├── simple-agent/             # SDK hello world (~20 lines)
+│   ├── telegram-bot/             # Full bot with npm imports
+│   ├── mcp-server/               # Claude Desktop integration
+│   └── x402-server/              # Paywall any API
+├── mcp-server.ts                 # Standalone MCP server (29 tools)
+├── telegram-bot.ts               # Telegram bot with HITL (29 actions)
+├── x402-middleware.ts            # x402 payment middleware
+├── demo-agent-commerce.ts        # Multi-agent commerce (2 wallets, 8 steps)
+├── demo-runloop.ts               # Autonomous runtime (5 scenarios)
+├── test-all-actions.ts           # Full test suite (13 sections)
+├── test-x402.ts                  # x402 security tests
+├── test-npm-exhaustive.ts        # npm install test (75/75)
+├── test-toaitools.ts             # toAITools() schema test (458/462)
+└── .env.example                  # Environment variable template
 ```
 
 ---
 
 ## Test Results
 
-### npm Install Exhaustive Test (75/75 — 75 pass, 0 fail, 1 skip)
+### test-all-actions.ts — 13 Sections, 29 Actions, 9 Plugins
+
 ```
-✅ All 29 actions — schema validation, execution, and toAITools() via npm install
-✅ Correct parameter names in JSON schemas (to, beneficiary, domain, etc.)
+✅ Plugin System & toAITools()     8 tests — validate 29 actions, OpenAI format, JSON serialization
+✅ Token Plugin                   10 tests — balance (own/explicit/friendly/other), jetton, transfers
+✅ DeFi Plugin                     3 tests — price by address, by symbol, invalid token
+✅ NFT Plugin                      2 tests — collection, error handling
+✅ DNS Plugin                      5 tests — resolve, auto-suffix .ton, reverse lookup, domain info
+✅ Analytics Plugin                5 tests — wallet info (own/other), tx history
+✅ Staking Plugin                  1 test  — staking info
+✅ Live Transfer                   5 tests — real 0.01 TON transfer, balance verified
+✅ Transfer Edge Cases             5 tests — zero/negative/insufficient/invalid address
+✅ Escrow On-Chain                10 tests — full lifecycle: deploy → deposit → release on-chain
+✅ Identity Plugin                15 tests — register 2 agents, discovery, reputation scoring
+✅ Schema Validation               8 tests — all write actions schema-checked
+✅ Cross-Plugin Edge Cases         4 tests — unknown action, chainable .use(), single plugin
 ```
 
-### toAITools() Schema Test (458/462 — 4 test expectation mismatches, not bugs)
+### test-x402.ts — Security Edge Cases
+
 ```
-✅ Zod v4 native toJSONSchema() produces correct JSON schemas for all actions
-✅ All parameter names, types, and descriptions are correct
+✅ Free endpoint (200)              ✅ 402 Payment Required
+✅ Payment sent on-chain            ✅ Paid access with proof (200)
+✅ Second paywall (402)             ✅ Cross-endpoint replay attack (rejected)
+✅ Wrong wallet TX (rejected)       ✅ Old TX / timestamp expired (rejected)
+✅ Insufficient amount (rejected)   ✅ Wrong network TX (rejected)
 ```
 
-### Full Suite (63/64 — 63 pass, 1 skip)
+### demo-runloop.ts — 5 Scenarios, 15+ Autonomous Actions
+
 ```
-✅ get_balance          ✅ get_wallet_info       ✅ get_transaction_history
-✅ get_staking_info     ✅ get_jetton_balance    ✅ resolve_domain
-✅ lookup_address       ✅ get_domain_info       ✅ get_price
-✅ get_nft_info         ✅ get_nft_collection    ✅ transfer_ton (schema)
-✅ transfer_jetton      ✅ transfer_nft          ✅ swap_dedust (schema)
-✅ swap_stonfi          ✅ stake_ton (schema)    ✅ unstake_ton (schema)
-✅ deploy_jetton        ✅ get_jetton_info       ✅ create_escrow (on-chain)
-✅ deposit_to_escrow    ✅ release_escrow        ✅ refund_escrow
-✅ get_escrow_info      ✅ register_agent        ✅ discover_agent
-✅ get_agent_reputation ✅ pay_for_resource
+✅ Balance & Price Analysis     — multi-step autonomous reasoning
+✅ Autonomous Transfer          — send TON + verify balance change
+✅ Multi-Step Research           — resolve domain + check balance + get price
+✅ Full Agent Workflow           — register + balance + price + DNS + discover
+✅ Autonomous Escrow            — create escrow + list + inspect
 ```
 
-### Autonomous Runtime — runLoop (3/3 passing)
+### demo-agent-commerce.ts — 8 Steps, On-Chain Verified
+
 ```
-✅ Balance & Price Analysis — multi-step autonomous reasoning
-✅ Autonomous Transfer — send TON + verify balance
-✅ Multi-Step Research — resolve domain + check balance + get price
+✅ Identity (2 agents, 2 wallets)  ✅ Discovery (by capability)
+✅ Escrow (contract deployed)      ✅ Deposit (funded on-chain)
+✅ Service (data delivered)        ✅ Release (payment sent)
+✅ Reputation (100/100)            ✅ Verify (balance increased)
 ```
 
-### x402 Middleware (5/5 passing)
-```
-✅ Free endpoint (200)    ✅ 402 Payment Required
-✅ Payment sent on-chain  ✅ Paid access (200)
-✅ Second paywall (402)
-```
+### Other Test Suites
 
-### Claude Desktop MCP (8/8 passing)
-
-### Telegram Bot (13/13 passing)
 ```
-✅ All 13 messages — correct parameter names (to, beneficiary, domain)
+npm Install Exhaustive   75/75 passed (1 skip)   — all 29 actions via npm install
+toAITools() Schemas     458/462 passed           — Zod v4 native toJSONSchema()
+Claude Desktop MCP         8/8 passed            — live tool calls
+Telegram Bot             13/13 passed            — correct parameter names
 ```
 
 ---
@@ -563,16 +766,17 @@ ton-agent-kit/
 |---------|--------------|-----------------|-------------------|
 | **Chain** | TON | Solana | Base/ETH |
 | **Actions** | 29 | 60+ | 50+ |
+| **npm Packages** | 14 | 1 | 1 |
 | **Autonomous Runtime** | ✅ `agent.runLoop()` — LLM-driven | ❌ | ❌ |
 | **On-chain Escrow** | ✅ Tact smart contract | ❌ | ❌ |
 | **MCP Server** | ✅ | ✅ | ✅ |
 | **LangChain** | ✅ | ✅ | ✅ |
-| **Multi-provider** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
-| **x402 Middleware** | ✅ Production-hardened | ❌ | ❌ |
-| **Agent identity** | ✅ Registry + reputation | ❌ | ❌ |
+| **Multi-provider LLM** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
+| **x402 Middleware** | ✅ Production-hardened, anti-replay | ❌ | ❌ |
+| **Agent Identity** | ✅ Registry + reputation | ❌ | ❌ |
 | **Human-in-the-loop** | ✅ Telegram native | ❌ | Partial (TEE) |
-| **1B user distribution** | ✅ Telegram | ❌ | ❌ |
-| **Plugin system** | ✅ `.use()` | ✅ `.use()` | ✅ |
+| **1B User Distribution** | ✅ Telegram | ❌ | ❌ |
+| **Plugin System** | ✅ `.use()` chain | ✅ `.use()` | ✅ |
 
 ---
 
@@ -583,7 +787,7 @@ ton-agent-kit/
 - **@dedust/sdk** + **@ston-fi/sdk** — DEX integrations
 - **@modelcontextprotocol/sdk** — MCP server
 - **grammY** + **@grammyjs/runner** — Telegram bot
-- **OpenAI** (configurable via AI_MODEL env var) — Natural language
+- **OpenAI** (configurable via `OPENAI_BASE_URL` + `AI_MODEL` env vars) — Natural language
 - **Express** — x402 payment server
 - **Tact** — Smart contracts (escrow)
 - **Zod v4** — Schema validation + native `toJSONSchema()` (no external converters)
@@ -593,7 +797,10 @@ ton-agent-kit/
 
 ## Production Roadmap
 
-- [x] npm package publishing (@ton-agent-kit/* — 13 packages live)
+- [x] npm package publishing (@ton-agent-kit/* — 14 packages live)
+- [x] `toAITools()` — Zod v4 native JSON schemas, works via npm install
+- [x] `@ton-agent-kit/x402-middleware` npm package with pluggable anti-replay
+- [x] Per-instance anti-replay cache (inside `tonPaywall`, not module-scoped)
 - [ ] Payment channel integration via tonweb SDK for zero-fee streaming payments
 - [ ] On-chain agent identity (TON DNS — register agents as .ton subdomains)
 - [ ] Multi-wallet support per agent (hot/cold wallet separation)

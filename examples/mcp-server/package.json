@@ -1,7 +1,7 @@
 {
-  "name": "ton-agent-kit-telegram-bot",
+  "name": "ton-agent-kit-mcp-server",
   "version": "1.0.0",
-  "description": "Demo Telegram bot powered by TON Agent Kit",
+  "description": "MCP server example for TON Agent Kit — works with Claude Desktop, Cursor, etc.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -12,14 +12,14 @@
     "@ton-agent-kit/core": "^1.0.0",
     "@ton-agent-kit/plugin-token": "^1.0.0",
     "@ton-agent-kit/plugin-defi": "^1.0.0",
+    "@ton-agent-kit/plugin-nft": "^1.0.0",
     "@ton-agent-kit/plugin-dns": "^1.0.0",
     "@ton-agent-kit/plugin-staking": "^1.0.0",
     "@ton-agent-kit/plugin-escrow": "^1.0.0",
     "@ton-agent-kit/plugin-identity": "^1.0.0",
     "@ton-agent-kit/plugin-analytics": "^1.0.0",
-    "grammy": "^1.25.0",
-    "@grammyjs/runner": "^2.0.0",
-    "openai": "^4.0.0",
+    "@ton-agent-kit/plugin-payments": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.23.0"
   },
   "devDependencies": {
