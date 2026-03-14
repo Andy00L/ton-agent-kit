@@ -4,6 +4,7 @@
 // ============================================================
 
 export { TonAgentKit } from "./agent";
+export type { RunLoopOptions, RunLoopResult } from "./agent";
 export { defineAction, definePlugin, PluginRegistry } from "./plugin";
 export { KeypairWallet, ReadOnlyWallet } from "./wallet";
 export type { WalletConfig, WalletVersion } from "./wallet";
