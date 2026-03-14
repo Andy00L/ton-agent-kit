@@ -19,7 +19,7 @@
 
 TON Agent Kit is more than an SDK — it's the **infrastructure for an AI agent economy on TON**.
 
-Agents discover each other via **agent registry**. They pay each other via **x402 middleware**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 29 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral.
+Agents discover each other via **agent registry**. They pay each other via **x402 middleware**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 29 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral. Agents can run fully autonomously via **`agent.runLoop()`** — give a natural-language goal, the LLM decides which on-chain actions to execute.
 
 ### The problem
 
@@ -35,7 +35,8 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 | Agent Identity | SATI | ERC-8004 (123K agents) | ❌ | ✅ **Agent registry + reputation** |
 | Agent Payments | x402 ($0.00025/tx) | Virtuals ACP | ❌ | ✅ **x402 middleware** |
 | Agent Security | Embedded wallets | Agentic Wallets (TEE) | ❌ | ✅ **Telegram HITL + balance guards** |
-| Escrow | — | — | ❌ | ✅ **Trustless escrow with deadlines** |
+| Escrow | — | — | ❌ | ✅ **On-chain Tact escrow smart contract** |
+| Autonomous Runtime | — | — | ❌ | ✅ **`agent.runLoop()` — LLM-driven execution** |
 | User Access | — | — | — | ✅ **1B Telegram users** |
 
 ---
@@ -82,6 +83,36 @@ await agent.methods.transfer_ton({
 });
 ```
 
+### Autonomous Runtime (`agent.runLoop()`)
+
+Give your agent a natural-language goal — the LLM decides which blockchain actions to execute, autonomously.
+
+```typescript
+import { TonAgentKit, KeypairWallet } from "@ton-agent-kit/core";
+import TokenPlugin from "@ton-agent-kit/plugin-token";
+import DefiPlugin from "@ton-agent-kit/plugin-defi";
+import DnsPlugin from "@ton-agent-kit/plugin-dns";
+
+const agent = new TonAgentKit(wallet, rpcUrl)
+  .use(TokenPlugin)
+  .use(DefiPlugin)
+  .use(DnsPlugin);
+
+const result = await agent.runLoop(
+  "Check my TON balance, get the USDT price, and calculate my holdings in USD",
+  {
+    model: "gpt-4.1-nano",        // or any OpenAI-compatible model
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL, // OpenRouter, Groq, Together, Mistral
+  },
+);
+
+console.log(result.summary); // "Your balance is 3.98 TON worth ~$15.12 USD"
+console.log(result.steps);   // [{action: "get_balance", ...}, {action: "get_price", ...}]
+```
+
+The agent autonomously plans, executes actions, and returns a structured summary. Supports any OpenAI-compatible provider via `baseURL`.
+
 ### Auto-detect Wallet Version
 
 ```typescript
@@ -106,7 +137,7 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_jetton_balance` | Get Jetton (USDT, NOT, etc.) balance via TONAPI | ✅ Live |
 | `transfer_ton` | Send TON with balance guard + comment support | ✅ Live (TX confirmed) |
 | `transfer_jetton` | Send Jettons | ✅ Schema validated |
-| `deploy_jetton` | Deploy a new token | ✅ Live |
+| `deploy_jetton` | Deploy a new token | ✅ Live (AgentCoin deployed on testnet) |
 | `get_jetton_info` | Get token metadata | ✅ Schema validated |
 
 ### 📈 DeFi Plugin (3 actions)
@@ -150,15 +181,15 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ### 🔒 Escrow Plugin (5 actions)
 
-*Trustless escrow for agent-to-agent and P2P deals. Tact smart contract included.*
+*On-chain trustless escrow — each deal deploys a Tact smart contract to TON. All state (deposit, release, refund) is on-chain.*
 
 | Action | Description | Status |
 |--------|-------------|--------|
-| `create_escrow` | Create a deal with deadline + arbiter | ✅ Live |
-| `deposit_to_escrow` | Lock funds with on-chain TX | ✅ Live |
-| `release_escrow` | Release to beneficiary | ✅ Live |
-| `refund_escrow` | Refund after deadline or by arbiter | ✅ Live |
-| `get_escrow_info` | Get status or list all escrows | ✅ Live |
+| `create_escrow` | Deploy escrow contract with deadline + arbiter | ✅ Live (on-chain) |
+| `deposit_to_escrow` | Lock funds in escrow contract | ✅ Live (on-chain) |
+| `release_escrow` | Release to beneficiary via contract | ✅ Live (on-chain) |
+| `refund_escrow` | Refund after deadline or by arbiter via contract | ✅ Live (on-chain) |
+| `get_escrow_info` | Read on-chain contract state | ✅ Live (on-chain) |
 
 ### 🪪 Agent Identity Plugin (3 actions)
 
@@ -200,7 +231,7 @@ The plugins combine into a **complete agent economy**:
         ↓
 3. PAYMENT — Auto-pay via x402 middleware
         ↓
-4. ESCROW — Trustless task verification via smart contract
+4. ESCROW — Trustless task verification via on-chain Tact smart contract
         ↓
 5. REPUTATION — Completed tasks build reputation score
         ↓
@@ -209,15 +240,35 @@ The plugins combine into a **complete agent economy**:
 
 This is the **first Agent Commerce Protocol on TON** — agents discover, pay, trust, and rate each other autonomously.
 
-### Demo
+### Multi-Agent Commerce Demo
 
-See the full agent-to-agent commerce flow in action:
+Two AI agents with **separate wallets** execute **real on-chain commerce** — every transaction verifiable on [tonviewer.com](https://tonviewer.com):
 
 ```bash
+# Set TON_MNEMONIC (Agent A) and TON_MNEMONIC_AGENT_B (Agent B) in .env
 bun run demo-agent-commerce.ts
 ```
 
-Two AI agents negotiate, pay, and rate each other through the complete cycle: Identity → Discovery → Escrow → Service → Reputation. See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full source.
+**Full flow:**
+1. **Identity** — Both agents register with capabilities
+2. **Discovery** — Agent B discovers Agent A by capability
+3. **Escrow** — Agent B deploys an on-chain Tact escrow contract
+4. **Deposit** — Agent B locks TON in the escrow contract
+5. **Service** — Agent A delivers market data
+6. **Release** — Agent B releases funds to Agent A via the contract
+7. **Reputation** — Both agents rate each other
+8. **Verify** — All transactions visible on tonviewer.com
+
+See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full source.
+
+### Autonomous Runtime Demo
+
+```bash
+bun run demo-runloop.ts                # run 3 built-in scenarios
+bun run demo-runloop.ts "custom goal"  # run a custom goal
+```
+
+The agent receives a natural-language goal and autonomously plans + executes blockchain actions. See [demo-runloop.ts](demo-runloop.ts) for 3 demo scenarios (balance analysis, autonomous transfer, multi-step research).
 
 ---
 
@@ -351,12 +402,13 @@ ton-agent-kit/
 │   ├── langchain/          # LangChain tool wrappers
 │   └── ai-tools/           # Vercel AI SDK tools
 ├── contracts/
-│   └── escrow.tact         # Escrow smart contract (Tact)
+│   └── escrow.tact         # Escrow smart contract (Tact — on-chain)
 ├── mcp-server.ts           # Standalone MCP server (29 tools)
 ├── telegram-bot.ts         # Telegram bot with HITL
 ├── x402-middleware.ts       # x402 payment middleware (production-hardened)
-├── demo-agent-commerce.ts  # Agent Commerce Protocol demo
-├── test-all-actions.ts     # Full test suite (69/69 passing)
+├── demo-agent-commerce.ts  # Multi-agent commerce demo (2 wallets, on-chain escrow)
+├── demo-runloop.ts         # Autonomous agent runtime demo (3 scenarios)
+├── test-all-actions.ts     # Full test suite (63/64 passing, 1 skip)
 ├── test-x402.ts            # x402 end-to-end test (5/5 passing)
 ├── .env.example            # Environment variable template
 └── ARCHITECTURE.md
@@ -366,7 +418,7 @@ ton-agent-kit/
 
 ## Test Results
 
-### Full Suite (69/69 — 68 pass, 1 skip)
+### Full Suite (63/64 — 63 pass, 1 skip)
 ```
 ✅ get_balance          ✅ get_wallet_info       ✅ get_transaction_history
 ✅ get_staking_info     ✅ get_jetton_balance    ✅ resolve_domain
@@ -374,20 +426,27 @@ ton-agent-kit/
 ✅ get_nft_info         ✅ get_nft_collection    ✅ transfer_ton (schema)
 ✅ transfer_jetton      ✅ transfer_nft          ✅ swap_dedust (schema)
 ✅ swap_stonfi          ✅ stake_ton (schema)    ✅ unstake_ton (schema)
-✅ deploy_jetton        ✅ get_jetton_info       ✅ create_escrow
+✅ deploy_jetton        ✅ get_jetton_info       ✅ create_escrow (on-chain)
 ✅ deposit_to_escrow    ✅ release_escrow        ✅ refund_escrow
 ✅ get_escrow_info      ✅ register_agent        ✅ discover_agent
 ✅ get_agent_reputation ✅ pay_for_resource
 ```
 
-### Claude Desktop MCP (8/8 passing)
+### Autonomous Runtime — runLoop (3/3 passing)
 ```
-✅ get_balance     ✅ get_wallet_info     ✅ get_transaction_history
-✅ get_staking_info   ✅ resolve_domain   ✅ get_price
-✅ get_nft_collection   ✅ ton_agent_info
+✅ Balance & Price Analysis — multi-step autonomous reasoning
+✅ Autonomous Transfer — send TON + verify balance
+✅ Multi-Step Research — resolve domain + check balance + get price
 ```
 
 ### x402 Middleware (5/5 passing)
+```
+✅ Free endpoint (200)    ✅ 402 Payment Required
+✅ Payment sent on-chain  ✅ Paid access (200)
+✅ Second paywall (402)
+```
+
+### Claude Desktop MCP (8/8 passing)
 ### Telegram Bot (9/9 passing)
 
 ---
@@ -398,12 +457,13 @@ ton-agent-kit/
 |---------|--------------|-----------------|-------------------|
 | **Chain** | TON | Solana | Base/ETH |
 | **Actions** | 29 | 60+ | 50+ |
+| **Autonomous Runtime** | ✅ `agent.runLoop()` — LLM-driven | ❌ | ❌ |
+| **On-chain Escrow** | ✅ Tact smart contract | ❌ | ❌ |
 | **MCP Server** | ✅ | ✅ | ✅ |
 | **LangChain** | ✅ | ✅ | ✅ |
 | **Multi-provider** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
 | **x402 Middleware** | ✅ Production-hardened | ❌ | ❌ |
 | **Agent identity** | ✅ Registry + reputation | ❌ | ❌ |
-| **Escrow** | ✅ Smart contract | ❌ | ❌ |
 | **Human-in-the-loop** | ✅ Telegram native | ❌ | Partial (TEE) |
 | **1B user distribution** | ✅ Telegram | ❌ | ❌ |
 | **Plugin system** | ✅ `.use()` | ✅ `.use()` | ✅ |
@@ -420,20 +480,21 @@ ton-agent-kit/
 - **OpenAI** (configurable via AI_MODEL env var) — Natural language
 - **Express** — x402 payment server
 - **Tact** — Smart contracts (escrow)
-- **Zod** — Schema validation
+- **Zod v4** — Schema validation + native `toJSONSchema()` (no external converters)
 - **TONAPI** — Indexed blockchain data
 
 ---
 
 ## Production Roadmap
 
+- [ ] npm package publishing (@ton-agent-kit/*)
+- [ ] Payment channel integration via tonweb SDK for zero-fee streaming payments
+- [ ] On-chain agent identity (TON DNS — register agents as .ton subdomains)
+- [ ] Multi-wallet support per agent (hot/cold wallet separation)
 - [ ] Pluggable storage adapter for chat history (File / Redis / Custom)
 - [ ] Automatic escrow expiration and cleanup
 - [ ] Session key smart contract deployment (Tact)
-- [ ] TON DNS subdomain registration for agent identity
 - [ ] ADNL agent-to-agent encrypted communication
-- [ ] Payment channel integration via tonweb SDK for zero-fee streaming payments
-- [ ] npm package publishing (@ton-agent-kit/*)
 - [ ] Unit tests with @ton/sandbox
 - [ ] Rate limiting and spending caps per session
 
