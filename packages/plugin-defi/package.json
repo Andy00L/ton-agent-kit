@@ -14,5 +14,8 @@
     "@dedust/sdk": "^0.8.7",
     "@ston-fi/sdk": "^1.0.0"
   },
-  "license": "MIT"
+  "keywords": ["ton", "blockchain", "ai", "agent", "sdk"],
+  "license": "MIT",
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "https://github.com/Andy00L/ton-agent-kit.git" }
 }
