@@ -5,6 +5,12 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@ton-agent-kit/core"><img src="https://img.shields.io/npm/v/@ton-agent-kit/core?label=%40ton-agent-kit%2Fcore" alt="npm"></a>
+  <a href="https://www.npmjs.com/search?q=%40ton-agent-kit"><img src="https://img.shields.io/badge/npm-13%20packages-blue" alt="npm packages"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+</p>
+
+<p align="center">
   <a href="#quick-start">Quick Start</a> •
   <a href="#plugins--actions">Plugins</a> •
   <a href="#agent-commerce-protocol">Agent Commerce</a> •
@@ -48,6 +54,12 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 ```bash
 npm install @ton-agent-kit/core @ton-agent-kit/plugin-token @ton-agent-kit/plugin-defi
 ```
+
+> **Contributing?** Clone the repo instead:
+> ```bash
+> git clone https://github.com/aspect-build/ton-agent-kit.git
+> cd ton-agent-kit && bun install
+> ```
 
 ### Setup
 
@@ -125,11 +137,37 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ---
 
+## Available Packages
+
+All 13 packages are published on npm under the `@ton-agent-kit` scope. Install only what you need.
+
+| Package | Description | npm |
+|---------|-------------|-----|
+| `@ton-agent-kit/core` | Core SDK — plugin system, wallet, agent | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/core)](https://www.npmjs.com/package/@ton-agent-kit/core) |
+| `@ton-agent-kit/plugin-token` | TON & Jetton operations | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-token)](https://www.npmjs.com/package/@ton-agent-kit/plugin-token) |
+| `@ton-agent-kit/plugin-defi` | DeDust & STON.fi swaps, prices | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-defi)](https://www.npmjs.com/package/@ton-agent-kit/plugin-defi) |
+| `@ton-agent-kit/plugin-nft` | NFT operations | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-nft)](https://www.npmjs.com/package/@ton-agent-kit/plugin-nft) |
+| `@ton-agent-kit/plugin-dns` | TON DNS resolution & management | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-dns)](https://www.npmjs.com/package/@ton-agent-kit/plugin-dns) |
+| `@ton-agent-kit/plugin-staking` | Stake/unstake TON | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-staking)](https://www.npmjs.com/package/@ton-agent-kit/plugin-staking) |
+| `@ton-agent-kit/plugin-analytics` | Transaction history & wallet info | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-analytics)](https://www.npmjs.com/package/@ton-agent-kit/plugin-analytics) |
+| `@ton-agent-kit/plugin-escrow` | On-chain Tact escrow contracts | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-escrow)](https://www.npmjs.com/package/@ton-agent-kit/plugin-escrow) |
+| `@ton-agent-kit/plugin-identity` | Agent registry & reputation | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-identity)](https://www.npmjs.com/package/@ton-agent-kit/plugin-identity) |
+| `@ton-agent-kit/plugin-payments` | x402 payment processing | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/plugin-payments)](https://www.npmjs.com/package/@ton-agent-kit/plugin-payments) |
+| `@ton-agent-kit/mcp-server` | MCP server for Claude/GPT/Cursor | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/mcp-server)](https://www.npmjs.com/package/@ton-agent-kit/mcp-server) |
+| `@ton-agent-kit/langchain` | LangChain tool wrappers | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/langchain)](https://www.npmjs.com/package/@ton-agent-kit/langchain) |
+| `@ton-agent-kit/ai-tools` | Vercel AI SDK & OpenAI tools | [![npm](https://img.shields.io/npm/v/@ton-agent-kit/ai-tools)](https://www.npmjs.com/package/@ton-agent-kit/ai-tools) |
+
+---
+
 ## Plugins & Actions
 
 **29 actions across 9 plugins.** Install only what you need.
 
 ### 🪙 Token Plugin (6 actions)
+
+```bash
+npm install @ton-agent-kit/plugin-token
+```
 
 | Action | Description | Status |
 |--------|-------------|--------|
@@ -142,6 +180,10 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ### 📈 DeFi Plugin (3 actions)
 
+```bash
+npm install @ton-agent-kit/plugin-defi
+```
+
 | Action | Description | Status |
 |--------|-------------|--------|
 | `swap_dedust` | Swap on DeDust DEX (mainnet) | ✅ Schema validated |
@@ -149,6 +191,10 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_price` | Get token price in USD and TON | ✅ Live ($1.00 USDT) |
 
 ### 🖼️ NFT Plugin (3 actions)
+
+```bash
+npm install @ton-agent-kit/plugin-nft
+```
 
 | Action | Description | Status |
 |--------|-------------|--------|
@@ -158,6 +204,10 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ### 🌐 DNS Plugin (3 actions)
 
+```bash
+npm install @ton-agent-kit/plugin-dns
+```
+
 | Action | Description | Status |
 |--------|-------------|--------|
 | `resolve_domain` | Resolve `.ton` domain → address | ✅ Live (foundation.ton) |
@@ -165,6 +215,10 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_domain_info` | Get domain registration details | ✅ Live |
 
 ### 💰 Staking Plugin (3 actions)
+
+```bash
+npm install @ton-agent-kit/plugin-staking
+```
 
 | Action | Description | Status |
 |--------|-------------|--------|
@@ -174,12 +228,20 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ### 📊 Wallet Analytics Plugin (2 actions)
 
+```bash
+npm install @ton-agent-kit/plugin-analytics
+```
+
 | Action | Description | Status |
 |--------|-------------|--------|
 | `get_transaction_history` | Recent transactions with details | ✅ Live |
 | `get_wallet_info` | Wallet status, type, last activity | ✅ Live |
 
 ### 🔒 Escrow Plugin (5 actions)
+
+```bash
+npm install @ton-agent-kit/plugin-escrow
+```
 
 *On-chain trustless escrow — each deal deploys a Tact smart contract to TON. All state (deposit, release, refund) is on-chain.*
 
@@ -193,6 +255,10 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ### 🪪 Agent Identity Plugin (3 actions)
 
+```bash
+npm install @ton-agent-kit/plugin-identity
+```
+
 *Agent registry with capabilities and reputation scoring.*
 
 | Action | Description | Status |
@@ -202,6 +268,10 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_agent_reputation` | Read + update reputation scores | ✅ Live |
 
 ### ⚡ Payments Plugin (1 action: pay_for_resource + x402 middleware)
+
+```bash
+npm install @ton-agent-kit/plugin-payments
+```
 
 *Production-hardened HTTP payment middleware for agent-to-agent commerce.*
 
@@ -487,7 +557,7 @@ ton-agent-kit/
 
 ## Production Roadmap
 
-- [ ] npm package publishing (@ton-agent-kit/*)
+- [x] npm package publishing (@ton-agent-kit/* — 13 packages live)
 - [ ] Payment channel integration via tonweb SDK for zero-fee streaming payments
 - [ ] On-chain agent identity (TON DNS — register agents as .ton subdomains)
 - [ ] Multi-wallet support per agent (hot/cold wallet separation)
