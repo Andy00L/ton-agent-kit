@@ -1,19 +1,36 @@
 import { TonClient4 } from "@ton/ton";
-import "dotenv/config";
+import { readFileSync } from "fs";
 import { Bot, InlineKeyboard } from "grammy";
 import OpenAI from "openai";
 import { TonAgentKit } from "./packages/core/src/agent";
 import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
+import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
 import DefiPlugin from "./packages/plugin-defi/src/index";
 import DnsPlugin from "./packages/plugin-dns/src/index";
-import StakingPlugin from "./packages/plugin-staking/src/index";
 import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
+import IdentityPlugin from "./packages/plugin-identity/src/index";
+import StakingPlugin from "./packages/plugin-staking/src/index";
+import TokenPlugin from "./packages/plugin-token/src/index";
 
 // ============================================================
 // Config
 // ============================================================
+
+const envContent = readFileSync(".env", "utf-8");
+const getEnv = (key: string) =>
+  envContent
+    .split("\n")
+    .find((l) => l.startsWith(key + "="))
+    ?.slice(key.length + 1)
+    .trim() || "";
+
+process.env.TON_MNEMONIC = getEnv("TON_MNEMONIC");
+process.env.TELEGRAM_BOT_TOKEN = getEnv("TELEGRAM_BOT_TOKEN");
+process.env.OPENAI_API_KEY = getEnv("OPENAI_API_KEY");
+process.env.OPENAI_BASE_URL = getEnv("OPENAI_BASE_URL");
+process.env.AI_MODEL = getEnv("AI_MODEL");
+process.env.TON_NETWORK = getEnv("TON_NETWORK");
+process.env.TON_RPC_URL = getEnv("TON_RPC_URL");
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const OPENAI_KEY = process.env.OPENAI_API_KEY!;
@@ -23,8 +40,7 @@ const MNEMONIC = process.env.TON_MNEMONIC!;
 const NETWORK = (process.env.TON_NETWORK as "testnet" | "mainnet") || "testnet";
 const RPC_URL = process.env.TON_RPC_URL || "https://testnet-v4.tonhubapi.com";
 
-// HITL: transactions above this amount require approval
-const AUTO_APPROVE_LIMIT = 0.05; // TON
+const AUTO_APPROVE_LIMIT = 0.05;
 
 // ============================================================
 // Pending approvals store
@@ -41,13 +57,33 @@ const pendingApprovals = new Map<
 >();
 
 // ============================================================
+// HTML formatting helpers
+// ============================================================
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function shortAddr(addr: string): string {
+  if (!addr) return "unknown";
+  if (addr.length > 20) return `${addr.slice(0, 8)}...${addr.slice(-6)}`;
+  return addr;
+}
+
+function formatTon(amount: string | number): string {
+  return parseFloat(String(amount)).toFixed(4);
+}
+
+// ============================================================
 // Initialize
 // ============================================================
 
 async function main() {
   console.log("🤖 Starting TON Agent Kit Telegram Bot...");
 
-  // Init wallet + agent
   const client = new TonClient4({ endpoint: RPC_URL });
   const wallet = await KeypairWallet.autoDetect(
     MNEMONIC.split(" "),
@@ -62,159 +98,164 @@ async function main() {
     .use(DnsPlugin)
     .use(StakingPlugin)
     .use(EscrowPlugin)
+    .use(IdentityPlugin)
     .use(AnalyticsPlugin);
 
-  // Init OpenAI
   const openai = new OpenAI({
     apiKey: OPENAI_KEY,
     ...(OPENAI_BASE && { baseURL: OPENAI_BASE }),
   });
 
-  // Init Telegram bot
   const bot = new Bot(BOT_TOKEN);
 
-  // ── Available actions for the LLM ──
-  const tools: OpenAI.ChatCompletionTool[] = [
-    {
-      type: "function",
-      function: {
-        name: "get_balance",
-        description: "Get TON balance. No params needed for own balance.",
-        parameters: {
-          type: "object",
-          properties: {
-            address: { type: "string", description: "Optional address" },
-          },
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "transfer_ton",
-        description: "Send TON to an address",
-        parameters: {
-          type: "object",
-          properties: {
-            to: { type: "string", description: "Destination address" },
-            amount: { type: "string", description: "Amount of TON" },
-            comment: { type: "string", description: "Optional comment" },
-          },
-          required: ["to", "amount"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "get_wallet_info",
-        description: "Get wallet details (balance, status, type)",
-        parameters: {
-          type: "object",
-          properties: { address: { type: "string" } },
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "get_transaction_history",
-        description: "Get recent transactions",
-        parameters: {
-          type: "object",
-          properties: { limit: { type: "number", default: 5 } },
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "resolve_domain",
-        description: "Resolve a .ton domain to address",
-        parameters: {
-          type: "object",
-          properties: { domain: { type: "string" } },
-          required: ["domain"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "get_price",
-        description: "Get token price in USD and TON",
-        parameters: {
-          type: "object",
-          properties: { token: { type: "string" } },
-          required: ["token"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "get_staking_info",
-        description: "Check staking positions",
-        parameters: { type: "object", properties: {} },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "create_escrow",
-        description: "Create an escrow deal",
-        parameters: {
-          type: "object",
-          properties: {
-            beneficiary: { type: "string" },
-            amount: { type: "string" },
-            description: { type: "string" },
-            deadlineMinutes: { type: "number", default: 60 },
-          },
-          required: ["beneficiary", "amount"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "get_escrow_info",
-        description: "Get escrow details or list all escrows",
-        parameters: {
-          type: "object",
-          properties: { escrowId: { type: "string" } },
-        },
-      },
-    },
-  ];
+  // ── Use toAITools() for proper schemas ──
+  const tools = agent.toAITools();
 
   // ── Chat history per user ──
   const chatHistories = new Map<number, OpenAI.ChatCompletionMessageParam[]>();
-
-  // ── Per-user TX mode: "auto" skips HITL, "confirm" (default) shows buttons ──
   const userTxMode = new Map<number, "auto" | "confirm">();
 
-  const friendlyWalletAddr = wallet.address.toString({ testOnly: NETWORK === "testnet", bounceable: false });
+  const friendlyAddr = wallet.address.toString({
+    testOnly: NETWORK === "testnet",
+    bounceable: false,
+  });
 
-  const SYSTEM_PROMPT = `You are TON Agent Kit Bot — an AI agent that manages a TON blockchain wallet via Telegram.
-You have 9 blockchain actions available.
+  const viewerBase =
+    NETWORK === "mainnet"
+      ? "https://tonviewer.com"
+      : "https://testnet.tonviewer.com";
 
-Your wallet: ${friendlyWalletAddr}
+  const SYSTEM_PROMPT = `You are TON Agent Kit Bot — an AI agent connected to the TON blockchain via Telegram.
+
+Wallet: ${friendlyAddr}
 Network: ${NETWORK}
+Actions: ${agent
+    .getAvailableActions()
+    .map((a: any) => a.name)
+    .join(", ")}
 
-You can check balances, send TON, resolve .ton domains, check prices, view transaction history, manage escrows, and more.
+RULES:
+1. Execute actions IMMEDIATELY when asked. Never ask "are you sure?" — the system handles approval buttons automatically.
+2. Format responses for Telegram HTML:
+   - Use <b>bold</b> for labels and important values
+   - Use <code>address</code> for addresses and hashes
+   - Use line breaks for readability
+   - Keep responses concise — no walls of text
+3. Format TON amounts to 4 decimal places
+4. When showing addresses, prefer the user-friendly format (EQ... or UQ...) and truncate: first 8 + last 6 chars
+5. After a transfer, always mention the explorer link
+6. For balance checks, show the amount prominently
+7. For escrow operations, clearly show the escrow ID and status
+8. For errors, explain what went wrong in plain language
 
-CRITICAL: When the user asks to perform any action (transfer, escrow, etc.), call the function IMMEDIATELY. Do NOT ask "are you sure?", "would you like to proceed?", or any form of confirmation. The system automatically shows Approve/Reject buttons for transfers above ${AUTO_APPROVE_LIMIT} TON. Your job is to call the function, not to ask for permission.
+FORMATTING EXAMPLES:
+- Balance: "💰 <b>Balance:</b> 2.3456 TON"
+- Transfer: "✅ <b>Sent 1.0000 TON</b> to <code>0QClVW...07VR9</code>"
+- Price: "📊 <b>USDT:</b> $1.00 (0.7670 TON)"
+- Domain: "🌐 <b>foundation.ton</b> → <code>0:5541...9a57</code>"
+- Escrow: "🔒 <b>Escrow created</b>\nID: <code>escrow_abc123</code>\nAmount: 0.05 TON"`;
 
-Users can type "TX auto" to skip approval buttons, or "TX confirm" to re-enable them.
+  // ── Onboarding: /start ──
+  bot.command("start", async (ctx) => {
+    const balResult = (await agent.runAction("get_balance", {})) as any;
+    const balance = formatTon(balResult.balance || "0");
 
-When displaying addresses to the user, always use the user-friendly format (like 0QClVWrj... or EQClVWrj...) instead of raw format (0:a5556...). Both formats refer to the same address — raw format is used internally by the blockchain, user-friendly format is what wallets like Tonkeeper display. If a function result includes both address and friendlyAddress fields, prefer showing friendlyAddress. If the user provides a raw address, accept it but display the user-friendly version back.
+    await ctx.reply(
+      `<b>🤖 TON Agent Kit</b>\n` +
+        `<i>AI-powered blockchain agent on TON</i>\n` +
+        `\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `\n` +
+        `💎 <b>Wallet</b>\n` +
+        `<code>${friendlyAddr}</code>\n` +
+        `Balance: <b>${balance} TON</b>\n` +
+        `Network: ${NETWORK === "testnet" ? "🧪 Testnet" : "🌐 Mainnet"}\n` +
+        `\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `\n` +
+        `⚡ <b>Quick start</b> — try these:\n` +
+        `\n` +
+        `💰 <i>"What's my balance?"</i>\n` +
+        `📤 <i>"Send 0.01 TON to 0QBQ-vTF..."</i>\n` +
+        `🌐 <i>"Resolve foundation.ton"</i>\n` +
+        `📊 <i>"What's the price of USDT?"</i>\n` +
+        `📜 <i>"Show my last 3 transactions"</i>\n` +
+        `🔒 <i>"Create escrow for 0.05 TON to 0QBQ..."</i>\n` +
+        `🪪 <i>"Register agent trading-bot"</i>\n` +
+        `\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `\n` +
+        `🛡️ <b>Security</b>\n` +
+        `Transfers above ${AUTO_APPROVE_LIMIT} TON require approval.\n` +
+        `Type <b>TX auto</b> to skip · <b>TX confirm</b> to re-enable\n` +
+        `\n` +
+        `Type <b>/help</b> for all commands.`,
+      { parse_mode: "HTML" },
+    );
+  });
 
-Rules:
-- Be concise. Use emojis sparingly.
-- Format TON amounts to 4 decimal places.
-- When showing addresses, use the user-friendly format and truncate to first 6 and last 4 characters.
-- Always show transaction results clearly.`;
+  // ── Help command ──
+  bot.command("help", async (ctx) => {
+    await ctx.reply(
+      `<b>📖 Commands</b>\n` +
+        `\n` +
+        `<b>💰 Wallet</b>\n` +
+        `• Check balance\n` +
+        `• Send TON to any address\n` +
+        `• View transaction history\n` +
+        `• Get wallet info\n` +
+        `\n` +
+        `<b>📈 DeFi</b>\n` +
+        `• Get token prices (USDT, etc.)\n` +
+        `• Swap tokens on DeDust/STON.fi\n` +
+        `\n` +
+        `<b>🌐 DNS</b>\n` +
+        `• Resolve .ton domains\n` +
+        `• Reverse lookup addresses\n` +
+        `\n` +
+        `<b>🔒 Escrow</b>\n` +
+        `• Create trustless escrow deals\n` +
+        `• Deposit, release, or refund\n` +
+        `• List all active escrows\n` +
+        `\n` +
+        `<b>🪪 Identity</b>\n` +
+        `• Register as an AI agent\n` +
+        `• Discover other agents\n` +
+        `• Check agent reputation\n` +
+        `\n` +
+        `<b>💎 Staking</b>\n` +
+        `• View staking positions\n` +
+        `• Stake/unstake TON\n` +
+        `\n` +
+        `<b>⚙️ Settings</b>\n` +
+        `<b>TX auto</b> — skip approval buttons\n` +
+        `<b>TX confirm</b> — require approval\n` +
+        `\n` +
+        `<i>Just type what you want in natural language!</i>`,
+      { parse_mode: "HTML" },
+    );
+  });
+
+  // ── Wallet command (quick balance check) ──
+  bot.command("wallet", async (ctx) => {
+    try {
+      const balResult = (await agent.runAction("get_balance", {})) as any;
+      const balance = formatTon(balResult.balance || "0");
+
+      await ctx.reply(
+        `💎 <b>Wallet</b>\n` +
+          `\n` +
+          `Address: <code>${friendlyAddr}</code>\n` +
+          `Balance: <b>${balance} TON</b>\n` +
+          `Network: ${NETWORK === "testnet" ? "🧪 Testnet" : "🌐 Mainnet"}\n` +
+          `\n` +
+          `<a href="${viewerBase}/${friendlyAddr}">View on Tonviewer ↗</a>`,
+        { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+      );
+    } catch (err: any) {
+      await ctx.reply(`⚠️ Error: ${escapeHtml(err.message.slice(0, 200))}`);
+    }
+  });
 
   // ── HITL: Approval handler ──
   bot.callbackQuery(/^approve_(.+)$/, async (ctx) => {
@@ -223,7 +264,10 @@ Rules:
     if (pending) {
       pending.resolve(true);
       pendingApprovals.delete(approvalId);
-      await ctx.editMessageText("✅ Approved! Executing transaction...");
+      await ctx.editMessageText(
+        "✅ <b>Approved</b> — executing transaction...",
+        { parse_mode: "HTML" },
+      );
     } else {
       await ctx.editMessageText("⚠️ This approval has expired.");
     }
@@ -236,7 +280,9 @@ Rules:
     if (pending) {
       pending.resolve(false);
       pendingApprovals.delete(approvalId);
-      await ctx.editMessageText("❌ Transaction rejected.");
+      await ctx.editMessageText("❌ <b>Transaction rejected</b>", {
+        parse_mode: "HTML",
+      });
     } else {
       await ctx.editMessageText("⚠️ This approval has expired.");
     }
@@ -255,22 +301,27 @@ Rules:
       .text("✅ Approve", `approve_${approvalId}`)
       .text("❌ Reject", `reject_${approvalId}`);
 
-    let message = `🔔 *Approval Required*\n\n`;
+    let message = `🔔 <b>Approval required</b>\n\n`;
     if (action === "transfer_ton") {
-      message += `Send *${params.amount} TON* to \`${params.to}\``;
-      if (params.comment) message += `\nComment: ${params.comment}`;
+      message += `📤 Send <b>${formatTon(params.amount)} TON</b>\n`;
+      message += `📍 To: <code>${escapeHtml(params.to)}</code>`;
+      if (params.comment)
+        message += `\n💬 Comment: ${escapeHtml(params.comment)}`;
+    } else if (action === "create_escrow") {
+      message += `🔒 Create escrow: <b>${formatTon(params.amount)} TON</b>\n`;
+      message += `📍 Beneficiary: <code>${escapeHtml(params.beneficiary)}</code>`;
     } else {
-      message += `Action: \`${action}\`\nParams: \`${JSON.stringify(params)}\``;
+      message += `⚡ Action: <code>${escapeHtml(action)}</code>\n`;
+      message += `📋 Params: <code>${escapeHtml(JSON.stringify(params).slice(0, 200))}</code>`;
     }
 
     await bot.api.sendMessage(chatId, message, {
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       reply_markup: keyboard,
     });
 
     return new Promise((resolve) => {
       pendingApprovals.set(approvalId, { chatId, action, params, resolve });
-      // Auto-expire after 2 minutes
       setTimeout(() => {
         if (pendingApprovals.has(approvalId)) {
           pendingApprovals.delete(approvalId);
@@ -280,39 +331,43 @@ Rules:
     });
   }
 
+  // ── TX mode commands ──
+  function handleTxMode(chatId: number, text: string): string | null {
+    const lower = text.toLowerCase().trim();
+    if (/\b(tx\s*auto|auto\s*approve|enable\s*auto)\b/.test(lower)) {
+      userTxMode.set(chatId, "auto");
+      return "🔓 <b>Auto mode enabled</b>\nTransfers execute without approval buttons.";
+    }
+    if (/\b(tx\s*confirm|approval\s*on|enable\s*confirm)\b/.test(lower)) {
+      userTxMode.set(chatId, "confirm");
+      return `🔒 <b>Confirmation mode enabled</b>\nTransfers above ${AUTO_APPROVE_LIMIT} TON require approval.`;
+    }
+    return null;
+  }
+
+  // ── Safe reply with HTML fallback ──
+  async function safeReply(ctx: any, text: string) {
+    try {
+      await ctx.reply(text, {
+        parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
+      });
+    } catch {
+      // Strip HTML tags as fallback
+      const plain = text.replace(/<[^>]+>/g, "");
+      await ctx.reply(plain);
+    }
+  }
+
   // ── Main message handler ──
   bot.on("message:text", async (ctx) => {
     const chatId = ctx.chat.id;
     const userMessage = ctx.message.text;
 
-    // ── Detect TX mode commands before sending to GPT ──
-    const msgLower = userMessage.toLowerCase().trim();
-    if (/\b(tx\s*auto|auto\s*approve|enable\s*auto\s*mode)\b/.test(msgLower)) {
-      userTxMode.set(chatId, "auto");
-      await ctx.reply("🔓 Auto mode enabled — transfers will execute without approval buttons.");
-      return;
-    }
-    if (/\b(tx\s*confirm|approval\s*on|enable\s*confirmation)\b/.test(msgLower)) {
-      userTxMode.set(chatId, "confirm");
-      await ctx.reply("🔒 Confirmation mode enabled — transfers above " + AUTO_APPROVE_LIMIT + " TON will require approval.");
-      return;
-    }
-
-    // Skip commands
-    if (userMessage.startsWith("/start")) {
-      await ctx.reply(
-        `🤖 *TON Agent Kit Bot*\n\n` +
-          `I'm an AI agent connected to TON blockchain.\n\n` +
-          `Try:\n` +
-          `• "What's my balance?"\n` +
-          `• "Send 0.01 TON to 0:abc..."\n` +
-          `• "Resolve alice.ton"\n` +
-          `• "Show my recent transactions"\n` +
-          `• "Create an escrow for 1 TON"\n\n` +
-          `Wallet: \`${friendlyWalletAddr.slice(0, 10)}...${friendlyWalletAddr.slice(-6)}\`\n` +
-          `Network: ${NETWORK}`,
-        { parse_mode: "Markdown" },
-      );
+    // TX mode commands
+    const modeReply = handleTxMode(chatId, userMessage);
+    if (modeReply) {
+      await safeReply(ctx, modeReply);
       return;
     }
 
@@ -322,16 +377,17 @@ Rules:
     }
     const history = chatHistories.get(chatId)!;
 
-    // Add user message
     history.push({ role: "user", content: userMessage });
 
-    // Keep history manageable (last 20 messages)
+    // Keep history manageable
     if (history.length > 22) {
       history.splice(1, history.length - 21);
     }
 
     try {
-      // Call OpenAI
+      // Show typing indicator
+      await ctx.api.sendChatAction(chatId, "typing");
+
       let response = await openai.chat.completions.create({
         model: AI_MODEL,
         messages: history,
@@ -351,58 +407,48 @@ Rules:
           const fnName = toolCall.function.name;
           const fnParams = JSON.parse(toolCall.function.arguments);
 
-          // HITL: "confirm" mode → ALWAYS show buttons; "auto" mode → skip entirely
+          // HITL check
           let approved = true;
           const mode = userTxMode.get(chatId) || "confirm";
-          if (fnName === "transfer_ton" && mode === "confirm") {
-            await ctx.reply(
-              `⏳ Requesting approval for ${fnParams.amount} TON transfer...`,
-            );
+          const needsApproval =
+            (fnName === "transfer_ton" || fnName === "create_escrow") &&
+            mode === "confirm";
+
+          if (needsApproval) {
             approved = await requestApproval(chatId, fnName, fnParams);
           }
 
           let result: string;
           if (approved) {
             try {
+              // Show typing while executing
+              await ctx.api.sendChatAction(chatId, "typing");
+
               const actionResult = await agent.runAction(fnName, fnParams);
               result = JSON.stringify(actionResult);
 
-              // TX confirmation — wait and verify on-chain, include explorer link
+              // TX confirmation — wait and add explorer link
               if (fnName === "transfer_ton") {
-                const walletAddr = wallet.address.toRawString();
-                const viewerBase = NETWORK === "mainnet"
-                  ? "https://tonviewer.com"
-                  : "https://testnet.tonviewer.com";
-                const fallbackLink = `${viewerBase}/${walletAddr}`;
-                const pluginExplorerUrl = (actionResult as any)?.explorerUrl;
-
                 await new Promise((r) => setTimeout(r, 10000));
                 try {
-                  const txHistory = await agent.runAction("get_transaction_history", { limit: 1 }) as any;
-                  // Extract real tx hash from history: events[0].id
+                  const txHistory = (await agent.runAction(
+                    "get_transaction_history",
+                    { limit: 1 },
+                  )) as any;
                   const realTxHash = txHistory?.events?.[0]?.id;
                   const txLink = realTxHash
                     ? `${viewerBase}/transaction/${realTxHash}`
-                    : fallbackLink;
+                    : `${viewerBase}/${friendlyAddr}`;
 
-                  if (txHistory && Object.keys(txHistory).length > 0) {
-                    result = JSON.stringify({
-                      ...actionResult,
-                      confirmation: `✅ Transaction confirmed on-chain\n${txLink}`,
-                      ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
-                    });
-                  } else {
-                    result = JSON.stringify({
-                      ...actionResult,
-                      confirmation: `⏳ Transaction sent, awaiting confirmation\n${fallbackLink}`,
-                      ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
-                    });
-                  }
+                  result = JSON.stringify({
+                    ...actionResult,
+                    explorerUrl: txLink,
+                    confirmed: !!realTxHash,
+                  });
                 } catch {
                   result = JSON.stringify({
                     ...actionResult,
-                    confirmation: `⏳ Transaction sent, awaiting confirmation\n${fallbackLink}`,
-                    ...(pluginExplorerUrl && { explorerUrl: pluginExplorerUrl }),
+                    explorerUrl: `${viewerBase}/${friendlyAddr}`,
                   });
                 }
               }
@@ -423,7 +469,9 @@ Rules:
           });
         }
 
-        // Get next response
+        // Show typing for follow-up
+        await ctx.api.sendChatAction(chatId, "typing");
+
         response = await openai.chat.completions.create({
           model: AI_MODEL,
           messages: history,
@@ -436,27 +484,40 @@ Rules:
       // Send final response
       const reply = assistantMessage.content || "Done!";
       history.push({ role: "assistant", content: reply });
-      try {
-        await ctx.reply(reply, { parse_mode: "Markdown" });
-      } catch {
-        await ctx.reply(reply);
-      }
+      await safeReply(ctx, reply);
     } catch (err: any) {
       console.error("Error:", err.message);
       chatHistories.delete(chatId);
-      await ctx.reply(`⚠️ Error: ${err.message.slice(0, 200)}`);
+      await safeReply(
+        ctx,
+        `⚠️ <b>Error:</b> ${escapeHtml(err.message.slice(0, 200))}`,
+      );
     }
   });
 
-  // Error handler (prevents crash on expired callbacks)
+  // Error handler
   bot.catch((err: any) => {
     console.error("Bot error (non-fatal):", err.message?.slice(0, 100));
   });
 
-  // Start bot with concurrent update processing (needed for HITL)
+  await bot.api.setMyCommands([
+    { command: "start", description: "Welcome & quick start" },
+    { command: "help", description: "All commands & capabilities" },
+    { command: "wallet", description: "Check balance & wallet info" },
+  ]);
+
+  // Start with concurrent processing (needed for HITL)
   const { run } = await import("@grammyjs/runner");
   const runner = run(bot);
-  console.log("✅ Bot is running! Send a message on Telegram.");
+
+  console.log(`\n${"━".repeat(40)}`);
+  console.log(`  🤖 TON Agent Kit Bot`);
+  console.log(`  📍 ${shortAddr(friendlyAddr)}`);
+  console.log(`  🌐 ${NETWORK}`);
+  console.log(`  🧠 ${AI_MODEL}`);
+  console.log(`  ⚡ ${agent.getAvailableActions().length} actions`);
+  console.log(`${"━".repeat(40)}\n`);
+
   process.on("SIGINT", () => runner.stop());
   process.on("SIGTERM", () => runner.stop());
 }
