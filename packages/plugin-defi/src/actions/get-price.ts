@@ -1,47 +1,51 @@
 import { z } from "zod";
-import { Address, toNano, fromNano } from "@ton/core";
 import { defineAction } from "@ton-agent-kit/core";
 
 export const getPriceAction = defineAction<
-  { token: string; quoteToken?: string },
-  { price: string; token: string; quoteToken: string; dex: string }
+  { token: string },
+  { priceUSD: string; priceTON: string; token: string }
 >({
   name: "get_price",
   description:
-    "Get the current price of a token on TON DEXes. Returns the price in TON or a specified quote token.",
+    "Get the current price of a token on TON. Returns the price in USD and TON using TONAPI rates.",
   schema: z.object({
     token: z.string().describe("Token to price: Jetton master address"),
-    quoteToken: z.string().optional().default("TON").describe("Quote token (default: TON)"),
   }),
   handler: async (agent, params) => {
-    const { Factory, MAINNET_FACTORY_ADDR, Asset, PoolType } = await import("@dedust/sdk");
+    const apiBase =
+      agent.network === "testnet"
+        ? "https://testnet.tonapi.io/v2"
+        : "https://tonapi.io/v2";
 
-    const factory = (agent.connection as any).open(
-      Factory.createFromAddress(MAINNET_FACTORY_ADDR)
-    );
+    const headers: Record<string, string> = {};
+    if (agent.config.TONAPI_KEY) {
+      headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
+    }
 
-    const tokenAsset = Asset.jetton(Address.parse(params.token));
-    const quoteAsset =
-      (params.quoteToken || "TON").toUpperCase() === "TON"
-        ? Asset.native()
-        : Asset.jetton(Address.parse(params.quoteToken!));
+    try {
+      const response = await fetch(
+        `${apiBase}/rates?tokens=${encodeURIComponent(params.token)}&currencies=usd,ton`,
+        { headers },
+      );
 
-    const pool = (agent.connection as any).open(
-      await factory.getPool(PoolType.VOLATILE, [tokenAsset, quoteAsset])
-    );
+      if (!response.ok) {
+        return { priceUSD: "unknown", priceTON: "unknown", token: params.token };
+      }
 
-    // Estimate: how much quoteToken do you get for 1 unit of token?
-    const oneUnit = toNano("1");
-    const { amountOut } = await pool.getEstimatedSwapOut({
-      assetIn: tokenAsset,
-      amountIn: oneUnit,
-    });
+      const data = await response.json();
+      const rates = data.rates?.[params.token]?.prices;
 
-    return {
-      price: fromNano(amountOut),
-      token: params.token,
-      quoteToken: params.quoteToken || "TON",
-      dex: "dedust",
-    };
+      if (!rates) {
+        return { priceUSD: "unknown", priceTON: "unknown", token: params.token };
+      }
+
+      return {
+        priceUSD: rates.USD?.toString() || "unknown",
+        priceTON: rates.TON?.toString() || "unknown",
+        token: params.token,
+      };
+    } catch {
+      return { priceUSD: "unknown", priceTON: "unknown", token: params.token };
+    }
   },
 });

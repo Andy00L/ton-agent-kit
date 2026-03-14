@@ -19,7 +19,7 @@
 
 TON Agent Kit is more than an SDK — it's the **infrastructure for an AI agent economy on TON**.
 
-Agents discover each other via **agent registry**. They pay each other via **x402 middleware with zero-fee payment channels**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 24 tools**.
+Agents discover each other via **agent registry**. They pay each other via **x402 middleware with zero-fee payment channels**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 32 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral.
 
 ### The problem
 
@@ -31,7 +31,7 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 
 | Capability | Solana | Base/ETH | TON (before) | TON Agent Kit |
 |---|---|---|---|---|
-| Agent SDK | Solana Agent Kit (60+) | Coinbase AgentKit (50+) | ❌ | ✅ **24 actions, 10 plugins** |
+| Agent SDK | Solana Agent Kit (60+) | Coinbase AgentKit (50+) | ❌ | ✅ **32 actions, 9 plugins** |
 | Agent Identity | SATI | ERC-8004 (123K agents) | ❌ | ✅ **Agent registry + reputation** |
 | Agent Payments | x402 ($0.00025/tx) | Virtuals ACP | ❌ | ✅ **x402 middleware ($0/tx via channels)** |
 | Agent Security | Embedded wallets | Agentic Wallets (TEE) | ❌ | ✅ **Telegram HITL + balance guards** |
@@ -46,6 +46,13 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 
 ```bash
 npm install @ton-agent-kit/core @ton-agent-kit/plugin-token @ton-agent-kit/plugin-defi
+```
+
+### Setup
+
+```bash
+cp .env.example .env
+# Edit .env with your TON_MNEMONIC and TON_NETWORK
 ```
 
 ### Basic Usage
@@ -89,7 +96,7 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ## Plugins & Actions
 
-**24 actions across 10 plugins.** Install only what you need.
+**32 actions across 9 plugins.** Install only what you need.
 
 ### 🪙 Token Plugin (6 actions)
 
@@ -118,11 +125,13 @@ const agent = await TonAgentKit.fromMnemonic(
 | `get_nft_collection` | Get collection info | ✅ Live ("Telegram Usernames") |
 | `transfer_nft` | Transfer an NFT | ✅ Schema validated |
 
-### 🌐 DNS Plugin (1 action)
+### 🌐 DNS Plugin (3 actions)
 
 | Action | Description | Status |
 |--------|-------------|--------|
 | `resolve_domain` | Resolve `.ton` domain → address | ✅ Live (foundation.ton) |
+| `lookup_address` | Reverse lookup: address → domain | ✅ Live |
+| `get_domain_info` | Get domain registration details | ✅ Live |
 
 ### 💰 Staking Plugin (3 actions)
 
@@ -161,12 +170,15 @@ const agent = await TonAgentKit.fromMnemonic(
 | `discover_agent` | Find agents by capability or name | ✅ Live |
 | `get_agent_reputation` | Read + update reputation scores | ✅ Live |
 
-### ⚡ x402 Payment Plugin (1 action + middleware)
+### ⚡ Payments Plugin (4 actions + x402 middleware)
 
-*Production-hardened HTTP payment middleware for agent-to-agent commerce.*
+*Zero-fee payment channels + production-hardened HTTP payment middleware for agent-to-agent commerce.*
 
 | Action | Description | Status |
 |--------|-------------|--------|
+| `create_payment_channel` | Open a channel with another agent | ✅ Live |
+| `send_micropayment` | Send zero-fee payment through channel | ✅ Live |
+| `close_payment_channel` | Settle and close channel on-chain | ✅ Live |
 | `pay_for_resource` | Auto-pay for x402-gated APIs | ✅ Live |
 
 ```typescript
@@ -200,11 +212,21 @@ The plugins combine into a **complete agent economy**:
 
 This is the **first Agent Commerce Protocol on TON** — agents discover, pay, trust, and rate each other autonomously.
 
+### Demo
+
+See the full agent-to-agent commerce flow in action:
+
+```bash
+bun run demo-agent-commerce.ts
+```
+
+Two AI agents negotiate, pay, and rate each other through the complete cycle: Identity → Discovery → Escrow → Service → Reputation. See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full source.
+
 ---
 
 ## MCP Server
 
-Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **24 tools available.**
+Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **32 tools available.**
 
 ### Setup (Claude Desktop)
 
@@ -322,22 +344,24 @@ ton-agent-kit/
 │   ├── plugin-token/       # TON & Jetton operations (6 actions)
 │   ├── plugin-defi/        # DeDust & STON.fi (3 actions)
 │   ├── plugin-nft/         # NFT operations (3 actions)
-│   ├── plugin-dns/         # TON DNS resolution (1 action)
+│   ├── plugin-dns/         # TON DNS: resolve, lookup, info (3 actions)
 │   ├── plugin-staking/     # TON staking (3 actions)
 │   ├── plugin-analytics/   # Wallet analytics (2 actions)
 │   ├── plugin-escrow/      # Trustless escrow (5 actions)
 │   ├── plugin-identity/    # Agent registry + reputation (3 actions)
-│   ├── plugin-payments/    # x402 + payment channels (1 action + middleware)
+│   ├── plugin-payments/    # x402 + payment channels (4 actions)
 │   ├── mcp-server/         # MCP server for Claude/GPT
 │   ├── langchain/          # LangChain tool wrappers
 │   └── ai-tools/           # Vercel AI SDK tools
 ├── contracts/
 │   └── escrow.tact         # Escrow smart contract (Tact)
-├── mcp-server.ts           # Standalone MCP server (24 tools)
+├── mcp-server.ts           # Standalone MCP server (32 tools)
 ├── telegram-bot.ts         # Telegram bot with HITL
 ├── x402-middleware.ts       # x402 payment middleware (production-hardened)
-├── test-connection.ts      # Full test suite (15/15 passing)
+├── demo-agent-commerce.ts  # Agent Commerce Protocol demo
+├── test-all-actions.ts     # Full test suite (69/69 passing)
 ├── test-x402.ts            # x402 end-to-end test (5/5 passing)
+├── .env.example            # Environment variable template
 └── ARCHITECTURE.md
 ```
 
@@ -345,13 +369,19 @@ ton-agent-kit/
 
 ## Test Results
 
-### Terminal (15/15 passing)
+### Full Suite (69/69 — 68 pass, 1 skip)
 ```
 ✅ get_balance          ✅ get_wallet_info       ✅ get_transaction_history
 ✅ get_staking_info     ✅ get_jetton_balance    ✅ resolve_domain
-✅ get_price            ✅ get_nft_collection    ✅ transfer_ton (schema)
+✅ lookup_address       ✅ get_domain_info       ✅ get_price
+✅ get_nft_info         ✅ get_nft_collection    ✅ transfer_ton (schema)
 ✅ transfer_jetton      ✅ transfer_nft          ✅ swap_dedust (schema)
 ✅ swap_stonfi          ✅ stake_ton (schema)    ✅ unstake_ton (schema)
+✅ deploy_jetton        ✅ get_jetton_info       ✅ create_escrow
+✅ deposit_to_escrow    ✅ release_escrow        ✅ refund_escrow
+✅ get_escrow_info      ✅ register_agent        ✅ discover_agent
+✅ get_agent_reputation ✅ create_payment_channel ✅ send_micropayment
+✅ close_payment_channel ✅ pay_for_resource
 ```
 
 ### Claude Desktop MCP (8/8 passing)
@@ -371,9 +401,10 @@ ton-agent-kit/
 | Feature | TON Agent Kit | Solana Agent Kit | Coinbase AgentKit |
 |---------|--------------|-----------------|-------------------|
 | **Chain** | TON | Solana | Base/ETH |
-| **Actions** | 24 | 60+ | 50+ |
+| **Actions** | 32 | 60+ | 50+ |
 | **MCP Server** | ✅ | ✅ | ✅ |
 | **LangChain** | ✅ | ✅ | ✅ |
+| **Multi-provider** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
 | **Zero-fee payments** | ✅ Payment channels | ❌ | ❌ |
 | **x402 Middleware** | ✅ Production-hardened | ❌ | ❌ |
 | **Agent identity** | ✅ Registry + reputation | ❌ | ❌ |
@@ -409,7 +440,6 @@ ton-agent-kit/
 - [ ] npm package publishing (@ton-agent-kit/*)
 - [ ] Unit tests with @ton/sandbox
 - [ ] Rate limiting and spending caps per session
-- [ ] Payment channel integration for zero-fee streaming payments
 
 ---
 

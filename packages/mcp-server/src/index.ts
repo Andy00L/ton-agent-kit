@@ -37,6 +37,10 @@ import DefiPlugin from "@ton-agent-kit/plugin-defi";
 import NftPlugin from "@ton-agent-kit/plugin-nft";
 import DnsPlugin from "@ton-agent-kit/plugin-dns";
 import PaymentsPlugin from "@ton-agent-kit/plugin-payments";
+import StakingPlugin from "@ton-agent-kit/plugin-staking";
+import EscrowPlugin from "@ton-agent-kit/plugin-escrow";
+import IdentityPlugin from "@ton-agent-kit/plugin-identity";
+import AnalyticsPlugin from "@ton-agent-kit/plugin-analytics";
 
 // ============================================================
 // Initialize Agent Kit from environment variables
@@ -69,7 +73,11 @@ function createAgent(): TonAgentKit {
     .use(DefiPlugin)
     .use(NftPlugin)
     .use(DnsPlugin)
-    .use(PaymentsPlugin);
+    .use(PaymentsPlugin)
+    .use(StakingPlugin)
+    .use(EscrowPlugin)
+    .use(IdentityPlugin)
+    .use(AnalyticsPlugin);
 
   return agent;
 }
@@ -108,7 +116,11 @@ async function main() {
       .use(DefiPlugin)
       .use(NftPlugin)
       .use(DnsPlugin)
-      .use(PaymentsPlugin);
+      .use(PaymentsPlugin)
+      .use(StakingPlugin)
+      .use(EscrowPlugin)
+      .use(IdentityPlugin)
+      .use(AnalyticsPlugin);
   } else {
     agent = createAgent();
   }

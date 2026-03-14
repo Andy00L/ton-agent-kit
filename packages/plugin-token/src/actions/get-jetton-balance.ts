@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { Address, fromNano } from "@ton/core";
-import { JettonMaster } from "@ton/ton";
+import { Address } from "@ton/core";
 import { defineAction, type JettonBalanceResult } from "@ton-agent-kit/core";
 
 export const getJettonBalanceAction = defineAction<
@@ -15,51 +14,57 @@ export const getJettonBalanceAction = defineAction<
     ownerAddress: z.string().optional().describe("Wallet address to check. Defaults to agent's own address."),
   }),
   handler: async (agent, params) => {
-    const jettonMasterAddr = Address.parse(params.jettonAddress);
     const ownerAddr = params.ownerAddress
-      ? Address.parse(params.ownerAddress)
-      : agent.wallet.address;
+      ? params.ownerAddress
+      : agent.wallet.address.toRawString();
 
-    const jettonMaster = (agent.connection as any).open(
-      JettonMaster.create(jettonMasterAddr)
-    );
+    const apiBase =
+      agent.network === "testnet"
+        ? "https://testnet.tonapi.io/v2"
+        : "https://tonapi.io/v2";
 
-    // Get jetton data for metadata
-    const jettonData = await jettonMaster.getJettonData();
-
-    // Get the owner's jetton wallet address
-    const jettonWalletAddr = await jettonMaster.getWalletAddress(ownerAddr);
-
-    // Get balance from the jetton wallet
-    let balanceRaw = "0";
-    try {
-      const lastBlock = await (agent.connection as any).getLastBlock();
-      const walletState = await (agent.connection as any).getAccount(
-        lastBlock.last.seqno,
-        jettonWalletAddr
-      );
-      if (walletState.account.state.type === "active") {
-        // Parse the jetton wallet data to get balance
-        const { JettonWallet } = require("@ton/ton");
-        const jWallet = (agent.connection as any).open(
-          JettonWallet.create(jettonWalletAddr)
-        );
-        const balance = await jWallet.getBalance();
-        balanceRaw = balance.toString();
-      }
-    } catch {
-      balanceRaw = "0";
+    const headers: Record<string, string> = {};
+    if (agent.config.TONAPI_KEY) {
+      headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
     }
 
-    const decimals = 9; // TON standard
-    const balance = fromNano(BigInt(balanceRaw));
+    try {
+      // Use TONAPI which handles all address formats (raw, user-friendly, etc.)
+      const response = await fetch(
+        `${apiBase}/accounts/${encodeURIComponent(ownerAddr)}/jettons/${encodeURIComponent(params.jettonAddress)}`,
+        { headers },
+      );
 
-    return {
-      balance,
-      balanceRaw,
-      symbol: "JETTON",
-      name: "Jetton",
-      decimals,
-    };
+      if (!response.ok) {
+        return {
+          balance: "0",
+          balanceRaw: "0",
+          symbol: "JETTON",
+          name: "Jetton",
+          decimals: 9,
+        };
+      }
+
+      const data = await response.json();
+      const decimals = data.jetton?.decimals ?? 9;
+      const balanceRaw = data.balance || "0";
+      const balance = (Number(balanceRaw) / Math.pow(10, decimals)).toString();
+
+      return {
+        balance,
+        balanceRaw,
+        symbol: data.jetton?.symbol || "JETTON",
+        name: data.jetton?.name || "Jetton",
+        decimals,
+      };
+    } catch {
+      return {
+        balance: "0",
+        balanceRaw: "0",
+        symbol: "JETTON",
+        name: "Jetton",
+        decimals: 9,
+      };
+    }
   },
 });

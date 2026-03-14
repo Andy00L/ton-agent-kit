@@ -1,4 +1,6 @@
-import { Address, fromNano, toNano } from "@ton/core";
+import { Address, fromNano, toNano, type MessageRelaxed } from "@ton/core";
+import { TonClient4, WalletContractV5R1 } from "@ton/ton";
+import type { AgentContext } from "./types";
 
 /**
  * Convert TON amount string to nanoton bigint
@@ -22,10 +24,10 @@ export function parseAddress(address: string): Address {
 }
 
 /**
- * Convert address to user-friendly format
+ * Convert address to user-friendly format (non-bounceable, like Tonkeeper)
  */
-export function toFriendlyAddress(address: Address, testOnly: boolean = false): string {
-  return address.toString({ bounceable: true, testOnly });
+export function toFriendlyAddress(address: Address, network: "testnet" | "mainnet" = "mainnet"): string {
+  return address.toString({ testOnly: network === "testnet", bounceable: false });
 }
 
 /**
@@ -36,9 +38,9 @@ export function explorerUrl(
   network: "mainnet" | "testnet" = "mainnet"
 ): string {
   const base = network === "testnet"
-    ? "https://testnet.tonscan.org"
-    : "https://tonscan.org";
-  return `${base}/tx/${txHash}`;
+    ? "https://testnet.tonviewer.com"
+    : "https://tonviewer.com";
+  return `${base}/transaction/${txHash}`;
 }
 
 /**
@@ -49,9 +51,9 @@ export function explorerAddressUrl(
   network: "mainnet" | "testnet" = "mainnet"
 ): string {
   const base = network === "testnet"
-    ? "https://testnet.tonscan.org"
-    : "https://tonscan.org";
-  return `${base}/address/${address}`;
+    ? "https://testnet.tonviewer.com"
+    : "https://tonviewer.com";
+  return `${base}/${address}`;
 }
 
 /**
@@ -81,6 +83,37 @@ export async function retry<T>(
     }
   }
   throw lastError;
+}
+
+/**
+ * Send a transaction using the proven WalletContractV5R1 pattern.
+ * This bypasses KeypairWallet.sendTransfer() which hits a domainSign
+ * incompatibility in certain @ton/ton versions.
+ */
+export async function sendTransaction(
+  agent: AgentContext,
+  messages: MessageRelaxed[],
+): Promise<void> {
+  const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
+  const networkId = agent.network === "testnet" ? -3 : -239;
+  const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+  const walletContract = freshClient.open(
+    WalletContractV5R1.create({
+      workchain: 0,
+      publicKey,
+      walletId: {
+        networkGlobalId: networkId,
+        workchain: 0,
+        subwalletNumber: 0,
+      },
+    }),
+  );
+  const seqno = await walletContract.getSeqno();
+  await walletContract.sendTransfer({
+    seqno,
+    secretKey,
+    messages,
+  });
 }
 
 /**

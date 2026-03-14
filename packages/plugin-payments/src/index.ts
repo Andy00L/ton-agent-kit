@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { Address, toNano, fromNano, beginCell, Cell } from "@ton/core";
-import { definePlugin, defineAction, type TransactionResult } from "@ton-agent-kit/core";
+import { Address, toNano, fromNano, beginCell, Cell, internal } from "@ton/core";
+import { TonClient4, WalletContractV5R1 } from "@ton/ton";
+import { definePlugin, defineAction, type TransactionResult, sendTransaction } from "@ton-agent-kit/core";
 
 // ============================================================
 // TON Payment Channels — Zero-fee agent-to-agent micropayments
@@ -64,17 +65,18 @@ const createChannelAction = defineAction<
       .storeUint(channelId, 64)      // channel_id
       .endCell();
 
-    const sender = agent.wallet.getSender();
-
     // In production: deploy the payment channel contract
     // For hackathon MVP: simulate the channel creation
     // The actual contract code would be loaded from the TON payment-channels repo
 
     // Send initial deposit to channel contract
-    await sender.send({
-      to: agent.wallet.address, // placeholder — real: channel contract address
-      value: deposit + toNano("0.1"), // deposit + gas
-    });
+    await sendTransaction(agent, [
+      internal({
+        to: agent.wallet.address, // placeholder — real: channel contract address
+        value: deposit + toNano("0.1"), // deposit + gas
+        bounce: false,
+      }),
+    ]);
 
     return {
       txHash: "pending",
@@ -108,14 +110,14 @@ const createChannelAction = defineAction<
 // ============================================================
 const sendMicropaymentAction = defineAction<
   {
-    channelAddress: string;
+    channelId: string;
     amount: string;
     description?: string;
   },
   {
     status: "sent";
     amount: string;
-    channelAddress: string;
+    channelId: string;
     fee: string;
     seqno: number;
   }
@@ -124,7 +126,7 @@ const sendMicropaymentAction = defineAction<
   description:
     "Send a zero-fee micropayment through an open payment channel. This is an OFF-CHAIN operation — instant and completely FREE. Perfect for agent-to-agent payments like pay-per-API-call, streaming compute, or data feeds.",
   schema: z.object({
-    channelAddress: z.string().describe("Payment channel contract address"),
+    channelId: z.string().describe("Payment channel ID or contract address"),
     amount: z.string().describe("Amount to send in TON (e.g., '0.001' for a micropayment)"),
     description: z.string().optional().describe("Description of what this payment is for"),
   }),
@@ -160,7 +162,7 @@ const sendMicropaymentAction = defineAction<
     return {
       status: "sent" as const,
       amount: params.amount,
-      channelAddress: params.channelAddress,
+      channelId: params.channelId,
       fee: "0 TON (off-chain)", // THE KEY DIFFERENTIATOR
       seqno,
     };
@@ -168,14 +170,14 @@ const sendMicropaymentAction = defineAction<
   examples: [
     {
       input: {
-        channelAddress: "EQChannel...",
+        channelId: "channel-123",
         amount: "0.001",
         description: "API call payment",
       },
       output: {
         status: "sent",
         amount: "0.001",
-        channelAddress: "EQChannel...",
+        channelId: "channel-123",
         fee: "0 TON (off-chain)",
         seqno: 1,
       },
@@ -188,17 +190,17 @@ const sendMicropaymentAction = defineAction<
 // close_payment_channel — Settle and close channel on-chain
 // ============================================================
 const closeChannelAction = defineAction<
-  { channelAddress: string },
+  { channelId: string },
   TransactionResult & { finalBalance: string }
 >({
   name: "close_payment_channel",
   description:
     "Close a payment channel and settle final balances on-chain. Both parties receive their remaining balance. This is the only operation that costs gas after opening.",
   schema: z.object({
-    channelAddress: z.string().describe("Payment channel contract address to close"),
+    channelId: z.string().describe("Payment channel ID or contract address to close"),
   }),
   handler: async (agent, params) => {
-    const channelAddr = Address.parse(params.channelAddress);
+    const channelAddr = Address.parse(params.channelId);
 
     // Build close channel message
     // op: cooperative_close
@@ -207,12 +209,14 @@ const closeChannelAction = defineAction<
       .storeUint(0, 64)   // query_id
       .endCell();
 
-    const sender = agent.wallet.getSender();
-    await sender.send({
-      to: channelAddr,
-      value: toNano("0.05"), // gas for closing
-      body: closeBody,
-    });
+    await sendTransaction(agent, [
+      internal({
+        to: channelAddr,
+        value: toNano("0.05"),
+        bounce: true,
+        body: closeBody,
+      }),
+    ]);
 
     return {
       txHash: "pending",
@@ -224,12 +228,115 @@ const closeChannelAction = defineAction<
 });
 
 // ============================================================
+// pay_for_resource — x402 payment gateway
+// ============================================================
+const payForResourceAction = defineAction({
+  name: "pay_for_resource",
+  description:
+    "Pay for an x402-gated API resource. Sends payment, then retries the request with proof. Returns the API response.",
+  schema: z.object({
+    url: z.string().describe("URL of the x402-gated API endpoint"),
+  }),
+  handler: async (agent, params) => {
+    // Step 1: Request the resource
+    const initialResponse = await fetch(params.url);
+
+    // If not 402, return directly (no payment needed)
+    if (initialResponse.status !== 402) {
+      const data = await initialResponse.json();
+      return { paid: false, status: initialResponse.status, data };
+    }
+
+    // Step 2: Parse payment requirements
+    const paymentInfo = await initialResponse.json();
+    const requirement = paymentInfo.payment;
+
+    if (!requirement || requirement.protocol !== "ton-x402-v1") {
+      throw new Error("Unsupported payment protocol");
+    }
+
+    // Step 3: Send payment
+    const toAddress = Address.parse(requirement.recipient);
+    const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
+    const networkId = agent.network === "testnet" ? -3 : -239;
+    const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+    const walletContract = freshClient.open(
+      WalletContractV5R1.create({
+        workchain: 0,
+        publicKey,
+        walletId: {
+          networkGlobalId: networkId,
+          workchain: 0,
+          subwalletNumber: 0,
+        },
+      }),
+    );
+
+    const commentBody = beginCell()
+      .storeUint(0, 32)
+      .storeStringTail(`x402:${params.url}`)
+      .endCell();
+
+    const seqno = await walletContract.getSeqno();
+    await walletContract.sendTransfer({
+      seqno,
+      secretKey,
+      messages: [
+        internal({
+          to: toAddress,
+          value: toNano(requirement.amount),
+          bounce: false,
+          body: commentBody,
+        }),
+      ],
+    });
+
+    // Step 4: Wait for confirmation
+    await new Promise((r) => setTimeout(r, 10000));
+
+    // Step 5: Get the tx hash from recent transactions
+    const apiBase =
+      agent.network === "testnet"
+        ? "https://testnet.tonapi.io/v2"
+        : "https://tonapi.io/v2";
+    const txResponse = await fetch(
+      `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
+    );
+    const txData = await txResponse.json();
+    const txHash = txData.events?.[0]?.event_id;
+
+    if (!txHash) {
+      throw new Error("Payment sent but could not retrieve transaction hash");
+    }
+
+    // Step 6: Retry with payment proof
+    const paidResponse = await fetch(params.url, {
+      headers: { "X-Payment-Hash": txHash },
+    });
+
+    if (paidResponse.ok) {
+      const data = await paidResponse.json();
+      return {
+        paid: true,
+        amount: requirement.amount + " TON",
+        txHash,
+        data,
+      };
+    }
+
+    throw new Error(
+      `Payment verified but resource returned ${paidResponse.status}`,
+    );
+  },
+});
+
+// ============================================================
 // Plugin export
 // ============================================================
 const PaymentsPlugin = definePlugin({
   name: "payments",
-  actions: [createChannelAction, sendMicropaymentAction, closeChannelAction],
+  actions: [createChannelAction, sendMicropaymentAction, closeChannelAction, payForResourceAction],
 });
 
 export default PaymentsPlugin;
-export { createChannelAction, sendMicropaymentAction, closeChannelAction };
+export { createChannelAction, sendMicropaymentAction, closeChannelAction, payForResourceAction };

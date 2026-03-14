@@ -1,0 +1,14 @@
+{
+  "name": "@ton-agent-kit/plugin-staking",
+  "version": "1.0.0",
+  "description": "Staking plugin for TON Agent Kit — stake/unstake TON with validator pools",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "build": "tsc" },
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "@ton/ton": "^16.2.0",
+    "@ton/core": "^0.63.1"
+  },
+  "license": "MIT"
+}

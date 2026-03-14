@@ -31,6 +31,7 @@ export {
   parseAddress,
   retry,
   RPC_ENDPOINTS,
+  sendTransaction,
   sleep,
   toFriendlyAddress,
   TONCENTER_ENDPOINTS,

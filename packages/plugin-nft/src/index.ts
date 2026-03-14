@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Address, toNano, beginCell } from "@ton/core";
-import { definePlugin, defineAction, type NftInfo, type TransactionResult } from "@ton-agent-kit/core";
+import { Address, toNano, beginCell, internal } from "@ton/core";
+import { definePlugin, defineAction, type NftInfo, type TransactionResult, sendTransaction } from "@ton-agent-kit/core";
 
 // ============================================================
 // get_nft_info — Get NFT metadata
@@ -67,12 +67,14 @@ const transferNftAction = defineAction<
       .storeBit(0)               // no forward_payload
       .endCell();
 
-    const sender = agent.wallet.getSender();
-    await sender.send({
-      to: nftAddr,
-      value: toNano("0.05"),
-      body: transferBody,
-    });
+    await sendTransaction(agent, [
+      internal({
+        to: nftAddr,
+        value: toNano("0.05"),
+        bounce: true,
+        body: transferBody,
+      }),
+    ]);
 
     return {
       txHash: "pending",
@@ -87,32 +89,42 @@ const transferNftAction = defineAction<
 // ============================================================
 const getCollectionAction = defineAction<
   { collectionAddress: string },
-  { address: string; nextItemIndex: number; ownerAddress: string }
+  { address: string; name?: string; description?: string; nextItemIndex?: number; ownerAddress?: string }
 >({
-  name: "get_collection",
+  name: "get_nft_collection",
   description: "Get information about an NFT collection on TON.",
   schema: z.object({
     collectionAddress: z.string().describe("NFT collection contract address"),
   }),
   handler: async (agent, params) => {
-    const collAddr = Address.parse(params.collectionAddress);
-    const lastBlock = await (agent.connection as any).getLastBlock();
+    // Use TONAPI for reliable collection info (handles all address formats)
+    const apiBase =
+      agent.network === "testnet"
+        ? "https://testnet.tonapi.io/v2"
+        : "https://tonapi.io/v2";
 
-    const result = await (agent.connection as any).runMethod(
-      lastBlock.last.seqno,
-      collAddr,
-      "get_collection_data"
+    const headers: Record<string, string> = {};
+    if (agent.config.TONAPI_KEY) {
+      headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
+    }
+
+    const response = await fetch(
+      `${apiBase}/nfts/collections/${encodeURIComponent(params.collectionAddress)}`,
+      { headers },
     );
 
-    const stack = result.reader;
-    const nextItemIndex = stack.readBigNumber();
-    const content = stack.readCell();
-    const owner = stack.readAddress();
+    if (!response.ok) {
+      throw new Error(`Failed to fetch collection: ${response.status}`);
+    }
+
+    const data = await response.json();
 
     return {
-      address: collAddr.toString(),
-      nextItemIndex: Number(nextItemIndex),
-      ownerAddress: owner.toString(),
+      address: data.address || params.collectionAddress,
+      name: data.metadata?.name,
+      description: data.metadata?.description,
+      nextItemIndex: data.next_item_index,
+      ownerAddress: data.owner?.address,
     };
   },
 });
@@ -126,4 +138,4 @@ const NftPlugin = definePlugin({
 });
 
 export default NftPlugin;
-export { getNftInfoAction, transferNftAction, getCollectionAction };
+export { getNftInfoAction, transferNftAction, getCollectionAction as getNftCollectionAction, getCollectionAction };
