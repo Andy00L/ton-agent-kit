@@ -46,7 +46,7 @@ import PaymentsPlugin from "./packages/plugin-payments/src/index";
 // ══════════════════════════════════════════════════════════════
 
 const W = 64;
-const RATE_MS = 2000;
+const RATE_MS = 1000;
 
 let passed = 0;
 let failed = 0;
@@ -477,8 +477,8 @@ ${"─".repeat(W)}`);
     console.log(`     Status: ${r.status} | Explorer: ${r.explorerUrl}`);
   });
 
-  console.log(`\n  ⏳ Waiting 12s for TX confirmation...\n`);
-  await delay(12000);
+  console.log(`\n  ⏳ Waiting 10s for TX confirmation...\n`);
+  await delay(10000);
 
   await test("verify balance decreased after transfer", async () => {
     const r = await agent.runAction("get_balance", {});
@@ -554,8 +554,8 @@ ${"─".repeat(W)}`);
   });
 
   if (escrow) {
-    console.log(`\n  ⏳ 15s for deployment...\n`);
-    await delay(15000);
+    console.log(`\n  ⏳ 12s for deployment...\n`);
+    await delay(12000);
 
     await test("get_escrow_info (after create — status: created)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
@@ -572,8 +572,8 @@ ${"─".repeat(W)}`);
       console.log(`     Status: ${r.status} | TX: ${r.depositTxHash}`);
     });
 
-    console.log(`\n  ⏳ 15s for deposit confirmation...\n`);
-    await delay(15000);
+    console.log(`\n  ⏳ 12s for deposit confirmation...\n`);
+    await delay(12000);
 
     await test("get_escrow_info (after deposit — status: funded)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
@@ -586,8 +586,8 @@ ${"─".repeat(W)}`);
       console.log(`     Status: ${r.status} | TX: ${r.releaseTxHash}`);
     });
 
-    console.log(`\n  ⏳ 15s for release confirmation...\n`);
-    await delay(15000);
+    console.log(`\n  ⏳ 12s for release confirmation...\n`);
+    await delay(12000);
 
     await test("get_escrow_info (after release — released: true, balance: 0)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
@@ -613,10 +613,11 @@ ${"─".repeat(W)}`);
     console.log(`     Total escrows: ${r.count}`);
   });
 
-  await test("get_escrow_info (nonexistent ID — returns not found)", async () => {
-    const r = await agent.runAction("get_escrow_info", { escrowId: "escrow_fake_123" });
-    console.log(`     Result: ${JSON.stringify(r).slice(0, 80)}`);
-  });
+  await testError(
+    "get_escrow_info (nonexistent ID — rejects)",
+    () => agent.runAction("get_escrow_info", { escrowId: "escrow_fake_123" }),
+    "not found",
+  );
 
   sectionEnd("Escrow On-Chain");
 

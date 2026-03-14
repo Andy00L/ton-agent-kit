@@ -1,12 +1,12 @@
 /**
  * TON Agent Kit — Autonomous Agent Runtime Demo
  *
- * Runs 3 demo scenarios in sequence, each fully autonomous.
+ * Runs 5 demo scenarios in sequence, each fully autonomous.
  * The agent receives a natural-language goal, plans which actions to call,
  * executes them, and returns a summary.
  *
  * Usage:
- *   bun run demo-runloop.ts              # run all 3 scenarios
+ *   bun run demo-runloop.ts              # run all 5 scenarios
  *   bun run demo-runloop.ts "custom goal" # run a single custom goal
  */
 
@@ -55,7 +55,17 @@ const SCENARIOS: Scenario[] = [
   },
   {
     name: "Multi-Step Research",
-    goal: 'Resolve the domain foundation.ton to get its address. Then check the balance of that address. Then get the USDT price. Give me a summary of all findings.',
+    goal: "Resolve the domain foundation.ton to get its address. Then check the balance of that address. Then get the USDT price. Give me a summary of all findings.",
+    allPlugins: true,
+  },
+  {
+    name: "Full Agent Workflow",
+    goal: "Register an agent called demo-bot with capabilities trading and analytics. Then check my TON balance. Get the USDT price. Resolve foundation.ton and check its balance. Then discover all agents with trading capability. Give me a full report.",
+    allPlugins: true,
+  },
+  {
+    name: "Autonomous Escrow",
+    goal: "Create an escrow to 0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3 for 0.05 TON with description autonomous-escrow-test and deadline 10 minutes. Then list all escrows and give me the details of the one we just created.",
     allPlugins: true,
   },
 ];
@@ -94,6 +104,18 @@ function formatResult(result: any): string[] {
   }
   if (result.domain) {
     lines.push(`     Domain:  ${result.domain} → ${result.resolved || result.address || "?"}`);
+  }
+  if (result.escrowId) {
+    lines.push(`     Escrow:  ${result.escrowId}`);
+  }
+  if (result.contractAddress) {
+    lines.push(`     Contract: ${result.contractAddress}`);
+  }
+  if (result.agentId) {
+    lines.push(`     Agent:   ${result.agentId}`);
+  }
+  if (result.count !== undefined) {
+    lines.push(`     Count:   ${result.count}`);
   }
   if (result.name && !result.balance && !result.priceUSD) {
     lines.push(`     Name:    ${result.name}`);
@@ -288,7 +310,7 @@ async function main() {
     return;
   }
 
-  // ── Run all 3 scenarios ──
+  // ── Run all scenarios ──
   console.log(`\n  📋 Running ${SCENARIOS.length} scenarios in sequence...\n`);
 
   const results: ScenarioResult[] = [];
@@ -313,11 +335,12 @@ async function main() {
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     const icon = r.success ? "✅" : "⚠️";
-    const label = `Scenario ${i + 1}: ${icon} Completed (${r.steps} steps)`;
+    const label = `Scenario ${i + 1}: ${icon} ${r.name} (${r.steps} steps)`;
     console.log(boxLine(label));
   }
   console.log(boxLine(``));
   console.log(boxLine(`Total:      ${totalSteps} autonomous actions executed`));
+  console.log(boxLine(`Scenarios:  ${results.filter(r => r.success).length}/${results.length} successful`));
   console.log(`  └${"─".repeat(W - 4)}┘\n`);
 }
 
