@@ -1,5 +1,3 @@
-// This file is also available as npm package: @ton-agent-kit/x402-middleware
-
 /**
  * TON Agent Kit — x402 Payment Middleware (Production-Hardened)
  *
@@ -19,7 +17,7 @@
  * - Custom — implement the ReplayStore interface
  *
  * Usage:
- *   import { tonPaywall, createPaymentServer } from "./x402-middleware";
+ *   import { tonPaywall, createPaymentServer } from "@ton-agent-kit/x402-middleware";
  *
  *   // Default (file-based, zero config)
  *   app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc..." }), handler);
