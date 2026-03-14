@@ -97,6 +97,30 @@ ton-agent-kit/
 
 ---
 
+## Package Distribution
+
+All 13 packages are published on the **npm public registry** under the `@ton-agent-kit` scope:
+
+```
+@ton-agent-kit/core              @ton-agent-kit/plugin-staking
+@ton-agent-kit/plugin-token      @ton-agent-kit/plugin-analytics
+@ton-agent-kit/plugin-defi       @ton-agent-kit/plugin-escrow
+@ton-agent-kit/plugin-nft        @ton-agent-kit/plugin-identity
+@ton-agent-kit/plugin-dns        @ton-agent-kit/plugin-payments
+@ton-agent-kit/mcp-server        @ton-agent-kit/langchain
+@ton-agent-kit/ai-tools
+```
+
+Install only what you need:
+
+```bash
+npm install @ton-agent-kit/core @ton-agent-kit/plugin-token
+```
+
+Each package is independently versioned and published with its own `package.json`, entry points, and peer dependencies.
+
+---
+
 ## Core Design
 
 ### 1. Plugin Architecture (`.use()` pattern)
@@ -400,6 +424,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 | Validation | Zod v4 (native `toJSONSchema()`) |
 | APIs | TONAPI (indexed data) |
 | Storage | JSON files (File), Redis (optional), Custom |
+| Distribution | npm (public registry — 13 packages under @ton-agent-kit) |
 
 ---
 
