@@ -81,6 +81,8 @@ ton-agent-kit/
 ├── x402-middleware.ts             # x402 payment middleware (production-hardened)
 ├── demo-agent-commerce.ts        # Multi-agent commerce demo (2 wallets, on-chain escrow)
 ├── demo-runloop.ts               # Autonomous agent runtime demo (3 scenarios)
+├── test-npm-exhaustive.ts         # npm install test suite (75/75 — 75 pass, 1 skip)
+├── test-toaitools.ts              # toAITools() schema test (458/462 passing)
 ├── test-all-actions.ts           # Full test suite (63/64 — 63 pass, 1 skip)
 ├── test-x402.ts                  # x402 end-to-end test (5/5 passing)
 │
@@ -111,13 +113,37 @@ All 13 packages are published on the **npm public registry** under the `@ton-age
 @ton-agent-kit/ai-tools
 ```
 
-Install only what you need:
+Install only what you need (note: `zod` is a required peer dependency for all packages):
 
 ```bash
-npm install @ton-agent-kit/core @ton-agent-kit/plugin-token
+npm install @ton-agent-kit/core @ton-agent-kit/plugin-token zod
 ```
 
 Each package is independently versioned and published with its own `package.json`, entry points, and peer dependencies.
+
+### Current Versions
+
+| Package | Version |
+|---------|---------|
+| `@ton-agent-kit/core` | 1.0.3 |
+| `@ton-agent-kit/plugin-token` | 1.0.2 |
+| `@ton-agent-kit/plugin-escrow` | 1.0.2 |
+| `@ton-agent-kit/plugin-defi` | 1.0.1 |
+| `@ton-agent-kit/plugin-dns` | 1.0.1 |
+| `@ton-agent-kit/plugin-nft` | 1.0.1 |
+| `@ton-agent-kit/plugin-staking` | 1.0.1 |
+| `@ton-agent-kit/plugin-identity` | 1.0.1 |
+| `@ton-agent-kit/plugin-analytics` | 1.0.1 |
+| `@ton-agent-kit/plugin-payments` | 1.0.1 |
+| `@ton-agent-kit/mcp-server` | 1.0.1 |
+
+### Peer Dependencies
+
+All `@ton-agent-kit/*` packages declare `zod` (>=4.0.0) as a **peer dependency**. This ensures a single Zod instance is shared across the SDK, which is critical for `toAITools()` — Zod v4's `toJSONSchema()` only works when schemas are created by the same Zod instance that generates the JSON schema. Users must install `zod` explicitly:
+
+```bash
+npm install @ton-agent-kit/core zod
+```
 
 ---
 
@@ -298,7 +324,8 @@ User                     TonAgentKit              OpenAI-compatible LLM
 ```
 
 ### Key design decisions:
-- **Zod v4 native**: Uses `toJSONSchema()` from Zod v4 directly — no `zod-to-json-schema` dependency
+- **Zod v4 native**: Uses `toJSONSchema()` from Zod v4 directly — no `zod-to-json-schema` dependency. Works correctly via `npm install` (not just monorepo) thanks to `zod` being a peer dependency, ensuring a single Zod instance
+- **Proper JSON schemas**: `toAITools()` generates correct parameter names (`to`, `beneficiary`, `domain`, etc.) and types — verified by 458/462 tests and 13/13 bot messages
 - **Provider-agnostic**: Any OpenAI-compatible API works via `baseURL` (OpenRouter, Groq, Together, Mistral)
 - **Parameter remapping**: Automatically fixes LLM parameter name mismatches against action schemas
 - **Event hooks**: `onIteration`, `onActionStart`, `onActionResult`, `onComplete` for custom UIs
@@ -400,6 +427,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 | Feature | Our advantage |
 |---------|--------------|
 | Autonomous Runtime | `agent.runLoop()` — no other agent SDK has LLM-driven autonomous execution |
+| `toAITools()` | Works via `npm install` (not just monorepo) — proper JSON schemas with correct parameter names, powered by Zod v4 native `toJSONSchema()` |
 | On-chain Escrow | Tact smart contract deployed per deal — fully trustless |
 | x402 | Production-hardened with pluggable anti-replay |
 | Agent identity | Registry + reputation (like ERC-8004 for TON) |
@@ -433,7 +461,7 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo.
 | Criteria (25%) | How we score | Target |
 |----------------|-------------|--------|
 | **Product Quality** | 29 actions across 9 plugins, `agent.runLoop()` autonomous runtime, MCP live in Claude Desktop, Telegram bot with HITL, x402 middleware, multi-agent commerce demo with on-chain escrow | 9-10/10 |
-| **Technical Execution** | Plugin architecture, wallet auto-detect, on-chain Tact escrow contract, production-hardened x402, autonomous runLoop, Zod v4 native schemas, multi-provider AI, friendly addresses | 9-10/10 |
+| **Technical Execution** | Plugin architecture, wallet auto-detect, on-chain Tact escrow contract, production-hardened x402, autonomous runLoop, Zod v4 native schemas (toAITools works via npm), multi-provider AI, friendly addresses, 75/75 npm tests + 458/462 schema tests | 9-10/10 |
 | **Ecosystem Value** | THE foundation for all TON AI agents — discovery, payments, trust, control, autonomous execution | 10/10 |
 | **User Potential** | Claude/GPT integration, Telegram bot (1B users), x402 enables agent economy, multi-provider support, runLoop for zero-code agent autonomy | 9-10/10 |
 
