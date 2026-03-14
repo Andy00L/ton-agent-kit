@@ -19,7 +19,7 @@
 
 TON Agent Kit is more than an SDK — it's the **infrastructure for an AI agent economy on TON**.
 
-Agents discover each other via **agent registry**. They pay each other via **x402 middleware with zero-fee payment channels**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 32 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral.
+Agents discover each other via **agent registry**. They pay each other via **x402 middleware**. Users control them safely from **Telegram with human-in-the-loop approval**. And any AI (Claude, GPT, LangChain, Vercel AI) can interact with TON through a single **MCP server with 29 tools**. Works with **any LLM provider** — OpenAI, OpenRouter, Groq, Together, Mistral.
 
 ### The problem
 
@@ -31,7 +31,7 @@ On Solana, the [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit)
 
 | Capability | Solana | Base/ETH | TON (before) | TON Agent Kit |
 |---|---|---|---|---|
-| Agent SDK | Solana Agent Kit (60+) | Coinbase AgentKit (50+) | ❌ | ✅ **32 actions, 9 plugins** |
+| Agent SDK | Solana Agent Kit (60+) | Coinbase AgentKit (50+) | ❌ | ✅ **29 actions, 9 plugins** |
 | Agent Identity | SATI | ERC-8004 (123K agents) | ❌ | ✅ **Agent registry + reputation** |
 | Agent Payments | x402 ($0.00025/tx) | Virtuals ACP | ❌ | ✅ **x402 middleware ($0/tx via channels)** |
 | Agent Security | Embedded wallets | Agentic Wallets (TEE) | ❌ | ✅ **Telegram HITL + balance guards** |
@@ -96,7 +96,7 @@ const agent = await TonAgentKit.fromMnemonic(
 
 ## Plugins & Actions
 
-**32 actions across 9 plugins.** Install only what you need.
+**29 actions across 9 plugins.** Install only what you need.
 
 ### 🪙 Token Plugin (6 actions)
 
@@ -170,15 +170,12 @@ const agent = await TonAgentKit.fromMnemonic(
 | `discover_agent` | Find agents by capability or name | ✅ Live |
 | `get_agent_reputation` | Read + update reputation scores | ✅ Live |
 
-### ⚡ Payments Plugin (4 actions + x402 middleware)
+### ⚡ Payments Plugin (1 action: pay_for_resource + x402 middleware)
 
-*Zero-fee payment channels + production-hardened HTTP payment middleware for agent-to-agent commerce.*
+*Production-hardened HTTP payment middleware for agent-to-agent commerce.*
 
 | Action | Description | Status |
 |--------|-------------|--------|
-| `create_payment_channel` | Open a channel with another agent | ✅ Live |
-| `send_micropayment` | Send zero-fee payment through channel | ✅ Live |
-| `close_payment_channel` | Settle and close channel on-chain | ✅ Live |
 | `pay_for_resource` | Auto-pay for x402-gated APIs | ✅ Live |
 
 ```typescript
@@ -226,7 +223,7 @@ Two AI agents negotiate, pay, and rate each other through the complete cycle: Id
 
 ## MCP Server
 
-Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **32 tools available.**
+Let Claude, GPT, Cursor, or any MCP-compatible AI interact with TON directly. **29 tools available.**
 
 ### Setup (Claude Desktop)
 
@@ -349,13 +346,13 @@ ton-agent-kit/
 │   ├── plugin-analytics/   # Wallet analytics (2 actions)
 │   ├── plugin-escrow/      # Trustless escrow (5 actions)
 │   ├── plugin-identity/    # Agent registry + reputation (3 actions)
-│   ├── plugin-payments/    # x402 + payment channels (4 actions)
+│   ├── plugin-payments/    # x402 pay_for_resource (1 action)
 │   ├── mcp-server/         # MCP server for Claude/GPT
 │   ├── langchain/          # LangChain tool wrappers
 │   └── ai-tools/           # Vercel AI SDK tools
 ├── contracts/
 │   └── escrow.tact         # Escrow smart contract (Tact)
-├── mcp-server.ts           # Standalone MCP server (32 tools)
+├── mcp-server.ts           # Standalone MCP server (29 tools)
 ├── telegram-bot.ts         # Telegram bot with HITL
 ├── x402-middleware.ts       # x402 payment middleware (production-hardened)
 ├── demo-agent-commerce.ts  # Agent Commerce Protocol demo
@@ -380,8 +377,7 @@ ton-agent-kit/
 ✅ deploy_jetton        ✅ get_jetton_info       ✅ create_escrow
 ✅ deposit_to_escrow    ✅ release_escrow        ✅ refund_escrow
 ✅ get_escrow_info      ✅ register_agent        ✅ discover_agent
-✅ get_agent_reputation ✅ create_payment_channel ✅ send_micropayment
-✅ close_payment_channel ✅ pay_for_resource
+✅ get_agent_reputation ✅ pay_for_resource
 ```
 
 ### Claude Desktop MCP (8/8 passing)
@@ -401,7 +397,7 @@ ton-agent-kit/
 | Feature | TON Agent Kit | Solana Agent Kit | Coinbase AgentKit |
 |---------|--------------|-----------------|-------------------|
 | **Chain** | TON | Solana | Base/ETH |
-| **Actions** | 32 | 60+ | 50+ |
+| **Actions** | 29 | 60+ | 50+ |
 | **MCP Server** | ✅ | ✅ | ✅ |
 | **LangChain** | ✅ | ✅ | ✅ |
 | **Multi-provider** | ✅ OpenAI, OpenRouter, Groq, Together, Mistral | Partial | Partial |
@@ -437,6 +433,7 @@ ton-agent-kit/
 - [ ] Session key smart contract deployment (Tact)
 - [ ] TON DNS subdomain registration for agent identity
 - [ ] ADNL agent-to-agent encrypted communication
+- [ ] Payment channel integration via tonweb SDK for zero-fee streaming payments
 - [ ] npm package publishing (@ton-agent-kit/*)
 - [ ] Unit tests with @ton/sandbox
 - [ ] Rate limiting and spending caps per session

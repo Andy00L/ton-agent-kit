@@ -1,0 +1,77 @@
+{
+  "agent_market-data-provider": {
+    "id": "agent_market-data-provider",
+    "name": "market-data-provider",
+    "address": "0:a5556ae3597e3d5dad785d3ed0d9746dfc4b5b9494d4bed9b8d5a9849dea34ed",
+    "capabilities": [
+      "price_feed",
+      "market_data",
+      "analytics"
+    ],
+    "description": "Real-time token prices and market analytics via x402 API",
+    "endpoint": null,
+    "network": "testnet",
+    "registeredAt": "2026-03-14T00:47:11.405Z",
+    "reputation": {
+      "score": 100,
+      "totalTasks": 1,
+      "successfulTasks": 1
+    }
+  },
+  "agent_trading-bot": {
+    "id": "agent_trading-bot",
+    "name": "trading-bot",
+    "address": "0:a5556ae3597e3d5dad785d3ed0d9746dfc4b5b9494d4bed9b8d5a9849dea34ed",
+    "capabilities": [
+      "trading",
+      "dex",
+      "arbitrage"
+    ],
+    "description": "Automated DEX trading with DeDust and StonFi",
+    "endpoint": null,
+    "network": "testnet",
+    "registeredAt": "2026-03-14T00:47:11.408Z",
+    "reputation": {
+      "score": 100,
+      "totalTasks": 1,
+      "successfulTasks": 1
+    }
+  },
+  "agent_test-validator-bot": {
+    "id": "agent_test-validator-bot",
+    "name": "test-validator-bot",
+    "address": "0:a5556ae3597e3d5dad785d3ed0d9746dfc4b5b9494d4bed9b8d5a9849dea34ed",
+    "capabilities": [
+      "testing",
+      "validation",
+      "analytics"
+    ],
+    "description": "Automated test agent for validation suite",
+    "endpoint": "https://test.example.com/api",
+    "network": "testnet",
+    "registeredAt": "2026-03-14T04:01:20.006Z",
+    "reputation": {
+      "score": 67,
+      "totalTasks": 3,
+      "successfulTasks": 2
+    }
+  },
+  "agent_data-provider-bot": {
+    "id": "agent_data-provider-bot",
+    "name": "data-provider-bot",
+    "address": "0:a5556ae3597e3d5dad785d3ed0d9746dfc4b5b9494d4bed9b8d5a9849dea34ed",
+    "capabilities": [
+      "price_feed",
+      "market_data"
+    ],
+    "description": "Market data provider",
+    "endpoint": null,
+    "network": "testnet",
+    "registeredAt": "2026-03-14T04:01:20.008Z",
+    "reputation": {
+      "score": 0,
+      "totalTasks": 0,
+      "successfulTasks": 0
+    }
+  }
+}
