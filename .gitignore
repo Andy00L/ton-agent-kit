@@ -12,3 +12,5 @@ coverage/
 .chat-histories.json
 .agent-registry.json
 .claude/
+.claude/
+bun.lock
