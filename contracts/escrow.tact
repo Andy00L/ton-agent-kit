@@ -58,8 +58,8 @@ contract Escrow with Deployable {
         self.released = true;
         send(SendParameters{
             to: self.beneficiary,
-            value: self.amount - ton("0.01"),
-            mode: SendRemainingBalance,
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
             bounce: false,
             body: "Escrow released".asComment()
         });
@@ -79,8 +79,8 @@ contract Escrow with Deployable {
         self.refunded = true;
         send(SendParameters{
             to: self.depositor,
-            value: self.amount - ton("0.01"),
-            mode: SendRemainingBalance,
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
             bounce: false,
             body: "Escrow refunded".asComment()
         });
