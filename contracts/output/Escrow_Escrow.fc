@@ -422,7 +422,7 @@ _ %balance() method_id(104128) {
         throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
         throw_unless(41415, ($self'amount > 0));
         $self'released = true;
-        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, ($self'amount - 10000000), 128, false, __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e4e240()));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, 0, 130, false, __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e4e240()));
         $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
         return ();
     }
@@ -436,7 +436,7 @@ _ %balance() method_id(104128) {
         throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
         throw_unless(41415, ($self'amount > 0));
         $self'refunded = true;
-        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, ($self'amount - 10000000), 128, false, __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b()));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, 0, 130, false, __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b()));
         $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
         return ();
     }
