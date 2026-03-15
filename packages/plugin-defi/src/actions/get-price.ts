@@ -32,7 +32,7 @@ export const getPriceAction = defineAction<
         return { priceUSD: "unknown", priceTON: "unknown", token: params.token };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       const rates = data.rates?.[params.token]?.prices;
 
       if (!rates) {

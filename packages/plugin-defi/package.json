@@ -1,7 +1,7 @@
 {
   "name": "@ton-agent-kit/plugin-defi",
-  "version": "1.0.1",
-  "description": "DeFi operations plugin — DeDust & STON.fi swaps, pools, prices",
+  "version": "1.1.0",
+  "description": "DeFi operations plugin — DeDust & STON.fi swaps, DCA, limit orders, yield farming, staking, trust scores",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
