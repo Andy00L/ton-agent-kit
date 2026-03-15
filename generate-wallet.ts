@@ -1,19 +1,24 @@
-import { mnemonicNew, mnemonicToPrivateKey } from "@ton/crypto";
-import { WalletContractV4 } from "@ton/ton";
+import { KeypairWallet } from "./packages/core/src/wallet";
 
 async function main() {
-  const mnemonic = await mnemonicNew(24);
-  const keyPair = await mnemonicToPrivateKey(mnemonic);
-  const wallet = WalletContractV4.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
+  // --- Single wallet ---
+  console.log("=== SINGLE WALLET (V5R1, testnet) ===\n");
+  const [single] = await KeypairWallet.generateMultiple(1, { network: "testnet" });
+  console.log("Address:", single.wallet.address.toString({ testOnly: true, bounceable: false }));
+  console.log("Mnemonic:", single.mnemonic.join(" "));
 
-  console.log("=== TON TESTNET WALLET ===");
-  console.log("Mnemonic:", mnemonic.join(" "));
-  console.log("Address:", wallet.address.toString({ testOnly: true }));
-  console.log("\nSave the mnemonic in your .env file!");
-  console.log("Then send testnet TON to the address above.");
+  // --- Multiple wallets ---
+  console.log("\n=== 3 WALLETS (V5R1, testnet) ===\n");
+  const wallets = await KeypairWallet.generateMultiple(3, { network: "testnet" });
+  for (let i = 0; i < wallets.length; i++) {
+    const { wallet, mnemonic } = wallets[i];
+    console.log(`Wallet ${i + 1}:`);
+    console.log("  Address:", wallet.address.toString({ testOnly: true, bounceable: false }));
+    console.log("  Mnemonic:", mnemonic.join(" "));
+  }
+
+  console.log("\nSave the mnemonics in your .env file!");
+  console.log("Then send testnet TON to the addresses above.");
 }
 
 main();

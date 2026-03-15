@@ -1,5 +1,5 @@
 import { Address, type MessageRelaxed } from "@ton/core";
-import { KeyPair, mnemonicToPrivateKey } from "@ton/crypto";
+import { KeyPair, mnemonicNew, mnemonicToPrivateKey } from "@ton/crypto";
 import {
   TonClient4,
   WalletContractV3R2,
@@ -165,6 +165,34 @@ export class KeypairWallet implements WalletProvider {
   async sign(data: Buffer): Promise<Buffer> {
     const { sign } = await import("@ton/crypto");
     return sign(data, this.keyPair.secretKey);
+  }
+
+  /**
+   * Generate multiple new wallets with fresh mnemonics.
+   * @param count - Number of wallets to generate
+   * @param options - Optional network setting (default: "mainnet")
+   * @returns Array of { wallet, mnemonic } objects
+   */
+  static async generateMultiple(
+    count: number,
+    options?: { network?: "testnet" | "mainnet" },
+  ): Promise<{ wallet: KeypairWallet; mnemonic: string[] }[]> {
+    const results: { wallet: KeypairWallet; mnemonic: string[] }[] = [];
+    const network = options?.network || "mainnet";
+
+    for (let i = 0; i < count; i++) {
+      const mnemonic = await mnemonicNew(24);
+      const wallet = await KeypairWallet.fromMnemonic(mnemonic, {
+        version: "V5R1",
+        network,
+      });
+      results.push({ wallet, mnemonic });
+    }
+
+    console.warn(
+      `Generated ${count} wallets. Save the mnemonics securely — they cannot be recovered.`,
+    );
+    return results;
   }
 
   static async getAllAddresses(
