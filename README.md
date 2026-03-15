@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.png" alt="TON Agent Kit" width="800">
+  <img src="assets/hero.png" alt="TON Agent Kit" width="1000">
 </p>
 
 <p align="center">
