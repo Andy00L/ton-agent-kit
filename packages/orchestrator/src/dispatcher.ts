@@ -1,3 +1,4 @@
+import { toJSONSchema } from "zod";
 import type { AgentConfig, Task, TaskResult, SwarmOptions } from "./types";
 import type { EventBus } from "./events";
 
@@ -78,17 +79,53 @@ export class Dispatcher {
         );
       }
 
-      // Build context from dependency results
-      const buildContext = (task: Task): Record<string, any> => {
-        if (!task.dependsOn || task.dependsOn.length === 0) return {};
+      /**
+       * Get the accepted parameter names for an action from its Zod schema.
+       */
+      const getActionParamNames = (
+        agentConfig: AgentConfig,
+        actionName: string,
+      ): Set<string> => {
+        const actions = agentConfig.agent.getAvailableActions();
+        const action = actions.find((a: any) => a.name === actionName);
+        if (!action) return new Set();
+        const schema = toJSONSchema(action.schema) as any;
+        return new Set(Object.keys(schema.properties || {}));
+      };
+
+      /**
+       * Build params for a task by auto-mapping dependency result fields
+       * to matching parameter names, plus _context as fallback.
+       */
+      const buildParams = (
+        task: Task,
+        agentConfig: AgentConfig,
+      ): Record<string, any> => {
+        if (!task.dependsOn || task.dependsOn.length === 0) return task.params;
+
+        const paramNames = getActionParamNames(agentConfig, task.action);
+        const merged = { ...task.params };
         const ctx: Record<string, any> = {};
+
         for (const depId of task.dependsOn) {
           const depResult = resultMap.get(depId);
-          if (depResult) {
-            ctx[depId] = depResult.result;
+          if (!depResult || !depResult.result) continue;
+
+          ctx[depId] = depResult.result;
+
+          // Auto-map: if the dependency result has a key that matches
+          // one of this action's parameter names, inject it
+          if (typeof depResult.result === "object" && depResult.result !== null) {
+            for (const [key, value] of Object.entries(depResult.result)) {
+              if (paramNames.has(key) && !(key in merged)) {
+                merged[key] = value;
+              }
+            }
           }
         }
-        return ctx;
+
+        merged._context = ctx;
+        return merged;
       };
 
       // Execute ready tasks
@@ -100,11 +137,7 @@ export class Dispatcher {
           );
         }
 
-        const context = buildContext(task);
-        const params =
-          Object.keys(context).length > 0
-            ? { ...task.params, _context: context }
-            : task.params;
+        const params = buildParams(task, agentConfig);
 
         this.events.taskStart(task);
         const label = `Task ${task.id} (${task.agent}.${task.action})`;
