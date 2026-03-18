@@ -1,0 +1,1767 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; Reputation_Reputation.headers.fc
+;;
+;; Header files for Reputation
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_not_null
+forall X -> X __tact_not_null(X x) impure inline;
+
+;; __tact_context_get
+(int, slice, int, slice) __tact_context_get() inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; __tact_dict_get_slice_int
+int __tact_dict_get_slice_int(cell d, int kl, slice k, int vl) inline;
+
+;; __tact_dict_set_slice_int
+(cell, ()) __tact_dict_set_slice_int(cell d, int kl, slice k, int v, int vl) inline;
+
+;; __tact_dict_get_uint_slice
+slice __tact_dict_get_uint_slice(cell d, int kl, int k) inline;
+
+;; __tact_dict_set_uint_slice
+(cell, ()) __tact_dict_set_uint_slice(cell d, int kl, int k, slice v) inline;
+
+;; __tact_dict_get_uint_int
+int __tact_dict_get_uint_int(cell d, int kl, int k, int vl) inline;
+
+;; __tact_dict_set_uint_int
+(cell, ()) __tact_dict_set_uint_int(cell d, int kl, int k, int v, int vl) inline;
+
+;; __tact_dict_get_uint_uint
+int __tact_dict_get_uint_uint(cell d, int kl, int k, int vl) inline;
+
+;; __tact_dict_set_uint_uint
+(cell, ()) __tact_dict_set_uint_uint(cell d, int kl, int k, int v, int vl) inline;
+
+;; __tact_dict_get_uint_cell
+cell __tact_dict_get_uint_cell(cell d, int kl, int k) inline;
+
+;; __tact_dict_set_uint_cell
+(cell, ()) __tact_dict_set_uint_cell(cell d, int kl, int k, cell v) inline;
+
+;; $DeployOk$_store
+builder $DeployOk$_store(builder build_0, (int) v) inline;
+
+;; $DeployOk$_store_cell
+cell $DeployOk$_store_cell((int) v, builder b) inline;
+
+;; $Reputation$_store
+builder $Reputation$_store(builder build_0, (slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) v) inline;
+
+;; $Reputation$_load
+(slice, ((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int))) $Reputation$_load(slice sc_0) inline;
+
+;; $Context$_get_value
+_ $Context$_get_value((int, slice, int, slice) v) inline;
+
+;; $AgentData$_not_null
+((slice, int, int, int, int)) $AgentData$_not_null(tuple v) inline;
+
+;; $AgentData$_as_optional
+tuple $AgentData$_as_optional((slice, int, int, int, int) v) inline;
+
+;; $AgentData$_to_tuple
+tuple $AgentData$_to_tuple(((slice, int, int, int, int)) v) inline;
+
+;; $AgentData$_to_opt_tuple
+tuple $AgentData$_to_opt_tuple(tuple v) inline;
+
+;; $AgentData$_to_opt_external
+tuple $AgentData$_to_opt_external(tuple v) inline;
+
+;; $DisputeInfo$_not_null
+((slice, slice, slice, int, int, int)) $DisputeInfo$_not_null(tuple v) inline;
+
+;; $DisputeInfo$_as_optional
+tuple $DisputeInfo$_as_optional((slice, slice, slice, int, int, int) v) inline;
+
+;; $DisputeInfo$_to_tuple
+tuple $DisputeInfo$_to_tuple(((slice, slice, slice, int, int, int)) v) inline;
+
+;; $DisputeInfo$_to_opt_tuple
+tuple $DisputeInfo$_to_opt_tuple(tuple v) inline;
+
+;; $DisputeInfo$_to_opt_external
+tuple $DisputeInfo$_to_opt_external(tuple v) inline;
+
+;; $AgentCleanupInfo$_to_external
+(int, int, int, int, int, int, int, int, int, int) $AgentCleanupInfo$_to_external(((int, int, int, int, int, int, int, int, int, int)) v) inline;
+
+;; $IntentData$_to_external
+(slice, int, int, int, int, int, int) $IntentData$_to_external(((slice, int, int, int, int, int, int)) v) inline;
+
+;; $OfferData$_to_external
+(slice, int, int, int, int) $OfferData$_to_external(((slice, int, int, int, int)) v) inline;
+
+;; $Reputation$init$_load
+(slice, ((slice))) $Reputation$init$_load(slice sc_0) inline;
+
+;; $Reputation$_contract_init
+(slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $Reputation$_contract_init(slice $owner) impure inline;
+
+;; $Reputation$_contract_load
+(slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $Reputation$_contract_load() impure inline;
+
+;; $Reputation$_contract_store
+() $Reputation$_contract_store((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) v) impure inline;
+
+;; $Reputation$_fun_decrementAgentIntents
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_decrementAgentIntents((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref;
+
+;; $Reputation$_fun_expireIntent
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_expireIntent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $Reputation$_fun_eraseAgent
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_eraseAgent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $Reputation$_fun_cleanup
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_cleanup((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $maxClean) impure inline_ref;
+
+;; $Reputation$_fun_forceCleanupAgentIntents
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_forceCleanupAgentIntents((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref;
+
+;; $Reputation$_fun_addToIntentServiceIndex
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_addToIntentServiceIndex((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $serviceHash, int $intentIndex) impure inline_ref;
+
+;; $Reputation$_fun_cleanupOneIntent
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_cleanupOneIntent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt
+((slice, int, int, int, int)) $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt(slice $owner, int $available, int $totalTasks, int $successes, int $registeredAt) inline;
+
+;; $Reputation$_fun_agentData
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), tuple) $Reputation$_fun_agentData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $Reputation$_fun_agentIndexByNameHash
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentIndexByNameHash((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $nameHash) impure inline_ref;
+
+;; $Reputation$_fun_agentReputation
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentReputation((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $Reputation$_fun_agentCount
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $Reputation$_fun_contractBalance
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_contractBalance((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $Reputation$_fun_agentsByCapability
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), cell) $Reputation$_fun_agentsByCapability((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $capHash) impure inline_ref;
+
+;; $Reputation$_fun_disputeCount
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_disputeCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled
+((slice, slice, slice, int, int, int)) $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled(slice $escrowAddress, slice $depositor, slice $beneficiary, int $amount, int $votingDeadline, int $settled) inline;
+
+;; $Reputation$_fun_disputeData
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), tuple) $Reputation$_fun_disputeData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason
+((int, int, int, int, int, int, int, int, int, int)) $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason(int $index, int $exists, int $score, int $totalRatings, int $registeredAt, int $lastActive, int $daysSinceActive, int $daysSinceRegistered, int $eligibleForCleanup, int $cleanupReason) inline;
+
+;; $Reputation$_fun_agentCleanupInfo
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (int, int, int, int, int, int, int, int, int, int)) $Reputation$_fun_agentCleanupInfo((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $Reputation$_fun_intentsByServiceHash
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), cell) $Reputation$_fun_intentsByServiceHash((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $serviceHash) impure inline_ref;
+
+;; $Reputation$_fun_intentCount
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_intentCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $Reputation$_fun_offerCount
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_offerCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref;
+
+;; $Reputation$_fun_agentIntentQuota
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentIntentQuota((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref;
+
+;; $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired
+((slice, int, int, int, int, int, int)) $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired(slice $buyer, int $serviceHash, int $budget, int $deadline, int $status, int $acceptedOffer, int $isExpired) inline;
+
+;; $Reputation$_fun_intentData
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (slice, int, int, int, int, int, int)) $Reputation$_fun_intentData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status
+((slice, int, int, int, int)) $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status(slice $seller, int $intentIndex, int $price, int $deliveryTime, int $status) inline;
+
+;; $Reputation$_fun_offerData
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (slice, int, int, int, int)) $Reputation$_fun_offerData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref;
+
+;; $MessageParameters$_constructor_bounce_to_value_mode_body
+((int, cell, int, slice, int)) $MessageParameters$_constructor_bounce_to_value_mode_body(int $bounce, slice $to, int $value, int $mode, cell $body) inline;
+
+;; $Reputation$_fun_notify
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_notify((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, cell $body) impure inline;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $DeployOk$_constructor_queryId
+((int)) $DeployOk$_constructor_queryId(int $queryId) inline;
+
+
+;; Reputation_Reputation.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+int __tact_sha256(slice data) asm """
+
+            <{
+                <{ DUP SREFS }> PUSHCONT
+                <{ LDREFRTOS }> PUSHCONT
+                WHILE
+                DEPTH
+                HASHEXT_SHA256
+            }> PUSHCONT
+            1 1 CALLXARGS
+
+""";
+
+forall X -> X __tact_not_null(X x) impure inline {
+    throw_if(128, null?(x)); return x;
+}
+
+(cell, int) __tact_dict_delete(cell dict, int key_len, slice index) asm(index dict key_len) """
+    DICTDEL
+""";
+
+(slice, int) __tact_dict_get(cell dict, int key_len, slice index) asm(index dict key_len) """
+    DICTGET NULLSWAPIFNOT
+""";
+
+(int, slice, int, slice) __tact_context_get() inline {
+    return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+forall X0, X1, X2, X3, X4 -> tuple __tact_tuple_create_5((X0, X1, X2, X3, X4) v) asm """
+    5 TUPLE
+""";
+
+forall X0, X1, X2, X3, X4 -> (X0, X1, X2, X3, X4) __tact_tuple_destroy_5(tuple v) asm """
+    5 UNTUPLE
+""";
+
+forall X0, X1, X2, X3, X4, X5 -> tuple __tact_tuple_create_6((X0, X1, X2, X3, X4, X5) v) asm """
+    6 TUPLE
+""";
+
+forall X0, X1, X2, X3, X4, X5 -> (X0, X1, X2, X3, X4, X5) __tact_tuple_destroy_6(tuple v) asm """
+    6 UNTUPLE
+""";
+
+int __tact_dict_get_slice_int(cell d, int kl, slice k, int vl) inline {
+    var (r, ok) = __tact_dict_get(d, kl, k);
+    if (ok) {
+        return r~load_int(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_slice_int(cell d, int kl, slice k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = __tact_dict_delete(d, kl, k);
+        return (r, ());
+    } else {
+        return (dict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
+    }
+}
+
+slice __tact_dict_get_uint_slice(cell d, int kl, int k) inline {
+    var (r, ok) = udict_get?(d, kl, k);
+    if (ok) {
+        return r;
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_uint_slice(cell d, int kl, int k, slice v) inline {
+    if (null?(v)) {
+        var (r, ok) = udict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (udict_set(d, kl, k, v), ());
+    }
+}
+
+int __tact_dict_get_uint_int(cell d, int kl, int k, int vl) inline {
+    var (r, ok) = udict_get?(d, kl, k);
+    if (ok) {
+        return r~load_int(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_uint_int(cell d, int kl, int k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = udict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (udict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
+    }
+}
+
+int __tact_dict_get_uint_uint(cell d, int kl, int k, int vl) inline {
+    var (r, ok) = udict_get?(d, kl, k);
+    if (ok) {
+        return r~load_uint(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_uint_uint(cell d, int kl, int k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = udict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (udict_set_builder(d, kl, k, begin_cell().store_uint(v, vl)), ());
+    }
+}
+
+cell __tact_dict_get_uint_cell(cell d, int kl, int k) inline {
+    var (r, ok) = udict_get_ref?(d, kl, k);
+    if (ok) {
+        return r;
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_uint_cell(cell d, int kl, int k, cell v) inline {
+    if (null?(v)) {
+        var (r, ok) = udict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (udict_set_ref(d, kl, k, v), ());
+    }
+}
+
+builder $global_beginCell() impure asm """
+    NEWC
+""";
+
+int $global_myBalance() impure asm """
+    BALANCE FIRST
+""";
+
+() $global_nativeReserve(int $amount, int $mode) impure asm """
+    RAWRESERVE
+""";
+
+() $global_message((int, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    106 PUSHINT         // 1 + 4 + 4 + 64 + 32 + 1
+    STZEROES
+    // → Stack state
+    // s0: Builder
+    // s1: `body`
+    // s2: `mode`
+    STDICT
+    ENDC
+    SWAP
+    SENDRAWMSG
+""";
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+int $global_now() impure asm """
+    NOW
+""";
+
+builder $Builder$_fun_storeRef(cell $cell, builder $self) impure asm """
+    STREF
+""";
+
+cell $Builder$_fun_endCell(builder $self) impure asm """
+    ENDC
+""";
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_notify((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, cell $body) impure inline {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    slice $to = __tact_context_get_sender();
+    int $bounce = false;
+    if (false) {
+        int $balance = $global_myBalance();
+        int $balanceBeforeMessage = ($balance - $Context$_get_value(__tact_context_get()));
+        if (($balanceBeforeMessage < 0)) {
+            $global_nativeReserve(0, 0);
+            $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 130, $body));
+            return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+        }
+    }
+    $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 66, $body));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+;; Reputation_Reputation.constants.fc
+;; Cell EM/Tg13WdFxW1NOuUBGvSVmNmtckyA1LLtMKxIf17+U=
+cell __gen_cell_cell_10cfd3835dd6745c56d4d3ae5011af49598d9ad724c80d4b2ed30ac487f5efe5() asm """
+    B{b5ee9c72410101010016000028000000004167656e7420726567697374657265642fa11489} B>boc PUSHREF
+""";
+
+;; Cell 1dpzAkEDgnuWkhs2T0fnnU3+s1KN8YfRNi/SNJg3J2g=
+cell __gen_cell_cell_d5da73024103827b96921b364f47e79d4dfeb3528df187d1362fd23498372768() asm """
+    B{b5ee9c7241010101001500002600000000526174696e67207265636f726465642ee0ec2f} B>boc PUSHREF
+""";
+
+;; Cell uD3Bn2VWx+skZ0AEtoZ40OjogBF4JblJyJchkAKFPqk=
+cell __gen_cell_cell_b83dc19f6556c7eb24674004b68678d0e8e880117825b949c897219002853ea9() asm """
+    B{b5ee9c7241010101001a00003000000000417661696c6162696c6974792075706461746564e46c702c} B>boc PUSHREF
+""";
+
+;; Cell R/2HdzaBFuHyJzwaq0D9eNdheKV5U4UQOY/aCLdz3R0=
+cell __gen_cell_cell_47fd8777368116e1f2273c1aab40fd78d76178a579538510398fda08b773dd1d() asm """
+    B{b5ee9c7241010101001800002c000000004361706162696c69747920696e6465786564c9cd7d50} B>boc PUSHREF
+""";
+
+;; Cell lypf3ZzP20meGfXYVd4m9PsaBFHvLpnJL+Ok8BPMOhQ=
+cell __gen_cell_cell_972a5fdd9ccfdb499e19f5d855de26f4fb1a0451ef2e99c92fe3a4f013cc3a14() asm """
+    B{b5ee9c7241010101001700002a00000000436c65616e757020636f6d706c65746564bf41861e} B>boc PUSHREF
+""";
+
+;; Cell uMQ3dNFpxJRFcbf81Kj9RH2ykhAn3iSJtmdTZ4lL9VU=
+cell __gen_cell_cell_b8c43774d169c4944571b7fcd4a8fd447db2921027de2489b6675367894bf555() asm """
+    B{b5ee9c7241010101001400002400000000466565732077697468647261776e803215d2} B>boc PUSHREF
+""";
+
+;; Cell 9VqByupNZm7g2EGsEkQjVXBiMHcSlfmlOdSfWQ14HXA=
+cell __gen_cell_cell_f55a81caea4d666ee0d841ac12442355706230771295f9a539d49f590d781d70() asm """
+    B{b5ee9c7241010101001600002800000000496e74656e742062726f616463617374468585fd} B>boc PUSHREF
+""";
+
+;; Cell 8SGjiGVPlRkuOqnfFb7DMRKa/xxCG/E9TbgAGwdxEZw=
+cell __gen_cell_cell_f121a388654f95192e3aa9df15bec331129aff1c421bf13d4db8001b0771119c() asm """
+    B{b5ee9c7241010101001000001c000000004f666665722073656e74dbb5e99f} B>boc PUSHREF
+""";
+
+;; Cell NZmbZUwmLglwWJlF+AJpxdKOrxGMlFprcr39IEkBs74=
+cell __gen_cell_cell_35999b654c262e0970589945f80269c5d28eaf118c945a6b72bdfd204901b3be() asm """
+    B{b5ee9c72410101010014000024000000004f66666572206163636570746564cef7d167} B>boc PUSHREF
+""";
+
+;; Cell QHTL/q0ZILTO+21FMJjqZ9qAl9q+LvSMoQrMAsIkJDg=
+cell __gen_cell_cell_4074cbfead1920b4cefb6d453098ea67da8097dabe2ef48ca10acc02c2242438() asm """
+    B{b5ee9c72410101010012000020000000004465616c20736574746c6564491df8bc} B>boc PUSHREF
+""";
+
+;; Cell kW3P4MBn22pU+JLZT6jv/8E1KEomVQMB76aQ5RXOOlo=
+cell __gen_cell_cell_916dcfe0c067db6a54f892d94fa8efffc135284a26550301efa690e515ce3a5a() asm """
+    B{b5ee9c7241010101001600002800000000496e74656e742063616e63656c6c6564258ac977} B>boc PUSHREF
+""";
+
+;; Reputation_Reputation.storage.fc
+;;
+;; Type: Context
+;; TLB: _ bounceable:bool sender:address value:int257 raw:^slice = Context
+;;
+
+_ $Context$_get_value((int, slice, int, slice) v) inline {
+    var (v'bounceable, v'sender, v'value, v'raw) = v;
+    return v'value;
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, $bounce);
+}
+
+;;
+;; Type: MessageParameters
+;; TLB: _ mode:int257 body:Maybe ^cell value:int257 to:address bounce:bool = MessageParameters
+;;
+
+((int, cell, int, slice, int)) $MessageParameters$_constructor_bounce_to_value_mode_body(int $bounce, slice $to, int $value, int $mode, cell $body) inline {
+    return ($mode, $body, $value, $to, $bounce);
+}
+
+;;
+;; Type: DeployOk
+;; Header: 0xaff90f57
+;; TLB: deploy_ok#aff90f57 queryId:uint64 = DeployOk
+;;
+
+builder $DeployOk$_store(builder build_0, (int) v) inline {
+    var (v'queryId) = v;
+    build_0 = store_uint(build_0, 2952335191, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    return build_0;
+}
+
+cell $DeployOk$_store_cell((int) v, builder b) inline {
+    return $DeployOk$_store(b, v).end_cell();
+}
+
+((int)) $DeployOk$_constructor_queryId(int $queryId) inline {
+    return ($queryId);
+}
+
+;;
+;; Type: AgentData
+;; TLB: _ owner:address available:bool totalTasks:uint32 successes:uint32 registeredAt:uint32 = AgentData
+;;
+
+((slice, int, int, int, int)) $AgentData$_not_null(tuple v) inline {
+    throw_if(128, null?(v));
+    var (slice vvv'owner, int vvv'available, int vvv'totalTasks, int vvv'successes, int vvv'registeredAt) = __tact_tuple_destroy_5(v);
+    return (vvv'owner, vvv'available, vvv'totalTasks, vvv'successes, vvv'registeredAt);
+}
+
+tuple $AgentData$_as_optional((slice, int, int, int, int) v) inline {
+    var (v'owner, v'available, v'totalTasks, v'successes, v'registeredAt) = v;
+    return __tact_tuple_create_5(v'owner, v'available, v'totalTasks, v'successes, v'registeredAt);
+}
+
+tuple $AgentData$_to_tuple(((slice, int, int, int, int)) v) inline {
+    var (v'owner, v'available, v'totalTasks, v'successes, v'registeredAt) = v;
+    return __tact_tuple_create_5(v'owner, v'available, v'totalTasks, v'successes, v'registeredAt);
+}
+
+tuple $AgentData$_to_opt_tuple(tuple v) inline {
+    if (null?(v)) { return null(); } 
+    return $AgentData$_to_tuple($AgentData$_not_null(v)); 
+}
+
+tuple $AgentData$_to_opt_external(tuple v) inline {
+    var loaded = $AgentData$_to_opt_tuple(v);
+    if (null?(loaded)) {
+        return null();
+    } else {
+        return (loaded);
+    }
+}
+
+((slice, int, int, int, int)) $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt(slice $owner, int $available, int $totalTasks, int $successes, int $registeredAt) inline {
+    return ($owner, $available, $totalTasks, $successes, $registeredAt);
+}
+
+;;
+;; Type: DisputeInfo
+;; TLB: _ escrowAddress:address depositor:address beneficiary:address amount:coins votingDeadline:uint32 settled:bool = DisputeInfo
+;;
+
+((slice, slice, slice, int, int, int)) $DisputeInfo$_not_null(tuple v) inline {
+    throw_if(128, null?(v));
+    var (slice vvv'escrowAddress, slice vvv'depositor, slice vvv'beneficiary, int vvv'amount, int vvv'votingDeadline, int vvv'settled) = __tact_tuple_destroy_6(v);
+    return (vvv'escrowAddress, vvv'depositor, vvv'beneficiary, vvv'amount, vvv'votingDeadline, vvv'settled);
+}
+
+tuple $DisputeInfo$_as_optional((slice, slice, slice, int, int, int) v) inline {
+    var (v'escrowAddress, v'depositor, v'beneficiary, v'amount, v'votingDeadline, v'settled) = v;
+    return __tact_tuple_create_6(v'escrowAddress, v'depositor, v'beneficiary, v'amount, v'votingDeadline, v'settled);
+}
+
+tuple $DisputeInfo$_to_tuple(((slice, slice, slice, int, int, int)) v) inline {
+    var (v'escrowAddress, v'depositor, v'beneficiary, v'amount, v'votingDeadline, v'settled) = v;
+    return __tact_tuple_create_6(v'escrowAddress, v'depositor, v'beneficiary, v'amount, v'votingDeadline, v'settled);
+}
+
+tuple $DisputeInfo$_to_opt_tuple(tuple v) inline {
+    if (null?(v)) { return null(); } 
+    return $DisputeInfo$_to_tuple($DisputeInfo$_not_null(v)); 
+}
+
+tuple $DisputeInfo$_to_opt_external(tuple v) inline {
+    var loaded = $DisputeInfo$_to_opt_tuple(v);
+    if (null?(loaded)) {
+        return null();
+    } else {
+        return (loaded);
+    }
+}
+
+((slice, slice, slice, int, int, int)) $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled(slice $escrowAddress, slice $depositor, slice $beneficiary, int $amount, int $votingDeadline, int $settled) inline {
+    return ($escrowAddress, $depositor, $beneficiary, $amount, $votingDeadline, $settled);
+}
+
+;;
+;; Type: AgentCleanupInfo
+;; TLB: _ index:uint32 exists:bool score:uint16 totalRatings:uint32 registeredAt:uint32 lastActive:uint32 daysSinceActive:uint32 daysSinceRegistered:uint32 eligibleForCleanup:bool cleanupReason:uint8 = AgentCleanupInfo
+;;
+
+(int, int, int, int, int, int, int, int, int, int) $AgentCleanupInfo$_to_external(((int, int, int, int, int, int, int, int, int, int)) v) inline {
+    var (v'index, v'exists, v'score, v'totalRatings, v'registeredAt, v'lastActive, v'daysSinceActive, v'daysSinceRegistered, v'eligibleForCleanup, v'cleanupReason) = v; 
+    return (v'index, v'exists, v'score, v'totalRatings, v'registeredAt, v'lastActive, v'daysSinceActive, v'daysSinceRegistered, v'eligibleForCleanup, v'cleanupReason);
+}
+
+((int, int, int, int, int, int, int, int, int, int)) $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason(int $index, int $exists, int $score, int $totalRatings, int $registeredAt, int $lastActive, int $daysSinceActive, int $daysSinceRegistered, int $eligibleForCleanup, int $cleanupReason) inline {
+    return ($index, $exists, $score, $totalRatings, $registeredAt, $lastActive, $daysSinceActive, $daysSinceRegistered, $eligibleForCleanup, $cleanupReason);
+}
+
+;;
+;; Type: IntentData
+;; TLB: _ buyer:address serviceHash:uint256 budget:coins deadline:uint32 status:uint8 acceptedOffer:uint32 isExpired:bool = IntentData
+;;
+
+(slice, int, int, int, int, int, int) $IntentData$_to_external(((slice, int, int, int, int, int, int)) v) inline {
+    var (v'buyer, v'serviceHash, v'budget, v'deadline, v'status, v'acceptedOffer, v'isExpired) = v; 
+    return (v'buyer, v'serviceHash, v'budget, v'deadline, v'status, v'acceptedOffer, v'isExpired);
+}
+
+((slice, int, int, int, int, int, int)) $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired(slice $buyer, int $serviceHash, int $budget, int $deadline, int $status, int $acceptedOffer, int $isExpired) inline {
+    return ($buyer, $serviceHash, $budget, $deadline, $status, $acceptedOffer, $isExpired);
+}
+
+;;
+;; Type: OfferData
+;; TLB: _ seller:address intentIndex:uint32 price:coins deliveryTime:uint32 status:uint8 = OfferData
+;;
+
+(slice, int, int, int, int) $OfferData$_to_external(((slice, int, int, int, int)) v) inline {
+    var (v'seller, v'intentIndex, v'price, v'deliveryTime, v'status) = v; 
+    return (v'seller, v'intentIndex, v'price, v'deliveryTime, v'status);
+}
+
+((slice, int, int, int, int)) $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status(slice $seller, int $intentIndex, int $price, int $deliveryTime, int $status) inline {
+    return ($seller, $intentIndex, $price, $deliveryTime, $status);
+}
+
+;;
+;; Type: Reputation
+;; TLB: _ owner:address fee:coins agentCount:uint32 agentOwners:dict<uint32, address> agentAvailable:dict<uint32, bool> agentTotalTasks:dict<uint32, uint32> agentSuccesses:dict<uint32, uint32> agentRegisteredAt:dict<uint32, uint32> agentLastActive:dict<uint32, uint32> nameToIndex:dict<uint256, uint32> capabilityIndex:dict<uint256, ^cell> openDisputes:dict<uint32, address> disputeDepositors:dict<uint32, address> disputeBeneficiaries:dict<uint32, address> disputeAmounts:dict<uint32, int> disputeDeadlines:dict<uint32, uint32> disputeSettled:dict<uint32, bool> disputeCount:uint32 cleanupCursor:uint32 intents:dict<uint32, address> intentServiceHashes:dict<uint32, uint256> intentBudgets:dict<uint32, int> intentDeadlines:dict<uint32, uint32> intentStatuses:dict<uint32, uint8> intentAcceptedOffer:dict<uint32, uint32> intentCount:uint32 intentsByService:dict<uint256, ^cell> offers:dict<uint32, address> offerIntents:dict<uint32, uint32> offerPrices:dict<uint32, int> offerDeliveryTimes:dict<uint32, uint32> offerStatuses:dict<uint32, uint8> offerCount:uint32 intentCleanupCursor:uint32 agentActiveIntents:dict<address, int> maxIntentsPerAgent:uint8 = Reputation
+;;
+
+builder $Reputation$_store(builder build_0, (slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) v) inline {
+    var (v'owner, v'fee, v'agentCount, v'agentOwners, v'agentAvailable, v'agentTotalTasks, v'agentSuccesses, v'agentRegisteredAt, v'agentLastActive, v'nameToIndex, v'capabilityIndex, v'openDisputes, v'disputeDepositors, v'disputeBeneficiaries, v'disputeAmounts, v'disputeDeadlines, v'disputeSettled, v'disputeCount, v'cleanupCursor, v'intents, v'intentServiceHashes, v'intentBudgets, v'intentDeadlines, v'intentStatuses, v'intentAcceptedOffer, v'intentCount, v'intentsByService, v'offers, v'offerIntents, v'offerPrices, v'offerDeliveryTimes, v'offerStatuses, v'offerCount, v'intentCleanupCursor, v'agentActiveIntents, v'maxIntentsPerAgent) = v;
+    build_0 = build_0.store_slice(v'owner);
+    build_0 = build_0.store_varuint16(v'fee);
+    build_0 = build_0.store_uint(v'agentCount, 32);
+    build_0 = build_0.store_dict(v'agentOwners);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_dict(v'agentAvailable);
+    build_1 = build_1.store_dict(v'agentTotalTasks);
+    build_1 = build_1.store_dict(v'agentSuccesses);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_dict(v'agentRegisteredAt);
+    build_2 = build_2.store_dict(v'agentLastActive);
+    build_2 = build_2.store_dict(v'nameToIndex);
+    var build_3 = begin_cell();
+    build_3 = build_3.store_dict(v'capabilityIndex);
+    build_3 = build_3.store_dict(v'openDisputes);
+    build_3 = build_3.store_dict(v'disputeDepositors);
+    var build_4 = begin_cell();
+    build_4 = build_4.store_dict(v'disputeBeneficiaries);
+    build_4 = build_4.store_dict(v'disputeAmounts);
+    build_4 = build_4.store_dict(v'disputeDeadlines);
+    var build_5 = begin_cell();
+    build_5 = build_5.store_dict(v'disputeSettled);
+    build_5 = build_5.store_uint(v'disputeCount, 32);
+    build_5 = build_5.store_uint(v'cleanupCursor, 32);
+    build_5 = build_5.store_dict(v'intents);
+    build_5 = build_5.store_dict(v'intentServiceHashes);
+    var build_6 = begin_cell();
+    build_6 = build_6.store_dict(v'intentBudgets);
+    build_6 = build_6.store_dict(v'intentDeadlines);
+    build_6 = build_6.store_dict(v'intentStatuses);
+    var build_7 = begin_cell();
+    build_7 = build_7.store_dict(v'intentAcceptedOffer);
+    build_7 = build_7.store_uint(v'intentCount, 32);
+    build_7 = build_7.store_dict(v'intentsByService);
+    build_7 = build_7.store_dict(v'offers);
+    var build_8 = begin_cell();
+    build_8 = build_8.store_dict(v'offerIntents);
+    build_8 = build_8.store_dict(v'offerPrices);
+    build_8 = build_8.store_dict(v'offerDeliveryTimes);
+    var build_9 = begin_cell();
+    build_9 = build_9.store_dict(v'offerStatuses);
+    build_9 = build_9.store_uint(v'offerCount, 32);
+    build_9 = build_9.store_uint(v'intentCleanupCursor, 32);
+    build_9 = build_9.store_dict(v'agentActiveIntents);
+    build_9 = build_9.store_uint(v'maxIntentsPerAgent, 8);
+    build_8 = store_builder_ref(build_8, build_9);
+    build_7 = store_builder_ref(build_7, build_8);
+    build_6 = store_builder_ref(build_6, build_7);
+    build_5 = store_builder_ref(build_5, build_6);
+    build_4 = store_builder_ref(build_4, build_5);
+    build_3 = store_builder_ref(build_3, build_4);
+    build_2 = store_builder_ref(build_2, build_3);
+    build_1 = store_builder_ref(build_1, build_2);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int))) $Reputation$_load(slice sc_0) inline {
+    var v'owner = sc_0~load_msg_addr();
+    var v'fee = sc_0~load_varuint16();
+    var v'agentCount = sc_0~load_uint(32);
+    var v'agentOwners = sc_0~load_dict();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'agentAvailable = sc_1~load_dict();
+    var v'agentTotalTasks = sc_1~load_dict();
+    var v'agentSuccesses = sc_1~load_dict();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'agentRegisteredAt = sc_2~load_dict();
+    var v'agentLastActive = sc_2~load_dict();
+    var v'nameToIndex = sc_2~load_dict();
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'capabilityIndex = sc_3~load_dict();
+    var v'openDisputes = sc_3~load_dict();
+    var v'disputeDepositors = sc_3~load_dict();
+    slice sc_4 = sc_3~load_ref().begin_parse();
+    var v'disputeBeneficiaries = sc_4~load_dict();
+    var v'disputeAmounts = sc_4~load_dict();
+    var v'disputeDeadlines = sc_4~load_dict();
+    slice sc_5 = sc_4~load_ref().begin_parse();
+    var v'disputeSettled = sc_5~load_dict();
+    var v'disputeCount = sc_5~load_uint(32);
+    var v'cleanupCursor = sc_5~load_uint(32);
+    var v'intents = sc_5~load_dict();
+    var v'intentServiceHashes = sc_5~load_dict();
+    slice sc_6 = sc_5~load_ref().begin_parse();
+    var v'intentBudgets = sc_6~load_dict();
+    var v'intentDeadlines = sc_6~load_dict();
+    var v'intentStatuses = sc_6~load_dict();
+    slice sc_7 = sc_6~load_ref().begin_parse();
+    var v'intentAcceptedOffer = sc_7~load_dict();
+    var v'intentCount = sc_7~load_uint(32);
+    var v'intentsByService = sc_7~load_dict();
+    var v'offers = sc_7~load_dict();
+    slice sc_8 = sc_7~load_ref().begin_parse();
+    var v'offerIntents = sc_8~load_dict();
+    var v'offerPrices = sc_8~load_dict();
+    var v'offerDeliveryTimes = sc_8~load_dict();
+    slice sc_9 = sc_8~load_ref().begin_parse();
+    var v'offerStatuses = sc_9~load_dict();
+    var v'offerCount = sc_9~load_uint(32);
+    var v'intentCleanupCursor = sc_9~load_uint(32);
+    var v'agentActiveIntents = sc_9~load_dict();
+    var v'maxIntentsPerAgent = sc_9~load_uint(8);
+    return (sc_0, (v'owner, v'fee, v'agentCount, v'agentOwners, v'agentAvailable, v'agentTotalTasks, v'agentSuccesses, v'agentRegisteredAt, v'agentLastActive, v'nameToIndex, v'capabilityIndex, v'openDisputes, v'disputeDepositors, v'disputeBeneficiaries, v'disputeAmounts, v'disputeDeadlines, v'disputeSettled, v'disputeCount, v'cleanupCursor, v'intents, v'intentServiceHashes, v'intentBudgets, v'intentDeadlines, v'intentStatuses, v'intentAcceptedOffer, v'intentCount, v'intentsByService, v'offers, v'offerIntents, v'offerPrices, v'offerDeliveryTimes, v'offerStatuses, v'offerCount, v'intentCleanupCursor, v'agentActiveIntents, v'maxIntentsPerAgent));
+}
+
+(slice, ((slice))) $Reputation$init$_load(slice sc_0) inline {
+    var v'owner = sc_0~load_msg_addr();
+    return (sc_0, (v'owner));
+}
+
+(slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $Reputation$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$Reputation$_load();
+    }
+    else {
+        (slice $owner) = $sc~$Reputation$init$_load();
+        $sc.end_parse();
+        return $Reputation$_contract_init($owner);
+    }
+}
+
+() $Reputation$_contract_store((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $Reputation$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract Reputation functions
+;;
+
+(slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $Reputation$_contract_init(slice $owner) impure inline {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = (null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null());
+    $self'owner = $owner;
+    $self'fee = 10000000;
+    $self'agentCount = 0;
+    $self'disputeCount = 0;
+    $self'cleanupCursor = 0;
+    $self'intentCount = 0;
+    $self'offerCount = 0;
+    $self'intentCleanupCursor = 0;
+    $self'maxIntentsPerAgent = 10;
+    return ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_decrementAgentIntents((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $c = __tact_dict_get_slice_int($self'agentActiveIntents, 267, $agent, 257);
+    if (( ((~ null?($c))) ? ((__tact_not_null($c) > 0)) : (false) )) {
+        $self'agentActiveIntents~__tact_dict_set_slice_int(267, $agent, (__tact_not_null($c) - 1), 257);
+    }
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_expireIntent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $status = __tact_dict_get_uint_uint($self'intentStatuses, 32, $index, 8);
+    if (( (null?($status)) ? (true) : ((__tact_not_null($status) != 0)) )) {
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+    }
+    slice $buyer = __tact_dict_get_uint_slice($self'intents, 32, $index);
+    $self'intentStatuses~__tact_dict_set_uint_uint(32, $index, 4, 8);
+    if ((~ null?($buyer))) {
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_decrementAgentIntents(__tact_not_null($buyer));
+    }
+    int $j = 0;
+    int $ops = 0;
+    while (( (($j < $self'offerCount)) ? (($ops < 20)) : (false) )) {
+        int $oi = __tact_dict_get_uint_uint($self'offerIntents, 32, $j, 32);
+        int $os = __tact_dict_get_uint_uint($self'offerStatuses, 32, $j, 8);
+        if (( (( (( ((~ null?($oi))) ? ((__tact_not_null($oi) == $index)) : (false) )) ? ((~ null?($os))) : (false) )) ? ((__tact_not_null($os) == 0)) : (false) )) {
+            $self'offerStatuses~__tact_dict_set_uint_uint(32, $j, 3, 8);
+            $ops = ($ops + 1);
+        }
+        $j = ($j + 1);
+    }
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_eraseAgent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    slice $agentAddr = __tact_dict_get_uint_slice($self'agentOwners, 32, $index);
+    $self'agentOwners~__tact_dict_set_uint_slice(32, $index, null());
+    $self'agentAvailable~__tact_dict_set_uint_int(32, $index, null(), 1);
+    $self'agentTotalTasks~__tact_dict_set_uint_uint(32, $index, null(), 32);
+    $self'agentSuccesses~__tact_dict_set_uint_uint(32, $index, null(), 32);
+    $self'agentRegisteredAt~__tact_dict_set_uint_uint(32, $index, null(), 32);
+    $self'agentLastActive~__tact_dict_set_uint_uint(32, $index, null(), 32);
+    if ((~ null?($agentAddr))) {
+        int $ci = 0;
+        int $cOps = 0;
+        while (( (($ci < $self'intentCount)) ? (($cOps < 20)) : (false) )) {
+            slice $b = __tact_dict_get_uint_slice($self'intents, 32, $ci);
+            int $s = __tact_dict_get_uint_uint($self'intentStatuses, 32, $ci, 8);
+            if (( (( (( ((~ null?($b))) ? (( equal_slices_bits(__tact_not_null($b), __tact_not_null($agentAddr)) )) : (false) )) ? ((~ null?($s))) : (false) )) ? ((__tact_not_null($s) == 0)) : (false) )) {
+                ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_expireIntent($ci);
+                $cOps = ($cOps + 1);
+            }
+            $ci = ($ci + 1);
+        }
+        int $cj = 0;
+        int $oOps = 0;
+        while (( (($cj < $self'offerCount)) ? (($oOps < 30)) : (false) )) {
+            slice $sl = __tact_dict_get_uint_slice($self'offers, 32, $cj);
+            int $os = __tact_dict_get_uint_uint($self'offerStatuses, 32, $cj, 8);
+            if (( (( (( ((~ null?($sl))) ? (( equal_slices_bits(__tact_not_null($sl), __tact_not_null($agentAddr)) )) : (false) )) ? ((~ null?($os))) : (false) )) ? ((__tact_not_null($os) == 0)) : (false) )) {
+                $self'offerStatuses~__tact_dict_set_uint_uint(32, $cj, 3, 8);
+                $oOps = ($oOps + 1);
+            }
+            $cj = ($cj + 1);
+        }
+        $self'agentActiveIntents~__tact_dict_set_slice_int(267, __tact_not_null($agentAddr), null(), 257);
+    }
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_cleanup((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $maxClean) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $cleaned = 0;
+    int $checked = 0;
+    int $i = $self'cleanupCursor;
+    while (( (( (($checked < 10)) ? (($i < $self'agentCount)) : (false) )) ? (($cleaned < $maxClean)) : (false) )) {
+        slice $o = __tact_dict_get_uint_slice($self'agentOwners, 32, $i);
+        if ((~ null?($o))) {
+            int $shouldErase = false;
+            int $totalTasks = __tact_dict_get_uint_uint($self'agentTotalTasks, 32, $i, 32);
+            int $successes = __tact_dict_get_uint_uint($self'agentSuccesses, 32, $i, 32);
+            int $lastActive = __tact_dict_get_uint_uint($self'agentLastActive, 32, $i, 32);
+            int $registeredAt = __tact_dict_get_uint_uint($self'agentRegisteredAt, 32, $i, 32);
+            int $tt = 0;
+            if ((~ null?($totalTasks))) {
+                $tt = __tact_not_null($totalTasks);
+            }
+            int $ss = 0;
+            if ((~ null?($successes))) {
+                $ss = __tact_not_null($successes);
+            }
+            if (($tt >= 100)) {
+                int $score = (($ss * 100) / $tt);
+                if (($score < 20)) {
+                    $shouldErase = true;
+                }
+            }
+            if (( (( ((~ $shouldErase)) ? ((~ null?($lastActive))) : (false) )) ? ((__tact_not_null($lastActive) > 0)) : (false) )) {
+                if ((($global_now() - __tact_not_null($lastActive)) > 2592000)) {
+                    $shouldErase = true;
+                }
+            }
+            if (( (( (( ((~ $shouldErase)) ? (($tt == 0)) : (false) )) ? ((~ null?($registeredAt))) : (false) )) ? ((__tact_not_null($registeredAt) > 0)) : (false) )) {
+                if ((($global_now() - __tact_not_null($registeredAt)) > 604800)) {
+                    $shouldErase = true;
+                }
+            }
+            if ($shouldErase) {
+                ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_eraseAgent($i);
+                $cleaned = ($cleaned + 1);
+            }
+        }
+        $i = ($i + 1);
+        $checked = ($checked + 1);
+    }
+    if (($i >= $self'agentCount)) {
+        $self'cleanupCursor = 0;
+    } else {
+        $self'cleanupCursor = $i;
+    }
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_forceCleanupAgentIntents((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $checked = 0;
+    int $i = 0;
+    while (( (($checked < 50)) ? (($i < $self'intentCount)) : (false) )) {
+        slice $b = __tact_dict_get_uint_slice($self'intents, 32, $i);
+        int $s = __tact_dict_get_uint_uint($self'intentStatuses, 32, $i, 8);
+        if (( (( (( ((~ null?($b))) ? (( equal_slices_bits(__tact_not_null($b), $agent) )) : (false) )) ? ((~ null?($s))) : (false) )) ? ((__tact_not_null($s) == 0)) : (false) )) {
+            int $d = __tact_dict_get_uint_uint($self'intentDeadlines, 32, $i, 32);
+            if (( ((~ null?($d))) ? (($global_now() >= __tact_not_null($d))) : (false) )) {
+                ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_expireIntent($i);
+                var $fresh$ret_0 = true;
+                return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_0);
+            }
+        }
+        $i = ($i + 1);
+        $checked = ($checked + 1);
+    }
+    var $fresh$ret_1 = false;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_1);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_addToIntentServiceIndex((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $serviceHash, int $intentIndex) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    cell $existing = __tact_dict_get_uint_cell($self'intentsByService, 256, $serviceHash);
+    builder $builder = $global_beginCell();
+    $builder = store_uint($builder, $intentIndex, 32);
+    if ((~ null?($existing))) {
+        $builder = store_uint($builder, 1, 1);
+        $builder = $Builder$_fun_storeRef(__tact_not_null($existing), $builder);
+    } else {
+        $builder = store_uint($builder, 0, 1);
+    }
+    $self'intentsByService~__tact_dict_set_uint_cell(256, $serviceHash, $Builder$_fun_endCell($builder));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), ()) $Reputation$_fun_cleanupOneIntent((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $i = $self'intentCleanupCursor;
+    int $checked = 0;
+    while (( (($checked < 5)) ? (($i < $self'intentCount)) : (false) )) {
+        int $status = __tact_dict_get_uint_uint($self'intentStatuses, 32, $i, 8);
+        if (( ((~ null?($status))) ? ((__tact_not_null($status) == 0)) : (false) )) {
+            int $deadline = __tact_dict_get_uint_uint($self'intentDeadlines, 32, $i, 32);
+            if (( ((~ null?($deadline))) ? (($global_now() >= __tact_not_null($deadline))) : (false) )) {
+                ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_expireIntent($i);
+                $self'intentCleanupCursor = ($i + 1);
+                return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+            }
+        }
+        $i = ($i + 1);
+        $checked = ($checked + 1);
+    }
+    if (($i >= $self'intentCount)) {
+        $self'intentCleanupCursor = 0;
+    } else {
+        $self'intentCleanupCursor = $i;
+    }
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), ());
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), tuple) $Reputation$_fun_agentData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    if (( (($index < 0)) ? (true) : (($index >= $self'agentCount)) )) {
+        var $fresh$ret_2 = null();
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_2);
+    }
+    slice $o = __tact_dict_get_uint_slice($self'agentOwners, 32, $index);
+    if (null?($o)) {
+        var $fresh$ret_3 = null();
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_3);
+    }
+    int $tt = __tact_dict_get_uint_uint($self'agentTotalTasks, 32, $index, 32);
+    int $ss = __tact_dict_get_uint_uint($self'agentSuccesses, 32, $index, 32);
+    int $ra = __tact_dict_get_uint_uint($self'agentRegisteredAt, 32, $index, 32);
+    int $av = __tact_dict_get_uint_int($self'agentAvailable, 32, $index, 1);
+    var $fresh$ret_4 = $AgentData$_as_optional($AgentData$_constructor_owner_available_totalTasks_successes_registeredAt(__tact_not_null($o), ( ((~ null?($av))) ? (__tact_not_null($av)) : (false) ), ((~ null?($tt)) ? __tact_not_null($tt) : 0), ((~ null?($ss)) ? __tact_not_null($ss) : 0), ((~ null?($ra)) ? __tact_not_null($ra) : 0)));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_4);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentIndexByNameHash((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $nameHash) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_5 = __tact_dict_get_uint_uint($self'nameToIndex, 256, $nameHash, 32);
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_5);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentReputation((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    if (( (($index < 0)) ? (true) : (($index >= $self'agentCount)) )) {
+        var $fresh$ret_6 = 0;
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_6);
+    }
+    int $total = __tact_dict_get_uint_uint($self'agentTotalTasks, 32, $index, 32);
+    if (( (null?($total)) ? (true) : ((__tact_not_null($total) == 0)) )) {
+        var $fresh$ret_7 = 0;
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_7);
+    }
+    int $succ = __tact_dict_get_uint_uint($self'agentSuccesses, 32, $index, 32);
+    if (null?($succ)) {
+        var $fresh$ret_8 = 0;
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_8);
+    }
+    var $fresh$ret_9 = ((__tact_not_null($succ) * 100) / __tact_not_null($total));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_9);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_10 = $self'agentCount;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_10);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_contractBalance((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_11 = $global_myBalance();
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_11);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), cell) $Reputation$_fun_agentsByCapability((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $capHash) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_12 = __tact_dict_get_uint_cell($self'capabilityIndex, 256, $capHash);
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_12);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_disputeCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_13 = $self'disputeCount;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_13);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), tuple) $Reputation$_fun_disputeData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    if (( (($index < 0)) ? (true) : (($index >= $self'disputeCount)) )) {
+        var $fresh$ret_14 = null();
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_14);
+    }
+    slice $addr = __tact_dict_get_uint_slice($self'openDisputes, 32, $index);
+    if (null?($addr)) {
+        var $fresh$ret_15 = null();
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_15);
+    }
+    int $settled = __tact_dict_get_uint_int($self'disputeSettled, 32, $index, 1);
+    var $fresh$ret_16 = $DisputeInfo$_as_optional($DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled(__tact_not_null($addr), __tact_not_null(__tact_dict_get_uint_slice($self'disputeDepositors, 32, $index)), __tact_not_null(__tact_dict_get_uint_slice($self'disputeBeneficiaries, 32, $index)), __tact_not_null(__tact_dict_get_uint_int($self'disputeAmounts, 32, $index, 257)), __tact_not_null(__tact_dict_get_uint_uint($self'disputeDeadlines, 32, $index, 32)), ( ((~ null?($settled))) ? (__tact_not_null($settled)) : (false) )));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_16);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (int, int, int, int, int, int, int, int, int, int)) $Reputation$_fun_agentCleanupInfo((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    slice $o = __tact_dict_get_uint_slice($self'agentOwners, 32, $index);
+    if (null?($o)) {
+        var $fresh$ret_17 = $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason($index, false, 0, 0, 0, 0, 0, 0, false, 0);
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_17);
+    }
+    int $tt = 0;
+    int $ttr = __tact_dict_get_uint_uint($self'agentTotalTasks, 32, $index, 32);
+    if ((~ null?($ttr))) {
+        $tt = __tact_not_null($ttr);
+    }
+    int $ss = 0;
+    int $ssr = __tact_dict_get_uint_uint($self'agentSuccesses, 32, $index, 32);
+    if ((~ null?($ssr))) {
+        $ss = __tact_not_null($ssr);
+    }
+    int $score = 0;
+    if (($tt > 0)) {
+        $score = (($ss * 100) / $tt);
+    }
+    int $ra = 0;
+    int $rar = __tact_dict_get_uint_uint($self'agentRegisteredAt, 32, $index, 32);
+    if ((~ null?($rar))) {
+        $ra = __tact_not_null($rar);
+    }
+    int $la = 0;
+    int $lar = __tact_dict_get_uint_uint($self'agentLastActive, 32, $index, 32);
+    if ((~ null?($lar))) {
+        $la = __tact_not_null($lar);
+    }
+    int $dsa = 0;
+    if (($la > 0)) {
+        $dsa = (($global_now() - $la) / 86400);
+    }
+    int $dsr = 0;
+    if (($ra > 0)) {
+        $dsr = (($global_now() - $ra) / 86400);
+    }
+    int $reason = 0;
+    if (( (($tt >= 100)) ? (($score < 20)) : (false) )) {
+        $reason = 1;
+    }
+    if (( (( (($reason == 0)) ? (($la > 0)) : (false) )) ? ((($global_now() - $la) > 2592000)) : (false) )) {
+        $reason = 2;
+    }
+    if (( (( (( (($reason == 0)) ? (($tt == 0)) : (false) )) ? (($ra > 0)) : (false) )) ? ((($global_now() - $ra) > 604800)) : (false) )) {
+        $reason = 3;
+    }
+    var $fresh$ret_18 = $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason($index, true, $score, $tt, $ra, $la, $dsa, $dsr, ($reason > 0), $reason);
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_18);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), cell) $Reputation$_fun_intentsByServiceHash((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $serviceHash) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_19 = __tact_dict_get_uint_cell($self'intentsByService, 256, $serviceHash);
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_19);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_intentCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_20 = $self'intentCount;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_20);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_offerCount((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_21 = $self'offerCount;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_21);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), int) $Reputation$_fun_agentIntentQuota((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, slice $agent) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    int $c = __tact_dict_get_slice_int($self'agentActiveIntents, 267, $agent, 257);
+    if ((~ null?($c))) {
+        var $fresh$ret_22 = __tact_not_null($c);
+        return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_22);
+    }
+    var $fresh$ret_23 = 0;
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_23);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (slice, int, int, int, int, int, int)) $Reputation$_fun_intentData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    slice $buyer = __tact_not_null(__tact_dict_get_uint_slice($self'intents, 32, $index));
+    int $status = __tact_not_null(__tact_dict_get_uint_uint($self'intentStatuses, 32, $index, 8));
+    int $deadline = __tact_not_null(__tact_dict_get_uint_uint($self'intentDeadlines, 32, $index, 32));
+    int $ao = 0;
+    int $aov = __tact_dict_get_uint_uint($self'intentAcceptedOffer, 32, $index, 32);
+    if ((~ null?($aov))) {
+        $ao = __tact_not_null($aov);
+    }
+    var $fresh$ret_24 = $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired($buyer, __tact_not_null(__tact_dict_get_uint_uint($self'intentServiceHashes, 32, $index, 256)), __tact_not_null(__tact_dict_get_uint_int($self'intentBudgets, 32, $index, 257)), $deadline, $status, $ao, ( (($status == 0)) ? (($global_now() >= $deadline)) : (false) ));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_24);
+}
+
+((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int), (slice, int, int, int, int)) $Reputation$_fun_offerData((slice, int, int, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, cell, int, int, cell, cell, cell, cell, cell, cell, int, cell, cell, cell, cell, cell, cell, int, int, cell, int) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)) = $self;
+    var $fresh$ret_25 = $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status(__tact_not_null(__tact_dict_get_uint_slice($self'offers, 32, $index)), __tact_not_null(__tact_dict_get_uint_uint($self'offerIntents, 32, $index, 32)), __tact_not_null(__tact_dict_get_uint_int($self'offerPrices, 32, $index, 257)), __tact_not_null(__tact_dict_get_uint_uint($self'offerDeliveryTimes, 32, $index, 32)), __tact_not_null(__tact_dict_get_uint_uint($self'offerStatuses, 32, $index, 8)));
+    return (($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent), $fresh$ret_25);
+}
+
+;;
+;; Get methods of a Contract Reputation
+;;
+
+_ %agentData(int $index) method_id(92172) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentData($index);
+    return $AgentData$_to_opt_external(res);
+}
+
+_ %agentIndexByNameHash(int $nameHash) method_id(88600) {
+    int $nameHash = $nameHash;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentIndexByNameHash($nameHash);
+    return res;
+}
+
+_ %agentReputation(int $index) method_id(110805) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentReputation($index);
+    return res;
+}
+
+_ %agentCount() method_id(81213) {
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentCount();
+    return res;
+}
+
+_ %contractBalance() method_id(110221) {
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_contractBalance();
+    return res;
+}
+
+_ %agentsByCapability(int $capHash) method_id(90929) {
+    int $capHash = $capHash;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentsByCapability($capHash);
+    return res;
+}
+
+_ %disputeCount() method_id(72077) {
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_disputeCount();
+    return res;
+}
+
+_ %disputeData(int $index) method_id(119614) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_disputeData($index);
+    return $DisputeInfo$_to_opt_external(res);
+}
+
+_ %agentCleanupInfo(int $index) method_id(100802) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentCleanupInfo($index);
+    return $AgentCleanupInfo$_to_external(res);
+}
+
+_ %intentsByServiceHash(int $serviceHash) method_id(105526) {
+    int $serviceHash = $serviceHash;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_intentsByServiceHash($serviceHash);
+    return res;
+}
+
+_ %intentCount() method_id(98654) {
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_intentCount();
+    return res;
+}
+
+_ %offerCount() method_id(123217) {
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_offerCount();
+    return res;
+}
+
+_ %agentIntentQuota(slice $agent) method_id(120244) {
+    slice $agent = $agent;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_agentIntentQuota($agent);
+    return res;
+}
+
+_ %intentData(int $index) method_id(93056) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_intentData($index);
+    return $IntentData$_to_external(res);
+}
+
+_ %offerData(int $index) method_id(100877) {
+    int $index = $index;
+    var self = $Reputation$_contract_load();
+    var res = self~$Reputation$_fun_offerData($index);
+    return $OfferData$_to_external(res);
+}
+
+;;
+;; Routing of a Contract Reputation
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent) = $Reputation$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    var op = in_msg~load_opcode_internal();
+    ;; Receive Register message
+    if (op == 950051591) {
+        var $msg'name = in_msg~load_ref().begin_parse();
+        var $msg'capabilities = in_msg~load_ref().begin_parse();
+        var $msg'available = in_msg~load_int(1);
+        throw_unless(24749, ($Context$_get_value(__tact_context_get()) >= $self'fee));
+        int $nameHash = __tact_sha256($msg'name);
+        int $existing = __tact_dict_get_uint_uint($self'nameToIndex, 256, $nameHash, 32);
+        if ((~ null?($existing))) {
+            int $idx = __tact_not_null($existing);
+            slice $agentOwner = __tact_dict_get_uint_slice($self'agentOwners, 32, $idx);
+            throw_unless(31510, ( ((~ null?($agentOwner))) ? (( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($agentOwner)) )) : (false) ));
+            $self'agentAvailable~__tact_dict_set_uint_int(32, $idx, $msg'available, 1);
+            $self'agentLastActive~__tact_dict_set_uint_uint(32, $idx, $global_now(), 32);
+        } else {
+            int $idx = $self'agentCount;
+            $self'agentOwners~__tact_dict_set_uint_slice(32, $idx, __tact_context_get_sender());
+            $self'agentAvailable~__tact_dict_set_uint_int(32, $idx, $msg'available, 1);
+            $self'agentTotalTasks~__tact_dict_set_uint_uint(32, $idx, 0, 32);
+            $self'agentSuccesses~__tact_dict_set_uint_uint(32, $idx, 0, 32);
+            $self'agentRegisteredAt~__tact_dict_set_uint_uint(32, $idx, $global_now(), 32);
+            $self'agentLastActive~__tact_dict_set_uint_uint(32, $idx, $global_now(), 32);
+            $self'nameToIndex~__tact_dict_set_uint_uint(256, $nameHash, $idx, 32);
+            $self'agentCount = ($self'agentCount + 1);
+        }
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_cleanup(2);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_10cfd3835dd6745c56d4d3ae5011af49598d9ad724c80d4b2ed30ac487f5efe5()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive Rate message
+    if (op == 2804297358) {
+        var $msg'agentName = in_msg~load_ref().begin_parse();
+        var $msg'success = in_msg~load_int(1);
+        throw_unless(24749, ($Context$_get_value(__tact_context_get()) >= $self'fee));
+        int $nameHash = __tact_sha256($msg'agentName);
+        int $existing = __tact_dict_get_uint_uint($self'nameToIndex, 256, $nameHash, 32);
+        throw_unless(27854, (~ null?($existing)));
+        int $idx = __tact_not_null($existing);
+        int $currentTasks = __tact_dict_get_uint_uint($self'agentTotalTasks, 32, $idx, 32);
+        if (null?($currentTasks)) {
+            throw_unless(27854, false);
+        }
+        $self'agentTotalTasks~__tact_dict_set_uint_uint(32, $idx, (__tact_not_null($currentTasks) + 1), 32);
+        if ($msg'success) {
+            $self'agentSuccesses~__tact_dict_set_uint_uint(32, $idx, (__tact_not_null(__tact_dict_get_uint_uint($self'agentSuccesses, 32, $idx, 32)) + 1), 32);
+        }
+        $self'agentLastActive~__tact_dict_set_uint_uint(32, $idx, $global_now(), 32);
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_cleanup(1);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_d5da73024103827b96921b364f47e79d4dfeb3528df187d1362fd23498372768()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive UpdateAvailability message
+    if (op == 1424124491) {
+        var $msg'name = in_msg~load_ref().begin_parse();
+        var $msg'available = in_msg~load_int(1);
+        int $nameHash = __tact_sha256($msg'name);
+        int $existing = __tact_dict_get_uint_uint($self'nameToIndex, 256, $nameHash, 32);
+        throw_unless(27854, (~ null?($existing)));
+        int $idx = __tact_not_null($existing);
+        slice $agentOwner = __tact_dict_get_uint_slice($self'agentOwners, 32, $idx);
+        throw_unless(38820, ( ((~ null?($agentOwner))) ? (( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($agentOwner)) )) : (false) ));
+        $self'agentAvailable~__tact_dict_set_uint_int(32, $idx, $msg'available, 1);
+        $self'agentLastActive~__tact_dict_set_uint_uint(32, $idx, $global_now(), 32);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_b83dc19f6556c7eb24674004b68678d0e8e880117825b949c897219002853ea9()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive IndexCapability message
+    if (op == 344274104) {
+        var $msg'agentIndex = in_msg~load_uint(32);
+        var $msg'capabilityHash = in_msg~load_uint(256);
+        slice $agentOwner = __tact_dict_get_uint_slice($self'agentOwners, 32, $msg'agentIndex);
+        throw_unless(27854, (~ null?($agentOwner)));
+        throw_unless(7126, ( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($agentOwner)) ));
+        $self'agentLastActive~__tact_dict_set_uint_uint(32, $msg'agentIndex, $global_now(), 32);
+        cell $existing = __tact_dict_get_uint_cell($self'capabilityIndex, 256, $msg'capabilityHash);
+        builder $builder = $global_beginCell();
+        $builder = store_uint($builder, $msg'agentIndex, 32);
+        if ((~ null?($existing))) {
+            $builder = store_uint($builder, 1, 1);
+            $builder = $Builder$_fun_storeRef(__tact_not_null($existing), $builder);
+        } else {
+            $builder = store_uint($builder, 0, 1);
+        }
+        $self'capabilityIndex~__tact_dict_set_uint_cell(256, $msg'capabilityHash, $Builder$_fun_endCell($builder));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_47fd8777368116e1f2273c1aab40fd78d76178a579538510398fda08b773dd1d()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive TriggerCleanup message
+    if (op == 2266087279) {
+        var $msg'maxClean = in_msg~load_uint(8);
+        int $max = $msg'maxClean;
+        if (($max > 50)) {
+            $max = 50;
+        }
+        if (($max < 1)) {
+            $max = 1;
+        }
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_cleanup($max);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_972a5fdd9ccfdb499e19f5d855de26f4fb1a0451ef2e99c92fe3a4f013cc3a14()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive NotifyDisputeOpened message
+    if (op == 796807257) {
+        var $msg'escrowAddress = in_msg~load_msg_addr();
+        var $msg'depositor = in_msg~load_msg_addr();
+        var $msg'beneficiary = in_msg~load_msg_addr();
+        var $msg'amount = in_msg~load_varuint16();
+        var $msg'votingDeadline = in_msg~load_uint(32);
+        int $idx = $self'disputeCount;
+        $self'openDisputes~__tact_dict_set_uint_slice(32, $idx, $msg'escrowAddress);
+        $self'disputeDepositors~__tact_dict_set_uint_slice(32, $idx, $msg'depositor);
+        $self'disputeBeneficiaries~__tact_dict_set_uint_slice(32, $idx, $msg'beneficiary);
+        $self'disputeAmounts~__tact_dict_set_uint_int(32, $idx, $msg'amount, 257);
+        $self'disputeDeadlines~__tact_dict_set_uint_uint(32, $idx, $msg'votingDeadline, 32);
+        $self'disputeSettled~__tact_dict_set_uint_int(32, $idx, false, 1);
+        $self'disputeCount = ($idx + 1);
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive NotifyDisputeSettled message
+    if (op == 3214956934) {
+        var $msg'escrowAddress = in_msg~load_msg_addr();
+        var $msg'released = in_msg~load_int(1);
+        var $msg'refunded = in_msg~load_int(1);
+        int $i = 0;
+        while (($i < $self'disputeCount)) {
+            slice $addr = __tact_dict_get_uint_slice($self'openDisputes, 32, $i);
+            if (( ((~ null?($addr))) ? (( equal_slices_bits(__tact_not_null($addr), $msg'escrowAddress) )) : (false) )) {
+                $self'disputeSettled~__tact_dict_set_uint_int(32, $i, true, 1);
+                $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+                return ();
+            }
+            $i = ($i + 1);
+        }
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive Withdraw message
+    if (op == 593874976) {
+        var $msg = empty_tuple();
+        throw_unless(26825, ( equal_slices_bits(__tact_context_get_sender(), $self'owner) ));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'owner, 0, 130, false, __gen_cell_cell_b8c43774d169c4944571b7fcd4a8fd447db2921027de2489b6675367894bf555()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive BroadcastIntent message
+    if (op == 2523776749) {
+        var $msg'serviceHash = in_msg~load_uint(256);
+        var $msg'budget = in_msg~load_varuint16();
+        var $msg'deadline = in_msg~load_uint(32);
+        throw_unless(4391, ($msg'deadline > $global_now()));
+        throw_unless(22978, ($msg'budget > 0));
+        int $currentActive = 0;
+        int $ca = __tact_dict_get_slice_int($self'agentActiveIntents, 267, __tact_context_get_sender(), 257);
+        if ((~ null?($ca))) {
+            $currentActive = __tact_not_null($ca);
+        }
+        if (($currentActive >= $self'maxIntentsPerAgent)) {
+            int $freed = ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_forceCleanupAgentIntents(__tact_context_get_sender());
+            if ($freed) {
+                int $ca2 = __tact_dict_get_slice_int($self'agentActiveIntents, 267, __tact_context_get_sender(), 257);
+                if ((~ null?($ca2))) {
+                    $currentActive = __tact_not_null($ca2);
+                } else {
+                    $currentActive = 0;
+                }
+            }
+            throw_unless(7480, ($currentActive < $self'maxIntentsPerAgent));
+        }
+        int $idx = $self'intentCount;
+        $self'intents~__tact_dict_set_uint_slice(32, $idx, __tact_context_get_sender());
+        $self'intentServiceHashes~__tact_dict_set_uint_uint(32, $idx, $msg'serviceHash, 256);
+        $self'intentBudgets~__tact_dict_set_uint_int(32, $idx, $msg'budget, 257);
+        $self'intentDeadlines~__tact_dict_set_uint_uint(32, $idx, $msg'deadline, 32);
+        $self'intentStatuses~__tact_dict_set_uint_uint(32, $idx, 0, 8);
+        $self'intentCount = ($idx + 1);
+        $self'agentActiveIntents~__tact_dict_set_slice_int(267, __tact_context_get_sender(), ($currentActive + 1), 257);
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_addToIntentServiceIndex($msg'serviceHash, $idx);
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_cleanupOneIntent();
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_cleanup(1);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_f55a81caea4d666ee0d841ac12442355706230771295f9a539d49f590d781d70()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive SendOffer message
+    if (op == 1834677927) {
+        var $msg'intentIndex = in_msg~load_uint(32);
+        var $msg'price = in_msg~load_varuint16();
+        var $msg'deliveryTime = in_msg~load_uint(32);
+        int $intentStatus = __tact_dict_get_uint_uint($self'intentStatuses, 32, $msg'intentIndex, 8);
+        throw_unless(13316, (~ null?($intentStatus)));
+        throw_unless(26624, (__tact_not_null($intentStatus) == 0));
+        int $deadline = __tact_dict_get_uint_uint($self'intentDeadlines, 32, $msg'intentIndex, 32);
+        throw_unless(48272, ( ((~ null?($deadline))) ? (($global_now() < __tact_not_null($deadline))) : (false) ));
+        int $budget = __tact_dict_get_uint_int($self'intentBudgets, 32, $msg'intentIndex, 257);
+        throw_unless(35699, ( ((~ null?($budget))) ? (($msg'price <= __tact_not_null($budget))) : (false) ));
+        slice $buyer = __tact_dict_get_uint_slice($self'intents, 32, $msg'intentIndex);
+        throw_unless(34810, ( ((~ null?($buyer))) ? (( ~ equal_slices_bits(__tact_context_get_sender(), __tact_not_null($buyer)) )) : (false) ));
+        int $idx = $self'offerCount;
+        $self'offers~__tact_dict_set_uint_slice(32, $idx, __tact_context_get_sender());
+        $self'offerIntents~__tact_dict_set_uint_uint(32, $idx, $msg'intentIndex, 32);
+        $self'offerPrices~__tact_dict_set_uint_int(32, $idx, $msg'price, 257);
+        $self'offerDeliveryTimes~__tact_dict_set_uint_uint(32, $idx, $msg'deliveryTime, 32);
+        $self'offerStatuses~__tact_dict_set_uint_uint(32, $idx, 0, 8);
+        $self'offerCount = ($idx + 1);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_f121a388654f95192e3aa9df15bec331129aff1c421bf13d4db8001b0771119c()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive AcceptOffer message
+    if (op == 931468685) {
+        var $msg'offerIndex = in_msg~load_uint(32);
+        int $offerStatus = __tact_dict_get_uint_uint($self'offerStatuses, 32, $msg'offerIndex, 8);
+        throw_unless(50979, (~ null?($offerStatus)));
+        throw_unless(45503, (__tact_not_null($offerStatus) == 0));
+        int $intentIdx = __tact_dict_get_uint_uint($self'offerIntents, 32, $msg'offerIndex, 32);
+        throw_unless(40254, (~ null?($intentIdx)));
+        slice $buyer = __tact_dict_get_uint_slice($self'intents, 32, __tact_not_null($intentIdx));
+        throw_unless(22320, ( ((~ null?($buyer))) ? (( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($buyer)) )) : (false) ));
+        int $intentStatus = __tact_dict_get_uint_uint($self'intentStatuses, 32, __tact_not_null($intentIdx), 8);
+        throw_unless(26624, ( ((~ null?($intentStatus))) ? ((__tact_not_null($intentStatus) == 0)) : (false) ));
+        int $deadline = __tact_dict_get_uint_uint($self'intentDeadlines, 32, __tact_not_null($intentIdx), 32);
+        throw_unless(48272, ( ((~ null?($deadline))) ? (($global_now() < __tact_not_null($deadline))) : (false) ));
+        $self'offerStatuses~__tact_dict_set_uint_uint(32, $msg'offerIndex, 1, 8);
+        $self'intentStatuses~__tact_dict_set_uint_uint(32, __tact_not_null($intentIdx), 1, 8);
+        $self'intentAcceptedOffer~__tact_dict_set_uint_uint(32, __tact_not_null($intentIdx), $msg'offerIndex, 32);
+        if ((~ null?($buyer))) {
+            ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_decrementAgentIntents(__tact_not_null($buyer));
+        }
+        int $i = 0;
+        while (($i < $self'offerCount)) {
+            if (($i != $msg'offerIndex)) {
+                int $oIdx = __tact_dict_get_uint_uint($self'offerIntents, 32, $i, 32);
+                int $oSt = __tact_dict_get_uint_uint($self'offerStatuses, 32, $i, 8);
+                if (( (( (( ((~ null?($oIdx))) ? ((__tact_not_null($oIdx) == __tact_not_null($intentIdx))) : (false) )) ? ((~ null?($oSt))) : (false) )) ? ((__tact_not_null($oSt) == 0)) : (false) )) {
+                    $self'offerStatuses~__tact_dict_set_uint_uint(32, $i, 2, 8);
+                }
+            }
+            $i = ($i + 1);
+        }
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_35999b654c262e0970589945f80269c5d28eaf118c945a6b72bdfd204901b3be()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive SettleDeal message
+    if (op == 484654478) {
+        var $msg'intentIndex = in_msg~load_uint(32);
+        var $msg'rating = in_msg~load_uint(8);
+        int $intentStatus = __tact_dict_get_uint_uint($self'intentStatuses, 32, $msg'intentIndex, 8);
+        throw_unless(13316, (~ null?($intentStatus)));
+        throw_unless(39791, (__tact_not_null($intentStatus) == 1));
+        slice $buyer = __tact_dict_get_uint_slice($self'intents, 32, $msg'intentIndex);
+        throw_unless(22320, ( ((~ null?($buyer))) ? (( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($buyer)) )) : (false) ));
+        $self'intentStatuses~__tact_dict_set_uint_uint(32, $msg'intentIndex, 2, 8);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_4074cbfead1920b4cefb6d453098ea67da8097dabe2ef48ca10acc02c2242438()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive CancelIntent message
+    if (op == 1000023198) {
+        var $msg'intentIndex = in_msg~load_uint(32);
+        int $intentStatus = __tact_dict_get_uint_uint($self'intentStatuses, 32, $msg'intentIndex, 8);
+        throw_unless(13316, (~ null?($intentStatus)));
+        throw_unless(52517, (__tact_not_null($intentStatus) == 0));
+        slice $buyer = __tact_dict_get_uint_slice($self'intents, 32, $msg'intentIndex);
+        throw_unless(22320, ( ((~ null?($buyer))) ? (( equal_slices_bits(__tact_context_get_sender(), __tact_not_null($buyer)) )) : (false) ));
+        $self'intentStatuses~__tact_dict_set_uint_uint(32, $msg'intentIndex, 3, 8);
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_decrementAgentIntents(__tact_context_get_sender());
+        int $i = 0;
+        while (($i < $self'offerCount)) {
+            int $oIdx = __tact_dict_get_uint_uint($self'offerIntents, 32, $i, 32);
+            int $oSt = __tact_dict_get_uint_uint($self'offerStatuses, 32, $i, 8);
+            if (( (( (( ((~ null?($oIdx))) ? ((__tact_not_null($oIdx) == $msg'intentIndex)) : (false) )) ? ((~ null?($oSt))) : (false) )) ? ((__tact_not_null($oSt) == 0)) : (false) )) {
+                $self'offerStatuses~__tact_dict_set_uint_uint(32, $i, 2, 8);
+            }
+            $i = ($i + 1);
+        }
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_916dcfe0c067db6a54f892d94fa8efffc135284a26550301efa690e515ce3a5a()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Receive Deploy message
+    if (op == 0x946a98b6) {
+        var $deploy'queryId = in_msg~load_uint(64);
+        ($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent)~$Reputation$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId), begin_cell()));
+        $Reputation$_contract_store(($self'owner, $self'fee, $self'agentCount, $self'agentOwners, $self'agentAvailable, $self'agentTotalTasks, $self'agentSuccesses, $self'agentRegisteredAt, $self'agentLastActive, $self'nameToIndex, $self'capabilityIndex, $self'openDisputes, $self'disputeDepositors, $self'disputeBeneficiaries, $self'disputeAmounts, $self'disputeDeadlines, $self'disputeSettled, $self'disputeCount, $self'cleanupCursor, $self'intents, $self'intentServiceHashes, $self'intentBudgets, $self'intentDeadlines, $self'intentStatuses, $self'intentAcceptedOffer, $self'intentCount, $self'intentsByService, $self'offers, $self'offerIntents, $self'offerPrices, $self'offerDeliveryTimes, $self'offerStatuses, $self'offerCount, $self'intentCleanupCursor, $self'agentActiveIntents, $self'maxIntentsPerAgent));
+        return ();
+    }
+    
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}

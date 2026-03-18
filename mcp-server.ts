@@ -19,6 +19,7 @@ import StakingPlugin from "./packages/plugin-staking/src/index";
 import EscrowPlugin from "./packages/plugin-escrow/src/index";
 import IdentityPlugin from "./packages/plugin-identity/src/index";
 import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
+import MemoryPlugin from "./packages/plugin-memory/src/index";
 
 // ============================================================
 // MCP Server
@@ -56,7 +57,8 @@ async function main() {
     .use(StakingPlugin)
     .use(EscrowPlugin)
     .use(IdentityPlugin)
-    .use(AnalyticsPlugin);
+    .use(AnalyticsPlugin)
+    .use(MemoryPlugin);
 
   // Create MCP server
   const server = new Server(
@@ -135,7 +137,12 @@ async function main() {
   console.error(
     `Network: ${network} | Address: ${wallet.address.toRawString()}`,
   );
-  console.error(`Actions: ${agent.getAvailableActions().map((a) => a.name).join(", ")}`);
+  console.error(
+    `Actions: ${agent
+      .getAvailableActions()
+      .map((a) => a.name)
+      .join(", ")}`,
+  );
 }
 
 main().catch((err) => {

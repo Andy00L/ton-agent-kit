@@ -35,19 +35,37 @@ export const getEscrowInfoAction = defineAction<{ escrowId?: string }, any>({
           onChain: {
             depositor: toFriendlyAddress(onChain.depositor, agent.network),
             beneficiary: toFriendlyAddress(onChain.beneficiary, agent.network),
-            arbiter: toFriendlyAddress(onChain.arbiter, agent.network),
+            reputationContract: toFriendlyAddress(onChain.reputationContract, agent.network),
             amount: fromNano(onChain.amount) + " TON",
             balance: fromNano(onChain.balance) + " TON",
             deadline: new Date(Number(onChain.deadline) * 1000).toISOString(),
             released: onChain.released,
             refunded: onChain.refunded,
+            deliveryConfirmed: onChain.deliveryConfirmed,
+            disputed: onChain.disputed,
+            votingDeadline: onChain.votingDeadline ? new Date(Number(onChain.votingDeadline) * 1000).toISOString() : null,
+            arbiterCount: Number(onChain.arbiterCount),
+            votesRelease: Number(onChain.votesRelease),
+            votesRefund: Number(onChain.votesRefund),
+            minArbiters: Number(onChain.minArbiters),
+            minStake: fromNano(onChain.minStake) + " TON",
+            sellerStake: fromNano(onChain.sellerStake) + " TON",
+            sellerStaked: onChain.sellerStaked,
+            requireSellerStake: onChain.requireSellerStake,
+            baseSellerStake: fromNano(onChain.baseSellerStake) + " TON",
+            requireRepCollateral: onChain.requireRepCollateral,
+            minRepScore: Number(onChain.minRepScore),
+            autoReleaseAvailable: onChain.autoReleaseAvailable,
+            refundAvailable: onChain.refundAvailable,
             status: onChain.released
               ? "released"
               : onChain.refunded
                 ? "refunded"
-                : onChain.amount > BigInt(0)
-                  ? "funded"
-                  : "created",
+                : onChain.disputed
+                  ? "disputed"
+                  : onChain.amount > BigInt(0)
+                    ? "funded"
+                    : "created",
           },
         };
       } catch (e: any) {

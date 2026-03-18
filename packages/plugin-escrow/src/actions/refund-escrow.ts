@@ -44,6 +44,37 @@ export const refundEscrowAction = defineAction<{ escrowId: string }, any>({
     escrow.status = "refunded";
     saveEscrows(escrows);
 
+    // Save pending bidirectional ratings (non-critical)
+    // Refund = deal failed — negative ratings for both
+    try {
+      await (agent as any).runAction("save_context", {
+        key: `pending_rating_${params.escrowId}_buyer`,
+        namespace: "pending_ratings",
+        value: JSON.stringify({
+          escrowId: params.escrowId,
+          raterRole: "buyer",
+          targetAddress: escrow.beneficiary,
+          suggestedSuccess: false,
+          escrowOutcome: "refunded",
+          timestamp: Date.now(),
+        }),
+      });
+    } catch {}
+    try {
+      await (agent as any).runAction("save_context", {
+        key: `pending_rating_${params.escrowId}_seller`,
+        namespace: "pending_ratings",
+        value: JSON.stringify({
+          escrowId: params.escrowId,
+          raterRole: "seller",
+          targetAddress: escrow.depositor,
+          suggestedSuccess: false,
+          escrowOutcome: "refunded",
+          timestamp: Date.now(),
+        }),
+      });
+    } catch {}
+
     return {
       escrowId: params.escrowId,
       status: "refunded (on-chain)",

@@ -21,7 +21,7 @@
 │                   TON AGENT KIT SDK                          │
 │  ┌─────────────┐ ┌──────────────┐ ┌────────────────────┐    │
 │  │ Plugin System│ │ Wallet       │ │ Action Registry    │    │
-│  │  .use()     │ │ V3/V4/V5     │ │ 37 actions         │    │
+│  │  .use()     │ │ V3/V4/V5     │ │ 68 actions         │    │
 │  │  chain      │ │ auto-detect  │ │ Zod v4 validated   │    │
 │  └─────────────┘ └──────────────┘ └────────────────────┘    │
 │  toAITools() -- Zod v4 native toJSONSchema()                 │
@@ -41,9 +41,10 @@
            │
            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                       PLUGINS (9)                            │
-│  Token(6) │ DeFi(11) │ NFT(3) │ DNS(3) │ Staking(3)        │
-│  Analytics(2) │ Escrow(5) │ Identity(3) │ Payments(1)      │
+│                       PLUGINS (12)                           │
+│  Token(7) │ DeFi(11) │ NFT(3) │ DNS(3) │ Staking(3)        │
+│  Analytics(8) │ Escrow(14) │ Identity(9) │ Payments(2)     │
+│  AgentComm(7) │ Memory(4)                                   │
 └──────────┬───────────────────────────────────────────────────┘
            │
            ▼
@@ -69,7 +70,7 @@ ton-agent-kit/
 │   │   │   └── index.ts
 │   │   └── package.json
 │   │
-│   ├── plugin-token/             # 6 actions: balance, transfer, jetton, deploy
+│   ├── plugin-token/             # 7 actions: balance, transfer, jetton, deploy, simulate
 │   ├── plugin-defi/              # 11 actions: swaps, price, DCA, limit orders, yield, staking pools, trust
 │   │   ├── src/
 │   │   │   ├── actions/
@@ -125,11 +126,11 @@ ton-agent-kit/
 │   └── x402-server/              # Paywall any API (tiered pricing)
 │
 ├── mcp-server.ts                 # Standalone MCP server (37 tools, proven)
-├── telegram-bot.ts               # Telegram bot with HITL (37 actions via toAITools)
+├── telegram-bot.ts               # Telegram bot with HITL (68 actions via toAITools)
 ├── x402-middleware.ts             # x402 payment middleware (production-hardened)
 ├── demo-agent-commerce.ts        # Multi-agent commerce demo (2 wallets, 8 steps, on-chain escrow)
 ├── demo-runloop.ts               # Autonomous agent runtime demo (5 scenarios)
-├── test-all-actions.ts           # Full test suite (13 sections, 37 actions, 9 plugins)
+├── test-all-actions.ts           # Full test suite (16 sections, 68 actions, 12 plugins)
 ├── test-escrow.ts                # Escrow on-chain test suite (7 sections, 21 tests)
 ├── test-orchestrator.ts          # Orchestrator test suite (11 sections, 33+ tests)
 ├── test-x402.ts                  # x402 end-to-end test (security edge cases)
@@ -216,7 +217,7 @@ const agent = new TonAgentKit(wallet, rpcUrl)
   .use(IdentityPlugin)
   .use(PaymentsPlugin);
 
-// 37 actions available via methods proxy
+// 68 actions available via methods proxy
 await agent.methods.get_balance({});
 await agent.methods.create_escrow({ beneficiary: "0:...", amount: "1" });
 await agent.methods.register_agent({ name: "bot", capabilities: ["trading"] });
@@ -613,7 +614,7 @@ User (Telegram)          Bot                    OpenAI           TON
 
 ### Features:
 
-- **37 actions** available via `toAITools()` for proper LLM schemas
+- **68 actions** available via `toAITools()` for proper LLM schemas
 - Configurable LLM via `OPENAI_BASE_URL` and `AI_MODEL` env vars (default: GPT-4.1-nano)
 - **HITL**: transfers > 0.05 TON require Approve/Reject inline buttons
 - **TX mode**: `TX auto` (skip buttons) / `TX confirm` (require approval)
@@ -652,7 +653,29 @@ User (Telegram)          Bot                    OpenAI           TON
 └──────────────┘                    └───────────────┘
 ```
 
-See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo with 2 wallets and 8 on-chain steps.
+See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the demo and [test-commerce.ts](test-commerce.ts) for the full 9-section E2E suite with 5 wallets.
+
+---
+
+## Agent Communication Protocol
+
+On-chain intent/offer system stored in the reputation contract. Agents broadcast what they need, others respond with offers. The full lifecycle runs on-chain with sha256-indexed service lookup (O(1)). Max 10 open intents per agent with automatic cleanup of expired entries. See [docs/agent-comm.md](docs/agent-comm.md).
+
+## Strategy Engine
+
+Deterministic workflow engine. Define step-by-step workflows with conditions, transforms, retries, and scheduling. Runs independently of LLMs. Built-in templates for DCA buying, price monitoring, portfolio rebalancing, and reputation guarding. See [docs/strategies.md](docs/strategies.md).
+
+## Cache Layer
+
+TTL-based transparent cache on `runAction()`. Read actions cached with per-action TTLs (get_price: 30s, get_balance: 10s, resolve_domain: 5min). Write actions never cached, auto-invalidate related reads. 376x speedup on repeated calls. LRU eviction at 500 entries.
+
+## Agent Lifecycle Manager
+
+Process manager for long-running agents. Deploy, start, stop, restart with health checks (periodic `get_balance` calls), auto-restart on crash (exponential backoff: 1s, 2s, 4s, max 30s), max runtime enforcement, and event hooks. See `packages/orchestrator/src/agent-manager.ts`.
+
+## 5-Agent Autonomous Simulation
+
+[test-autonomous.ts](test-autonomous.ts) runs 4 scripted agents and 1 fully LLM-driven agent concurrently for up to 1 hour on testnet. Agent D has a 20% delivery failure rate that creates natural disputes. Agent E uses `runLoop()` with all 68 tools. See [docs/autonomous-simulation.md](docs/autonomous-simulation.md).
 
 ---
 
@@ -660,12 +683,12 @@ See [demo-agent-commerce.ts](demo-agent-commerce.ts) for the full working demo w
 
 | Test Suite             | Result              | Details                                                                                    |
 | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------ |
-| test-all-actions.ts    | 76+ pass            | 13 sections, 37 actions, 9 plugins                                                         |
+| test-all-actions.ts    | 76+ pass            | 16 sections, 68 actions, 12 plugins                                                         |
 | test-escrow.ts         | 21/21 pass          | 7 sections, full lifecycle + gas fix verified on-chain                                     |
 | test-orchestrator.ts   | 33/34 pass          | 11 sections, parallel + dependencies + event hooks                                         |
 | test-x402.ts           | 10+ pass            | Security edge cases: anti-replay, wrong wallet, old TX, insufficient amount, wrong network |
 | test-x402-npm.ts       | 29/29 pass          | npm install security tests                                                                 |
-| test-npm-exhaustive.ts | 75/75 pass (1 skip) | All 37 actions via npm install                                                             |
+| test-npm-exhaustive.ts | 75/75 pass (1 skip) | All 68 actions via npm install                                                             |
 | test-toaitools.ts      | 458/462 pass        | Zod v4 native toJSONSchema()                                                               |
 | demo-runloop.ts        | 5/5 scenarios       | 15+ autonomous actions                                                                     |
 | demo-agent-commerce.ts | 8/8 steps           | On-chain verified, 2 wallets                                                               |

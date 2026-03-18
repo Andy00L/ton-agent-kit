@@ -4,6 +4,10 @@ import type { AgentConfig, Task } from "./types";
 
 /**
  * Reads an env variable, falling back to parsing .env file directly.
+ *
+ * @param key - The environment variable name to look up
+ * @returns The value of the variable, or an empty string if not found
+ * @since 1.0.0
  */
 function readEnvKey(key: string): string {
   try {
@@ -20,8 +24,12 @@ function readEnvKey(key: string): string {
 }
 
 /**
- * Detects circular dependencies in a task graph.
+ * Detects circular dependencies in a task graph using depth-first search.
  * Returns the cycle path if one is found, or null if the graph is acyclic.
+ *
+ * @param tasks - The array of tasks forming the dependency graph
+ * @returns An array of task IDs forming the cycle, or null if no cycle exists
+ * @since 1.0.0
  */
 function detectCycle(tasks: Task[]): string[] | null {
   const visited = new Set<string>();
@@ -53,7 +61,13 @@ function detectCycle(tasks: Task[]): string[] | null {
 
 /**
  * Validates a task plan against the registered agents.
- * Returns an array of error messages (empty if valid).
+ * Checks for unknown agents, invalid actions, missing dependencies, circular dependencies, and task count limits.
+ *
+ * @param tasks - The array of tasks to validate
+ * @param agents - Map of agent name to {@link AgentConfig} for capability checking
+ * @param maxTasks - Maximum allowed number of tasks in the plan
+ * @returns An array of error messages (empty if the plan is valid)
+ * @since 1.0.0
  */
 function validatePlan(
   tasks: Task[],
@@ -117,12 +131,25 @@ Rules:
 
 /**
  * Uses an LLM to decompose a natural language goal into a validated task plan.
+ * Generates a JSON array of {@link Task} objects by prompting the LLM with available agent capabilities,
+ * then validates the output and retries once on failure.
+ *
+ * @since 1.0.0
  */
 export class Planner {
   private apiKey: string;
   private baseURL: string | undefined;
   private model: string;
 
+  /**
+   * Creates a new Planner instance.
+   *
+   * @param opts - Optional configuration for the LLM backend
+   * @param opts.apiKey - OpenAI-compatible API key (falls back to OPENAI_API_KEY env var or .env file)
+   * @param opts.baseURL - Custom base URL for the LLM API (falls back to OPENAI_BASE_URL env var)
+   * @param opts.model - LLM model identifier (falls back to AI_MODEL env var, defaults to "gpt-4o")
+   * @since 1.0.0
+   */
   constructor(opts?: {
     apiKey?: string;
     baseURL?: string;
@@ -137,8 +164,15 @@ export class Planner {
   }
 
   /**
-   * Decompose a goal into a validated task plan.
+   * Decompose a natural language goal into a validated task plan.
    * Retries once if the LLM output fails validation.
+   *
+   * @param goal - Natural language description of the desired outcome
+   * @param agents - Map of registered agent configurations (name to {@link AgentConfig})
+   * @param maxTasks - Maximum number of tasks the plan may contain (default: 20)
+   * @returns A validated array of {@link Task} objects ready for dispatch
+   * @throws {Error} If no API key is configured or the planner fails after 2 attempts
+   * @since 1.0.0
    */
   async plan(
     goal: string,

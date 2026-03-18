@@ -1,0 +1,5019 @@
+// automatically generated from `@stdlib/std/stdlib.fc` `C:/Users/0ther/CODE/personal/ai_hackathon/ton-agent-kit/contracts/output/Reputation_Reputation.fc` 
+PROGRAM{
+  DECLPROC __tact_not_null
+  DECLPROC __tact_context_get
+  DECLPROC __tact_context_get_sender
+  DECLPROC __tact_dict_get_slice_int
+  DECLPROC __tact_dict_set_slice_int
+  DECLPROC __tact_dict_get_uint_slice
+  DECLPROC __tact_dict_set_uint_slice
+  DECLPROC __tact_dict_get_uint_int
+  DECLPROC __tact_dict_set_uint_int
+  DECLPROC __tact_dict_get_uint_uint
+  DECLPROC __tact_dict_set_uint_uint
+  DECLPROC __tact_dict_get_uint_cell
+  DECLPROC __tact_dict_set_uint_cell
+  DECLPROC $DeployOk$_store
+  DECLPROC $DeployOk$_store_cell
+  DECLPROC $Reputation$_store
+  DECLPROC $Reputation$_load
+  DECLPROC $Context$_get_value
+  DECLPROC $AgentData$_not_null
+  DECLPROC $AgentData$_as_optional
+  DECLPROC $AgentData$_to_tuple
+  DECLPROC $AgentData$_to_opt_tuple
+  DECLPROC $AgentData$_to_opt_external
+  DECLPROC $DisputeInfo$_not_null
+  DECLPROC $DisputeInfo$_as_optional
+  DECLPROC $DisputeInfo$_to_tuple
+  DECLPROC $DisputeInfo$_to_opt_tuple
+  DECLPROC $DisputeInfo$_to_opt_external
+  DECLPROC $AgentCleanupInfo$_to_external
+  DECLPROC $IntentData$_to_external
+  DECLPROC $OfferData$_to_external
+  DECLPROC $Reputation$init$_load
+  DECLPROC $Reputation$_contract_init
+  DECLPROC $Reputation$_contract_load
+  DECLPROC $Reputation$_contract_store
+  DECLPROC $Reputation$_fun_decrementAgentIntents
+  DECLPROC $Reputation$_fun_expireIntent
+  DECLPROC $Reputation$_fun_eraseAgent
+  DECLPROC $Reputation$_fun_cleanup
+  DECLPROC $Reputation$_fun_forceCleanupAgentIntents
+  DECLPROC $Reputation$_fun_addToIntentServiceIndex
+  DECLPROC $Reputation$_fun_cleanupOneIntent
+  DECLPROC $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt
+  DECLPROC $Reputation$_fun_agentData
+  DECLPROC $Reputation$_fun_agentIndexByNameHash
+  DECLPROC $Reputation$_fun_agentReputation
+  DECLPROC $Reputation$_fun_agentCount
+  DECLPROC $Reputation$_fun_contractBalance
+  DECLPROC $Reputation$_fun_agentsByCapability
+  DECLPROC $Reputation$_fun_disputeCount
+  DECLPROC $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled
+  DECLPROC $Reputation$_fun_disputeData
+  DECLPROC $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason
+  DECLPROC $Reputation$_fun_agentCleanupInfo
+  DECLPROC $Reputation$_fun_intentsByServiceHash
+  DECLPROC $Reputation$_fun_intentCount
+  DECLPROC $Reputation$_fun_offerCount
+  DECLPROC $Reputation$_fun_agentIntentQuota
+  DECLPROC $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired
+  DECLPROC $Reputation$_fun_intentData
+  DECLPROC $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status
+  DECLPROC $Reputation$_fun_offerData
+  DECLPROC $MessageParameters$_constructor_bounce_to_value_mode_body
+  DECLPROC $Reputation$_fun_notify
+  DECLPROC $SendParameters$_constructor_to_value_mode_bounce_body
+  DECLPROC $DeployOk$_constructor_queryId
+  92172 DECLMETHOD %agentData
+  88600 DECLMETHOD %agentIndexByNameHash
+  110805 DECLMETHOD %agentReputation
+  81213 DECLMETHOD %agentCount
+  110221 DECLMETHOD %contractBalance
+  90929 DECLMETHOD %agentsByCapability
+  72077 DECLMETHOD %disputeCount
+  119614 DECLMETHOD %disputeData
+  100802 DECLMETHOD %agentCleanupInfo
+  105526 DECLMETHOD %intentsByServiceHash
+  98654 DECLMETHOD %intentCount
+  123217 DECLMETHOD %offerCount
+  120244 DECLMETHOD %agentIntentQuota
+  93056 DECLMETHOD %intentData
+  100877 DECLMETHOD %offerData
+  DECLPROC recv_internal
+  65535 DECLMETHOD __tact_selector_hack
+  DECLGLOBVAR __tact_context
+  DECLGLOBVAR __tact_context_sender
+  DECLGLOBVAR __tact_child_contract_codes
+  DECLGLOBVAR __tact_randomized
+  __tact_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+  }>
+  __tact_context_get PROCINLINE:<{
+    __tact_context GETGLOB
+    4 UNTUPLE
+  }>
+  __tact_context_get_sender PROCINLINE:<{
+    __tact_context_sender GETGLOB
+  }>
+  __tact_dict_get_slice_int PROCINLINE:<{
+    s1 s3 s3 XCHG3
+        DICTGET NULLSWAPIFNOT
+    IF:<{
+      SWAP
+      LDIX
+      DROP
+    }>ELSE<{
+      2DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_slice_int PROCINLINE:<{
+    OVER
+    ISNULL
+    IF:<{
+      2DROP
+      -ROT
+          DICTDEL
+      DROP
+    }>ELSE<{
+      NEWC
+      SWAP
+      STIX
+      s1 s3 s3 XCHG3
+      DICTSETB
+    }>
+  }>
+  __tact_dict_get_uint_slice PROCINLINE:<{
+    -ROT
+    DICTUGET
+    NULLSWAPIFNOT
+    IF:<{
+    }>ELSE<{
+      DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_uint_slice PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      -ROT
+      DICTUDEL
+      DROP
+    }>ELSE<{
+      s1 s3 s3 XCHG3
+      DICTUSET
+    }>
+  }>
+  __tact_dict_get_uint_int PROCINLINE:<{
+    s1 s3 s3 XCHG3
+    DICTUGET
+    NULLSWAPIFNOT
+    IF:<{
+      SWAP
+      LDIX
+      DROP
+    }>ELSE<{
+      2DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_uint_int PROCINLINE:<{
+    OVER
+    ISNULL
+    IF:<{
+      2DROP
+      -ROT
+      DICTUDEL
+      DROP
+    }>ELSE<{
+      NEWC
+      SWAP
+      STIX
+      s1 s3 s3 XCHG3
+      DICTUSETB
+    }>
+  }>
+  __tact_dict_get_uint_uint PROCINLINE:<{
+    s1 s3 s3 XCHG3
+    DICTUGET
+    NULLSWAPIFNOT
+    IF:<{
+      SWAP
+      LDUX
+      DROP
+    }>ELSE<{
+      2DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_uint_uint PROCINLINE:<{
+    OVER
+    ISNULL
+    IF:<{
+      2DROP
+      -ROT
+      DICTUDEL
+      DROP
+    }>ELSE<{
+      NEWC
+      SWAP
+      STUX
+      s1 s3 s3 XCHG3
+      DICTUSETB
+    }>
+  }>
+  __tact_dict_get_uint_cell PROCINLINE:<{
+    -ROT
+    DICTUGETREF
+    NULLSWAPIFNOT
+    IF:<{
+    }>ELSE<{
+      DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_set_uint_cell PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      -ROT
+      DICTUDEL
+      DROP
+    }>ELSE<{
+      s1 s3 s3 XCHG3
+      DICTUSETREF
+    }>
+  }>
+  $DeployOk$_store PROCINLINE:<{
+    2952335191 PUSHINT
+    ROT
+    32 STU
+    64 STU
+  }>
+  $DeployOk$_store_cell PROCINLINE:<{
+    SWAP
+    $DeployOk$_store INLINECALLDICT
+    ENDC
+  }>
+  $Reputation$_store PROCINLINE:<{
+    s1 35 s() XCHG
+    s0 36 s() XCHG
+    STSLICE
+    SWAP
+    s0 33 s() XCHG
+    STVARUINT16
+    s1 31 s() XCHG
+    32 STU
+    s1 29 s() XCHG
+    STDICT
+    s0 27 s() XCHG
+    NEWC
+    STDICT
+    s1 26 s() XCHG
+    STDICT
+    s1 24 s() XCHG
+    STDICT
+    s0 22 s() XCHG
+    NEWC
+    STDICT
+    s1 21 s() XCHG
+    STDICT
+    s1 19 s() XCHG
+    STDICT
+    s0 17 s() XCHG
+    NEWC
+    STDICT
+    s1 16 s() XCHG
+    STDICT
+    s1 s14 XCHG
+    STDICT
+    s0 s12 XCHG
+    NEWC
+    STDICT
+    s1 s11 XCHG
+    STDICT
+    s1 s9 XCHG
+    STDICT
+    s0 s7 XCHG
+    NEWC
+    STDICT
+    s1 s6 XCHG
+    32 STU
+    s1 s4 XCHG
+    32 STU
+    s1 s2 XCHG
+    STDICT
+    STDICT
+    SWAP
+    NEWC
+    STDICT
+    s1 s2 XCHG
+    STDICT
+    s1 s3 XCHG
+    STDICT
+    s0 s3 XCHG
+    NEWC
+    STDICT
+    s1 s5 XCHG
+    32 STU
+    s1 s5 XCHG
+    STDICT
+    s1 s6 XCHG
+    STDICT
+    s0 s6 XCHG
+    NEWC
+    STDICT
+    s1 s8 XCHG
+    STDICT
+    s1 s8 XCHG
+    STDICT
+    s0 s9 XCHG
+    NEWC
+    STDICT
+    s1 s10 XCHG
+    32 STU
+    s1 s10 XCHG
+    32 STU
+    s1 s10 XCHG
+    STDICT
+    s1 s10 XCHG
+    8 STU
+    s1 s5 XCHG
+    STBREFR
+    s1 s8 XCHG
+    STBREFR
+    s1 s6 XCHG
+    STBREFR
+    s1 s3 XCHG
+    STBREFR
+    s1 s4 XCHG
+    STBREFR
+    s1 s4 XCHG
+    STBREFR
+    STBREFR
+    STBREFR
+    STBREFR
+  }>
+  $Reputation$_load PROCINLINE:<{
+    LDMSGADDR
+    LDVARUINT16
+    32 LDU
+    LDDICT
+    LDREF
+    SWAP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    32 LDU
+    32 LDU
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    32 LDU
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    LDDICT
+    LDDICT
+    LDREF
+    DROP
+    CTOS
+    LDDICT
+    32 LDU
+    32 LDU
+    LDDICT
+    8 LDU
+    DROP
+    32 s() 36 s() XCHG
+    32 s() 35 s() XCHG
+    32 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+  }>
+  $Context$_get_value PROCINLINE:<{
+    s1 s3 XCHG
+    3 BLKDROP
+  }>
+  $AgentData$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+        5 UNTUPLE
+  }>
+  $AgentData$_as_optional PROCINLINE:<{
+        5 TUPLE
+  }>
+  $AgentData$_to_tuple PROCINLINE:<{
+        5 TUPLE
+  }>
+  $AgentData$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $AgentData$_not_null INLINECALLDICT
+      $AgentData$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $AgentData$_to_opt_external PROCINLINE:<{
+    $AgentData$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $DisputeInfo$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+        6 UNTUPLE
+  }>
+  $DisputeInfo$_as_optional PROCINLINE:<{
+        6 TUPLE
+  }>
+  $DisputeInfo$_to_tuple PROCINLINE:<{
+        6 TUPLE
+  }>
+  $DisputeInfo$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $DisputeInfo$_not_null INLINECALLDICT
+      $DisputeInfo$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $DisputeInfo$_to_opt_external PROCINLINE:<{
+    $DisputeInfo$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $AgentCleanupInfo$_to_external PROCINLINE:<{
+  }>
+  $IntentData$_to_external PROCINLINE:<{
+  }>
+  $OfferData$_to_external PROCINLINE:<{
+  }>
+  $Reputation$init$_load PROCINLINE:<{
+    LDMSGADDR
+    SWAP
+  }>
+  $Reputation$_contract_init PROCINLINE:<{
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    10000000 PUSHINT
+    0 PUSHINT
+    s0 s0 s0 PUSH3
+    s0 s0 PUSH2
+    s6 33 s() XCHG
+    s5 32 s() XCHG
+    s6 31 s() XCHG
+    s5 30 s() XCHG
+    s6 29 s() XCHG
+    s5 28 s() XCHG
+    s6 27 s() XCHG
+    s5 26 s() XCHG
+    s6 25 s() XCHG
+    s5 24 s() XCHG
+    s6 23 s() XCHG
+    s5 22 s() XCHG
+    s6 21 s() XCHG
+    s5 20 s() XCHG
+    s6 19 s() XCHG
+    s5 18 s() XCHG
+    s4 17 s() XCHG
+    s3 16 s() XCHG
+    s6 s15 XCHG
+    s5 s14 XCHG
+    s4 s13 XCHG
+    s3 s12 XCHG
+    s6 s11 XCHG
+    s5 s10 XCHG
+    s2 s9 XCHG
+    s4 s8 XCHG
+    s3 s7 XCHG
+    s1 s0 s4 XCHG3
+    s0 s3 XCHG
+    10 PUSHINT
+  }>
+  $Reputation$_contract_load PROCINLINE:<{
+    c4 PUSH
+    CTOS
+    1 LDI
+    SWAP
+    IF:<{
+      $Reputation$_load INLINECALLDICT
+      36 s() POP
+      34 s() 35 s() XCHG
+      33 s() 34 s() XCHG
+      32 s() 33 s() XCHG
+      31 s() 32 s() XCHG
+      30 s() 31 s() XCHG
+      29 s() 30 s() XCHG
+      28 s() 29 s() XCHG
+      27 s() 28 s() XCHG
+      26 s() 27 s() XCHG
+      25 s() 26 s() XCHG
+      24 s() 25 s() XCHG
+      23 s() 24 s() XCHG
+      22 s() 23 s() XCHG
+      21 s() 22 s() XCHG
+      20 s() 21 s() XCHG
+      19 s() 20 s() XCHG
+      18 s() 19 s() XCHG
+      17 s() 18 s() XCHG
+      16 s() 17 s() XCHG
+      s15 16 s() XCHG
+      15 ROLL
+    }>ELSE<{
+      $Reputation$init$_load INLINECALLDICT
+      SWAP
+      ENDS
+      $Reputation$_contract_init INLINECALLDICT
+    }>
+  }>
+  $Reputation$_contract_store PROCINLINE:<{
+    NEWC
+    TRUE
+    SWAP
+    1 STI
+    s0 36 s() XCHG
+    s0 35 s() XCHG
+    s0 34 s() XCHG
+    s0 33 s() XCHG
+    s0 32 s() XCHG
+    s0 31 s() XCHG
+    s0 30 s() XCHG
+    s0 29 s() XCHG
+    s0 28 s() XCHG
+    s0 27 s() XCHG
+    s0 26 s() XCHG
+    s0 25 s() XCHG
+    s0 24 s() XCHG
+    s0 23 s() XCHG
+    s0 22 s() XCHG
+    s0 21 s() XCHG
+    s0 20 s() XCHG
+    s0 19 s() XCHG
+    s0 18 s() XCHG
+    s0 17 s() XCHG
+    s0 16 s() XCHG
+    15 -ROLL
+    $Reputation$_store INLINECALLDICT
+    ENDC
+    c4 POP
+  }>
+  $Reputation$_fun_decrementAgentIntents PROCREF:<{
+    s2 PUSH
+    267 PUSHINT
+    s2 PUSH
+    257 PUSHINT
+    __tact_dict_get_slice_int INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      DUP
+      __tact_not_null INLINECALLDICT
+      0 GTINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      267 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      DEC
+      s3 s4 XCHG
+      s1 s2 XCHG
+      257 PUSHINT
+      __tact_dict_set_slice_int INLINECALLDICT
+      SWAP
+    }>ELSE<{
+      2DROP
+    }>
+  }>
+  $Reputation$_fun_expireIntent PROCREF:<{
+    s13 PUSH
+    32 PUSHINT
+    s2 PUSH
+    8 PUSHINT
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      TRUE
+    }>ELSE<{
+      __tact_not_null INLINECALLDICT
+      0 NEQINT
+    }>
+    IFJMP:<{
+      DROP
+    }>
+    17 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    s0 s14 XCHG
+    32 PUSHINT
+    s2 PUSH
+    4 PUSHINT
+    8 PUSHINT
+    __tact_dict_set_uint_uint INLINECALLDICT
+    s14 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s0 s14 XCHG
+      __tact_not_null INLINECALLDICT
+      36 s() 37 s() XCHG
+      35 s() 37 s() XCHG
+      34 s() 37 s() XCHG
+      33 s() 37 s() XCHG
+      32 s() 37 s() XCHG
+      31 s() 37 s() XCHG
+      30 s() 37 s() XCHG
+      29 s() 37 s() XCHG
+      28 s() 37 s() XCHG
+      27 s() 37 s() XCHG
+      26 s() 37 s() XCHG
+      25 s() 37 s() XCHG
+      24 s() 37 s() XCHG
+      23 s() 37 s() XCHG
+      22 s() 37 s() XCHG
+      21 s() 37 s() XCHG
+      20 s() 37 s() XCHG
+      19 s() 37 s() XCHG
+      18 s() 37 s() XCHG
+      17 s() 37 s() XCHG
+      16 s() 37 s() XCHG
+      s15 37 s() XCHG
+      s14 37 s() XCHG
+      s13 37 s() XCHG
+      s12 37 s() XCHG
+      s11 37 s() XCHG
+      s10 37 s() XCHG
+      s9 37 s() XCHG
+      s8 37 s() XCHG
+      s7 37 s() XCHG
+      s6 37 s() XCHG
+      s5 37 s() XCHG
+      s4 37 s() XCHG
+      s3 37 s() XCHG
+      s2 37 s() XCHG
+      s1 37 s() XCHG
+      $Reputation$_fun_decrementAgentIntents INLINECALLDICT
+      35 s() 36 s() XCHG
+      34 s() 35 s() XCHG
+      33 s() 34 s() XCHG
+      32 s() 33 s() XCHG
+      31 s() 32 s() XCHG
+      30 s() 31 s() XCHG
+      29 s() 30 s() XCHG
+      28 s() 29 s() XCHG
+      27 s() 28 s() XCHG
+      26 s() 27 s() XCHG
+      25 s() 26 s() XCHG
+      24 s() 25 s() XCHG
+      23 s() 24 s() XCHG
+      22 s() 23 s() XCHG
+      21 s() 22 s() XCHG
+      20 s() 21 s() XCHG
+      19 s() 20 s() XCHG
+      18 s() 19 s() XCHG
+      17 s() 18 s() XCHG
+      16 s() 17 s() XCHG
+      s15 16 s() XCHG
+      15 ROLL
+    }>ELSE<{
+      s14 POP
+    }>
+    0 PUSHINT
+    DUP
+    WHILE:<{
+      s1 s6 PUSH2
+      LESS
+      IF:<{
+        DUP
+        20 LESSINT
+      }>ELSE<{
+        FALSE
+      }>
+    }>DO<{
+      32 PUSHINT
+      s11 s(-1) s(-1) PUXCPU
+      s4 s(-1) PUXC
+      __tact_dict_get_uint_uint INLINECALLDICT
+      s8 PUSH
+      32 PUSHINT
+      s4 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        SWAP
+        __tact_not_null INLINECALLDICT
+        s4 PUSH
+        EQUAL
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      IF:<{
+        DUP
+        ISNULL
+        NOT
+      }>ELSE<{
+        FALSE
+      }>
+      IF:<{
+        __tact_not_null INLINECALLDICT
+        0 EQINT
+      }>ELSE<{
+        DROP
+        FALSE
+      }>
+      IF:<{
+        s0 s7 XCHG
+        32 PUSHINT
+        s2 PUSH
+        3 PUSHINT
+        8 PUSHINT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        s0 s7 XCHG
+        INC
+      }>
+      SWAP
+      INC
+      SWAP
+    }>
+    3 BLKDROP
+  }>
+  $Reputation$_fun_eraseAgent PROCREF:<{
+    33 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    s0 34 s() XCHG
+    32 PUSHINT
+    s2 PUSH
+    PUSHNULL
+    __tact_dict_set_uint_slice INLINECALLDICT
+    s0 33 s() XCHG
+    32 PUSHINT
+    s2 PUSH
+    PUSHNULL
+    1 PUSHINT
+    __tact_dict_set_uint_int INLINECALLDICT
+    32 PUSHINT
+    PUSHNULL
+    OVER
+    s3 35 s() XCHG
+    s4 PUSH
+    -ROT
+    __tact_dict_set_uint_uint INLINECALLDICT
+    32 PUSHINT
+    PUSHNULL
+    OVER
+    s3 34 s() XCHG
+    s4 PUSH
+    -ROT
+    __tact_dict_set_uint_uint INLINECALLDICT
+    32 PUSHINT
+    PUSHNULL
+    OVER
+    s3 33 s() XCHG
+    s4 PUSH
+    -ROT
+    __tact_dict_set_uint_uint INLINECALLDICT
+    32 PUSHINT
+    PUSHNULL
+    OVER
+    s4 32 s() XCHG
+    s2 s3 XCHG
+    s2 32 s() XCHG
+    __tact_dict_set_uint_uint INLINECALLDICT
+    33 s() PUSH
+    ISNULL
+    NOT
+    IF:<{
+      0 PUSHINT
+      DUP
+      WHILE:<{
+        s1 s13 PUSH2
+        LESS
+        IF:<{
+          DUP
+          20 LESSINT
+        }>ELSE<{
+          FALSE
+        }>
+      }>DO<{
+        19 s() PUSH
+        32 PUSHINT
+        s3 PUSH
+        __tact_dict_get_uint_slice INLINECALLDICT
+        16 s() PUSH
+        32 PUSHINT
+        s4 PUSH
+        8 PUSHINT
+        __tact_dict_get_uint_uint INLINECALLDICT
+        OVER
+        ISNULL
+        NOT
+        IF:<{
+          SWAP
+          __tact_not_null INLINECALLDICT
+          37 s() PUSH
+          __tact_not_null INLINECALLDICT
+          SDEQ
+        }>ELSE<{
+          NIP
+          FALSE
+        }>
+        IF:<{
+          DUP
+          ISNULL
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          __tact_not_null INLINECALLDICT
+          0 EQINT
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IF:<{
+          35 s() 38 s() XCHG
+          34 s() 37 s() XCHG
+          33 s() 36 s() XCHG
+          32 s() 37 s() XCHG
+          31 s() 36 s() XCHG
+          30 s() 37 s() XCHG
+          29 s() 36 s() XCHG
+          28 s() 37 s() XCHG
+          s2 27 s() XCHG
+          26 s() 36 s() XCHG
+          25 s() 37 s() XCHG
+          s2 24 s() XCHG
+          23 s() 36 s() XCHG
+          22 s() 37 s() XCHG
+          s2 21 s() XCHG
+          20 s() 36 s() XCHG
+          19 s() 37 s() XCHG
+          s2 18 s() XCHG
+          17 s() 36 s() XCHG
+          16 s() 37 s() XCHG
+          s2 s15 XCHG
+          s14 36 s() XCHG
+          s13 37 s() XCHG
+          s2 s12 XCHG
+          s11 36 s() XCHG
+          s10 37 s() XCHG
+          s2 s9 XCHG
+          s8 36 s() XCHG
+          s7 37 s() XCHG
+          s2 s6 XCHG
+          s5 36 s() XCHG
+          s4 37 s() XCHG
+          s2 s3 XCHG
+          s2 36 s() XCHG
+          s1 37 s() XCHG
+          s0 36 s() XCHG
+          37 s() PUSH
+          $Reputation$_fun_expireIntent INLINECALLDICT
+          s0 36 s() XCHG
+          INC
+          35 s() 38 s() XCHG
+          34 s() 37 s() XCHG
+          33 s() 36 s() XCHG
+          32 s() 34 s() XCHG
+          31 s() 33 s() XCHG
+          30 s() 32 s() XCHG
+          29 s() 31 s() XCHG
+          28 s() 30 s() XCHG
+          26 s() 29 s() XCHG
+          25 s() 28 s() XCHG
+          24 s() 27 s() XCHG
+          23 s() 26 s() XCHG
+          22 s() 25 s() XCHG
+          21 s() 24 s() XCHG
+          20 s() 23 s() XCHG
+          19 s() 22 s() XCHG
+          18 s() 21 s() XCHG
+          17 s() 20 s() XCHG
+          16 s() 19 s() XCHG
+          s15 18 s() XCHG
+          s14 17 s() XCHG
+          s13 16 s() XCHG
+          s12 s15 XCHG
+          s11 s14 XCHG
+          s10 s13 XCHG
+          s9 s12 XCHG
+          s8 s11 XCHG
+          s7 s10 XCHG
+          s6 s9 XCHG
+          s5 s8 XCHG
+          s4 s7 XCHG
+          s3 s6 XCHG
+          s5 s4 s0 XCHG3
+          s2 s3 XCHG
+        }>
+        SWAP
+        INC
+        SWAP
+      }>
+      2DROP
+      0 PUSHINT
+      DUP
+      WHILE:<{
+        s1 s6 PUSH2
+        LESS
+        IF:<{
+          DUP
+          30 LESSINT
+        }>ELSE<{
+          FALSE
+        }>
+      }>DO<{
+        s11 PUSH
+        32 PUSHINT
+        s3 PUSH
+        __tact_dict_get_uint_slice INLINECALLDICT
+        s8 PUSH
+        32 PUSHINT
+        s4 PUSH
+        8 PUSHINT
+        __tact_dict_get_uint_uint INLINECALLDICT
+        OVER
+        ISNULL
+        NOT
+        IF:<{
+          SWAP
+          __tact_not_null INLINECALLDICT
+          37 s() PUSH
+          __tact_not_null INLINECALLDICT
+          SDEQ
+        }>ELSE<{
+          NIP
+          FALSE
+        }>
+        IF:<{
+          DUP
+          ISNULL
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          __tact_not_null INLINECALLDICT
+          0 EQINT
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IF:<{
+          s0 s7 XCHG
+          32 PUSHINT
+          s2 PUSH
+          3 PUSHINT
+          8 PUSHINT
+          __tact_dict_set_uint_uint INLINECALLDICT
+          s0 s7 XCHG
+          INC
+        }>
+        SWAP
+        INC
+        SWAP
+      }>
+      2DROP
+      267 PUSHINT
+      s0 34 s() XCHG
+      __tact_not_null INLINECALLDICT
+      s2 s3 XCHG
+      s1 34 s() XCHG
+      PUSHNULL
+      257 PUSHINT
+      __tact_dict_set_slice_int INLINECALLDICT
+      SWAP
+    }>ELSE<{
+      33 s() POP
+    }>
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+  }>
+  $Reputation$_fun_cleanup PROCREF:<{
+    0 PUSHINT
+    DUP
+    20 s() PUSH
+    WHILE:<{
+      OVER
+      10 LESSINT
+      IF:<{
+        DUP
+        38 s() PUSH
+        LESS
+      }>ELSE<{
+        FALSE
+      }>
+      IF:<{
+        s2 s3 PUSH2
+        LESS
+      }>ELSE<{
+        FALSE
+      }>
+    }>DO<{
+      36 s() PUSH
+      32 PUSHINT
+      s2 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      ISNULL
+      NOT
+      IF:<{
+        FALSE
+        32 PUSHINT
+        DUP
+        37 s() PUSH
+        s2 s4 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        32 PUSHINT
+        DUP
+        37 s() PUSH
+        s2 s5 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        32 PUSHINT
+        DUP
+        36 s() PUSH
+        s2 s6 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        32 PUSHINT
+        DUP
+        38 s() PUSH
+        s2 s7 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        0 PUSHINT
+        s4 PUSH
+        ISNULL
+        NOT
+        IF:<{
+          DROP
+          s0 s3 XCHG
+          __tact_not_null INLINECALLDICT
+          s0 s3 XCHG
+        }>ELSE<{
+          s4 POP
+        }>
+        0 PUSHINT
+        s3 PUSH
+        ISNULL
+        NOT
+        IF:<{
+          DROP
+          s0 s2 XCHG
+          __tact_not_null INLINECALLDICT
+          s0 s2 XCHG
+        }>ELSE<{
+          s3 POP
+        }>
+        s3 PUSH
+        99 GTINT
+        IF:<{
+          s0 s2 XCHG
+          100 MULCONST
+          s3 PUSH
+          DIV
+          20 LESSINT
+          IF:<{
+            TRUE
+            s4 POP
+          }>
+        }>ELSE<{
+          s2 POP
+        }>
+        s3 PUSH
+        NOT
+        IF:<{
+          DUP
+          ISNULL
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          DUP
+          __tact_not_null INLINECALLDICT
+          0 GTINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+              NOW
+          SWAP
+          __tact_not_null INLINECALLDICT
+          SUB
+          2592000 PUSHINT
+          GREATER
+          IF:<{
+            TRUE
+            s3 POP
+          }>
+        }>ELSE<{
+          DROP
+        }>
+        s2 PUSH
+        NOT
+        IF:<{
+          SWAP
+          0 EQINT
+        }>ELSE<{
+          NIP
+          FALSE
+        }>
+        IF:<{
+          DUP
+          ISNULL
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          DUP
+          __tact_not_null INLINECALLDICT
+          0 GTINT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+              NOW
+          SWAP
+          __tact_not_null INLINECALLDICT
+          SUB
+          604800 PUSHINT
+          GREATER
+          IF:<{
+            DROP
+            TRUE
+          }>
+        }>ELSE<{
+          DROP
+        }>
+        IF:<{
+          35 s() 39 s() XCHG
+          34 s() 38 s() XCHG
+          33 s() 37 s() XCHG
+          32 s() 36 s() XCHG
+          31 s() 39 s() XCHG
+          30 s() 38 s() XCHG
+          29 s() 37 s() XCHG
+          28 s() 36 s() XCHG
+          27 s() 39 s() XCHG
+          26 s() 38 s() XCHG
+          25 s() 37 s() XCHG
+          24 s() 36 s() XCHG
+          23 s() 39 s() XCHG
+          22 s() 38 s() XCHG
+          21 s() 37 s() XCHG
+          20 s() 36 s() XCHG
+          19 s() 39 s() XCHG
+          18 s() 38 s() XCHG
+          17 s() 37 s() XCHG
+          16 s() 36 s() XCHG
+          s15 39 s() XCHG
+          s14 38 s() XCHG
+          s13 37 s() XCHG
+          s12 36 s() XCHG
+          s11 39 s() XCHG
+          s10 38 s() XCHG
+          s9 37 s() XCHG
+          s8 36 s() XCHG
+          s7 39 s() XCHG
+          s6 38 s() XCHG
+          s5 37 s() XCHG
+          s4 36 s() XCHG
+          s3 39 s() XCHG
+          s2 38 s() XCHG
+          s1 37 s() XCHG
+          s0 36 s() XCHG
+          36 s() PUSH
+          $Reputation$_fun_eraseAgent INLINECALLDICT
+          s0 38 s() XCHG
+          INC
+          35 s() 39 s() XCHG
+          34 s() 38 s() XCHG
+          33 s() 37 s() XCHG
+          32 s() 36 s() XCHG
+          31 s() 35 s() XCHG
+          30 s() 34 s() XCHG
+          29 s() 33 s() XCHG
+          28 s() 32 s() XCHG
+          27 s() 31 s() XCHG
+          26 s() 30 s() XCHG
+          25 s() 29 s() XCHG
+          24 s() 28 s() XCHG
+          23 s() 27 s() XCHG
+          22 s() 26 s() XCHG
+          21 s() 25 s() XCHG
+          20 s() 24 s() XCHG
+          19 s() 23 s() XCHG
+          18 s() 22 s() XCHG
+          17 s() 21 s() XCHG
+          16 s() 20 s() XCHG
+          s15 19 s() XCHG
+          s14 18 s() XCHG
+          s13 17 s() XCHG
+          s12 16 s() XCHG
+          s11 s15 XCHG
+          s10 s14 XCHG
+          s9 s13 XCHG
+          s8 s12 XCHG
+          s7 s11 XCHG
+          s6 s10 XCHG
+          s5 s9 XCHG
+          s4 s8 XCHG
+          s3 s7 XCHG
+          s0 s1 s6 XCHG3
+          s5 s4 XCHG2
+        }>
+      }>
+      INC
+      SWAP
+      INC
+      SWAP
+    }>
+    21 s() POP
+    3 BLKDROP
+    17 s() PUSH
+    34 s() PUSH
+    GEQ
+    IF:<{
+      17 s() POP
+      0 PUSHINT
+    }>ELSE<{
+      s0 17 s() XCHG
+    }>
+    s0 17 s() XCHG
+  }>
+  $Reputation$_fun_forceCleanupAgentIntents PROCREF:<{
+    c2 SAVE
+    SAMEALTSAVE
+    0 PUSHINT
+    DUP
+    WHILE:<{
+      OVER
+      50 LESSINT
+      IF:<{
+        s0 s13 PUSH2
+        LESS
+      }>ELSE<{
+        FALSE
+      }>
+    }>DO<{
+      19 s() PUSH
+      32 PUSHINT
+      s2 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      16 s() PUSH
+      32 PUSHINT
+      s3 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        SWAP
+        __tact_not_null INLINECALLDICT
+        s4 PUSH
+        SDEQ
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      IF:<{
+        DUP
+        ISNULL
+        NOT
+      }>ELSE<{
+        FALSE
+      }>
+      IF:<{
+        __tact_not_null INLINECALLDICT
+        0 EQINT
+      }>ELSE<{
+        DROP
+        FALSE
+      }>
+      IF:<{
+        32 PUSHINT
+        DUP
+        18 s() PUSH
+        s2 s3 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        DUP
+        ISNULL
+        NOT
+        IF:<{
+              NOW
+          SWAP
+          __tact_not_null INLINECALLDICT
+          GEQ
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IFJMP:<{
+          2 1 BLKDROP2
+          $Reputation$_fun_expireIntent INLINECALLDICT
+          TRUE
+          RETALT
+        }>
+      }>
+      INC
+      SWAP
+      INC
+      SWAP
+    }>
+    3 BLKDROP
+    FALSE
+  }>
+  $Reputation$_fun_addToIntentServiceIndex PROCREF:<{
+    s11 PUSH
+    8 PUSHPOW2
+    s3 PUSH
+    __tact_dict_get_uint_cell INLINECALLDICT
+        NEWC
+    s1 s2 XCHG
+    32 STU
+    OVER
+    ISNULL
+    NOT
+    IF:<{
+      1 PUSHINT
+      SWAP
+      1 STU
+      SWAP
+      __tact_not_null INLINECALLDICT
+      SWAP
+          STREF
+    }>ELSE<{
+      0 PUSHINT
+      s2 POP
+      1 STU
+    }>
+    8 PUSHPOW2
+    SWAP
+        ENDC
+    s3 s12 XCHG
+    s1 s2 XCHG
+    __tact_dict_set_uint_cell INLINECALLDICT
+    s0 s9 XCHG
+  }>
+  $Reputation$_fun_cleanupOneIntent PROCREF:<{
+    c2 SAVE
+    SAMEALTSAVE
+    s2 PUSH
+    0 PUSHINT
+    WHILE:<{
+      DUP
+      5 LESSINT
+      IF:<{
+        s1 s12 PUSH2
+        LESS
+      }>ELSE<{
+        FALSE
+      }>
+    }>DO<{
+      s14 PUSH
+      32 PUSHINT
+      s3 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      DUP
+      ISNULL
+      NOT
+      IF:<{
+        __tact_not_null INLINECALLDICT
+        0 EQINT
+      }>ELSE<{
+        DROP
+        FALSE
+      }>
+      IF:<{
+        32 PUSHINT
+        DUP
+        17 s() PUSH
+        s2 s4 s2 XCPUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        DUP
+        ISNULL
+        NOT
+        IF:<{
+              NOW
+          SWAP
+          __tact_not_null INLINECALLDICT
+          GEQ
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IFJMP:<{
+          DROP
+          35 s() 36 s() XCHG
+          34 s() 36 s() XCHG
+          33 s() 36 s() XCHG
+          32 s() 36 s() XCHG
+          31 s() 36 s() XCHG
+          30 s() 36 s() XCHG
+          29 s() 36 s() XCHG
+          28 s() 36 s() XCHG
+          27 s() 36 s() XCHG
+          26 s() 36 s() XCHG
+          25 s() 36 s() XCHG
+          24 s() 36 s() XCHG
+          23 s() 36 s() XCHG
+          22 s() 36 s() XCHG
+          21 s() 36 s() XCHG
+          20 s() 36 s() XCHG
+          19 s() 36 s() XCHG
+          18 s() 36 s() XCHG
+          17 s() 36 s() XCHG
+          16 s() 36 s() XCHG
+          s15 36 s() XCHG
+          s14 36 s() XCHG
+          s13 36 s() XCHG
+          s12 36 s() XCHG
+          s11 36 s() XCHG
+          s10 36 s() XCHG
+          s9 36 s() XCHG
+          s0 36 s() XCHG
+          s0 s8 XCHG
+          s0 s7 XCHG
+          s0 s6 XCHG
+          5 -ROLL
+          36 s() PUSH
+          $Reputation$_fun_expireIntent INLINECALLDICT
+          s2 POP
+          s0 35 s() XCHG
+          INC
+          34 s() 35 s() XCHG
+          33 s() 34 s() XCHG
+          32 s() 33 s() XCHG
+          31 s() 32 s() XCHG
+          30 s() 31 s() XCHG
+          29 s() 30 s() XCHG
+          28 s() 29 s() XCHG
+          27 s() 28 s() XCHG
+          26 s() 27 s() XCHG
+          25 s() 26 s() XCHG
+          24 s() 25 s() XCHG
+          23 s() 24 s() XCHG
+          22 s() 23 s() XCHG
+          21 s() 22 s() XCHG
+          20 s() 21 s() XCHG
+          19 s() 20 s() XCHG
+          18 s() 19 s() XCHG
+          17 s() 18 s() XCHG
+          16 s() 17 s() XCHG
+          s15 16 s() XCHG
+          s14 s15 XCHG
+          s13 s14 XCHG
+          s12 s13 XCHG
+          s11 s12 XCHG
+          s10 s11 XCHG
+          s9 s10 XCHG
+          s8 s9 XCHG
+          s7 s8 XCHG
+          s6 s7 XCHG
+          s5 s6 XCHG
+          s4 s5 XCHG
+          s3 s4 XCHG
+          s0 s3 s3 XCHG3
+          RETALT
+        }>
+      }>
+      SWAP
+      INC
+      SWAP
+      INC
+    }>
+    DROP
+    s3 POP
+    s2 s10 PUSH2
+    GEQ
+    IF:<{
+      s2 POP
+      0 PUSHINT
+    }>ELSE<{
+      s0 s2 XCHG
+    }>
+    s0 s2 XCHG
+  }>
+  $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt PROCINLINE:<{
+  }>
+  $Reputation$_fun_agentData PROCREF:<{
+    DUP
+    0 LESSINT
+    IF:<{
+      TRUE
+    }>ELSE<{
+      DUP
+      35 s() PUSH
+      GEQ
+    }>
+    IFJMP:<{
+      DROP
+      PUSHNULL
+    }>
+    33 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    DUP
+    ISNULL
+    IFJMP:<{
+      2DROP
+      PUSHNULL
+    }>
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s4 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s5 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s6 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    32 PUSHINT
+    37 s() PUSH
+    s0 s1 s6 XCHG3
+    1 PUSHINT
+    __tact_dict_get_uint_int INLINECALLDICT
+    s0 s3 XCHG
+    __tact_not_null INLINECALLDICT
+    s3 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s0 s3 XCHG
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      s3 POP
+      FALSE
+    }>
+    s2 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s0 s2 XCHG
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      s2 POP
+      0 PUSHINT
+    }>
+    OVER
+    ISNULL
+    NOT
+    IF:<{
+      SWAP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      NIP
+      0 PUSHINT
+    }>
+    s4 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s0 s4 XCHG
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      s4 POP
+      0 PUSHINT
+    }>
+    s3 s4 XCHG
+    s1 s3 s0 XCHG3
+    $AgentData$_constructor_owner_available_totalTasks_successes_registeredAt INLINECALLDICT
+    $AgentData$_as_optional INLINECALLDICT
+  }>
+  $Reputation$_fun_agentIndexByNameHash PROCREF:<{
+    8 PUSHPOW2
+    28 s() PUSH
+    s0 s2 XCHG
+    32 PUSHINT
+    __tact_dict_get_uint_uint INLINECALLDICT
+  }>
+  $Reputation$_fun_agentReputation PROCREF:<{
+    DUP
+    0 LESSINT
+    IF:<{
+      TRUE
+    }>ELSE<{
+      DUP
+      35 s() PUSH
+      GEQ
+    }>
+    IFJMP:<{
+      DROP
+      0 PUSHINT
+    }>
+    32 PUSHINT
+    DUP
+    33 s() PUSH
+    s2 s3 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      TRUE
+    }>ELSE<{
+      DUP
+      __tact_not_null INLINECALLDICT
+      0 EQINT
+    }>
+    IFJMP:<{
+      2DROP
+      0 PUSHINT
+    }>
+    32 PUSHINT
+    DUP
+    33 s() PUSH
+    s0 s3 XCHG
+    s4 s4 XCHG2
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    IFJMP:<{
+      2DROP
+      0 PUSHINT
+    }>
+    __tact_not_null INLINECALLDICT
+    100 MULCONST
+    SWAP
+    __tact_not_null INLINECALLDICT
+    DIV
+  }>
+  $Reputation$_fun_agentCount PROCREF:<{
+    33 s() PUSH
+  }>
+  $Reputation$_fun_contractBalance PROCREF:<{
+        BALANCE FIRST
+  }>
+  $Reputation$_fun_agentsByCapability PROCREF:<{
+    8 PUSHPOW2
+    27 s() PUSH
+    s0 s2 XCHG
+    __tact_dict_get_uint_cell INLINECALLDICT
+  }>
+  $Reputation$_fun_disputeCount PROCREF:<{
+    18 s() PUSH
+  }>
+  $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled PROCINLINE:<{
+  }>
+  $Reputation$_fun_disputeData PROCREF:<{
+    DUP
+    0 LESSINT
+    IF:<{
+      TRUE
+    }>ELSE<{
+      DUP
+      20 s() PUSH
+      GEQ
+    }>
+    IFJMP:<{
+      DROP
+      PUSHNULL
+    }>
+    25 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    DUP
+    ISNULL
+    IFJMP:<{
+      2DROP
+      PUSHNULL
+    }>
+    21 s() PUSH
+    32 PUSHINT
+    s3 PUSH
+    1 PUSHINT
+    __tact_dict_get_uint_int INLINECALLDICT
+    SWAP
+    __tact_not_null INLINECALLDICT
+    26 s() PUSH
+    32 PUSHINT
+    s4 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    26 s() PUSH
+    32 PUSHINT
+    s5 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    26 s() PUSH
+    32 PUSHINT
+    s6 PUSH
+    257 PUSHINT
+    __tact_dict_get_uint_int INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    DUP
+    28 s() PUSH
+    s0 s3 XCHG
+    s8 s8 XCHG2
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    s4 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s0 s4 XCHG
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      s4 POP
+      FALSE
+    }>
+    s3 s5 XCHG
+    s4 s3 s0 XCHG3
+    s1 s2 XCHG
+    $DisputeInfo$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline_settled INLINECALLDICT
+    $DisputeInfo$_as_optional INLINECALLDICT
+  }>
+  $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason PROCINLINE:<{
+  }>
+  $Reputation$_fun_agentCleanupInfo PROCREF:<{
+    33 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    ISNULL
+    IFJMP:<{
+      FALSE
+      0 PUSHINT
+      s0 s0 s0 PUSH3
+      s0 s0 PUSH2
+      FALSE
+      OVER
+      $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason INLINECALLDICT
+    }>
+    0 PUSHINT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s4 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      NIP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      DROP
+    }>
+    0 PUSHINT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s5 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      NIP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      DROP
+    }>
+    0 PUSHINT
+    s2 PUSH
+    0 GTINT
+    IF:<{
+      DROP
+      100 MULCONST
+      OVER
+      DIV
+    }>ELSE<{
+      NIP
+    }>
+    0 PUSHINT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s6 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      NIP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      DROP
+    }>
+    0 PUSHINT
+    32 PUSHINT
+    DUP
+    34 s() PUSH
+    s2 s7 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      NIP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      DROP
+    }>
+    0 PUSHINT
+    OVER
+    0 GTINT
+    IF:<{
+      DROP
+          NOW
+      OVER
+      SUB
+      86400 PUSHINT
+      DIV
+    }>
+    0 PUSHINT
+    s3 PUSH
+    0 GTINT
+    IF:<{
+      DROP
+          NOW
+      s3 PUSH
+      SUB
+      86400 PUSHINT
+      DIV
+    }>
+    0 PUSHINT
+    s6 PUSH
+    99 GTINT
+    IF:<{
+      s5 PUSH
+      20 LESSINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      DROP
+      1 PUSHINT
+    }>
+    DUP
+    0 EQINT
+    IF:<{
+      s3 PUSH
+      0 GTINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+          NOW
+      s4 PUSH
+      SUB
+      2592000 PUSHINT
+      GREATER
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      DROP
+      2 PUSHINT
+    }>
+    DUP
+    0 EQINT
+    IF:<{
+      s6 PUSH
+      0 EQINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      s4 PUSH
+      0 GTINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+          NOW
+      s5 PUSH
+      SUB
+      604800 PUSHINT
+      GREATER
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      DROP
+      3 PUSHINT
+    }>
+    TRUE
+    OVER
+    0 GTINT
+    s1 s8 XCHG
+    s0 s6 XCHG2
+    s0 s5 XCHG
+    s0 s4 XCHG
+    s3 s1 s3 XCHG3
+    $AgentCleanupInfo$_constructor_index_exists_score_totalRatings_registeredAt_lastActive_daysSinceActive_daysSinceRegistered_eligibleForCleanup_cleanupReason INLINECALLDICT
+  }>
+  $Reputation$_fun_intentsByServiceHash PROCREF:<{
+    8 PUSHPOW2
+    s11 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_uint_cell INLINECALLDICT
+  }>
+  $Reputation$_fun_intentCount PROCREF:<{
+    s10 PUSH
+  }>
+  $Reputation$_fun_offerCount PROCREF:<{
+    s3 PUSH
+  }>
+  $Reputation$_fun_agentIntentQuota PROCREF:<{
+    267 PUSHINT
+    s3 PUSH
+    s0 s2 XCHG
+    257 PUSHINT
+    __tact_dict_get_slice_int INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IFJMP:<{
+      __tact_not_null INLINECALLDICT
+    }>
+    DROP
+    0 PUSHINT
+  }>
+  $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired PROCINLINE:<{
+  }>
+  $Reputation$_fun_intentData PROCREF:<{
+    17 s() PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    s14 PUSH
+    32 PUSHINT
+    s3 PUSH
+    8 PUSHINT
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    DUP
+    18 s() PUSH
+    s2 s5 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    0 PUSHINT
+    32 PUSHINT
+    DUP
+    18 s() PUSH
+    s2 s7 s2 XCPUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    DUP
+    ISNULL
+    NOT
+    IF:<{
+      NIP
+      __tact_not_null INLINECALLDICT
+    }>ELSE<{
+      DROP
+    }>
+    20 s() PUSH
+    32 PUSHINT
+    s6 PUSH
+    8 PUSHPOW2
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    21 s() PUSH
+    s0 s1 s7 XCHG3
+    257 PUSHINT
+    __tact_dict_get_uint_int INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    s3 PUSH
+    0 EQINT
+    IF:<{
+          NOW
+      s3 PUSH
+      GEQ
+    }>ELSE<{
+      FALSE
+    }>
+    s5 s6 XCHG
+    s4 s4 s0 XCHG3
+    $IntentData$_constructor_buyer_serviceHash_budget_deadline_status_acceptedOffer_isExpired INLINECALLDICT
+  }>
+  $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status PROCINLINE:<{
+  }>
+  $Reputation$_fun_offerData PROCREF:<{
+    s9 PUSH
+    32 PUSHINT
+    s2 PUSH
+    __tact_dict_get_uint_slice INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    s10 s(-1) s(-1) PUXCPU
+    s4 s(-1) PUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    s9 PUSH
+    32 PUSHINT
+    s4 PUSH
+    257 PUSHINT
+    __tact_dict_get_uint_int INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    s10 s(-1) s(-1) PUXCPU
+    s6 s(-1) PUXC
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    32 PUSHINT
+    s10 s0 s5 PUXC2
+    8 PUSHINT
+    __tact_dict_get_uint_uint INLINECALLDICT
+    __tact_not_null INLINECALLDICT
+    s3 s4 XCHG
+    s1 s3 s0 XCHG3
+    $OfferData$_constructor_seller_intentIndex_price_deliveryTime_status INLINECALLDICT
+  }>
+  $MessageParameters$_constructor_bounce_to_value_mode_body PROCINLINE:<{
+    s3 s3 XCHG2
+    s0 s4 XCHG
+  }>
+  $Reputation$_fun_notify PROCINLINE:<{
+    __tact_context_get_sender INLINECALLDICT
+    FALSE
+    0 PUSHINT
+    s0 s3 XCHG2
+    66 PUSHINT
+    SWAP
+    $MessageParameters$_constructor_bounce_to_value_mode_body INLINECALLDICT
+        NEWC
+        b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+        1 STI               // store `bounce`
+        b{000} STSLICECONST // store bounced = false and src = addr_none
+        STSLICE             // store `to`
+        SWAP
+        STGRAMS             // store `value`
+        106 PUSHINT         // 1 + 4 + 4 + 64 + 32 + 1
+        STZEROES
+        // → Stack state
+        // s0: Builder
+        // s1: `body`
+        // s2: `mode`
+        STDICT
+        ENDC
+        SWAP
+        SENDRAWMSG
+  }>
+  $SendParameters$_constructor_to_value_mode_bounce_body PROCINLINE:<{
+    s2 s4 XCHG
+    PUSHNULL
+    s4 s3 XCHG2
+    PUSHNULL
+    s0 s3 XCHG
+  }>
+  $DeployOk$_constructor_queryId PROCINLINE:<{
+  }>
+  %agentData PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentData INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+    $AgentData$_to_opt_external INLINECALLDICT
+  }>
+  %agentIndexByNameHash PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentIndexByNameHash INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %agentReputation PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentReputation INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %agentCount PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    $Reputation$_fun_agentCount INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %contractBalance PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    $Reputation$_fun_contractBalance INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %agentsByCapability PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentsByCapability INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %disputeCount PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    $Reputation$_fun_disputeCount INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %disputeData PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_disputeData INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+    $DisputeInfo$_to_opt_external INLINECALLDICT
+  }>
+  %agentCleanupInfo PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentCleanupInfo INLINECALLDICT
+    10 10 BLKDROP2
+    10 10 BLKDROP2
+    10 10 BLKDROP2
+    6 10 BLKDROP2
+    $AgentCleanupInfo$_to_external INLINECALLDICT
+  }>
+  %intentsByServiceHash PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_intentsByServiceHash INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %intentCount PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    $Reputation$_fun_intentCount INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %offerCount PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    $Reputation$_fun_offerCount INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %agentIntentQuota PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_agentIntentQuota INLINECALLDICT
+    16 s() POP
+    15 BLKDROP
+    16 s() POP
+    15 BLKDROP
+    4 1 BLKDROP2
+  }>
+  %intentData PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_intentData INLINECALLDICT
+    14 7 BLKDROP2
+    14 7 BLKDROP2
+    8 7 BLKDROP2
+    $IntentData$_to_external INLINECALLDICT
+  }>
+  %offerData PROC:<{
+    $Reputation$_contract_load INLINECALLDICT
+    35 s() 36 s() XCHG
+    34 s() 35 s() XCHG
+    33 s() 34 s() XCHG
+    32 s() 33 s() XCHG
+    31 s() 32 s() XCHG
+    30 s() 31 s() XCHG
+    29 s() 30 s() XCHG
+    28 s() 29 s() XCHG
+    27 s() 28 s() XCHG
+    26 s() 27 s() XCHG
+    25 s() 26 s() XCHG
+    24 s() 25 s() XCHG
+    23 s() 24 s() XCHG
+    22 s() 23 s() XCHG
+    21 s() 22 s() XCHG
+    20 s() 21 s() XCHG
+    19 s() 20 s() XCHG
+    18 s() 19 s() XCHG
+    17 s() 18 s() XCHG
+    16 s() 17 s() XCHG
+    s15 16 s() XCHG
+    15 ROLL
+    $Reputation$_fun_offerData INLINECALLDICT
+    15 5 BLKDROP2
+    15 5 BLKDROP2
+    6 5 BLKDROP2
+    $OfferData$_to_external INLINECALLDICT
+  }>
+  recv_internal PROC:<{
+    c2 SAVE
+    SAMEALTSAVE
+    SWAP
+    CTOS
+    2 PUSHINT
+    SDSKIPFIRST
+    1 LDI
+    1 LDI
+    LDMSGADDR
+    OVER
+    s3 s4 XCHG
+    s6 s6 XCHG2
+    4 TUPLE
+    __tact_context SETGLOB
+    s0 s2 XCHG
+    __tact_context_sender SETGLOB
+    $Reputation$_contract_load INLINECALLDICT
+    s0 37 s() XCHG
+    IFJMP:<{
+      15 BLKDROP
+      15 BLKDROP
+      7 BLKDROP
+    }>
+    s0 35 s() XCHG
+    32 LDUQ 130 THROWIFNOT
+    OVER
+    950051591 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      LDREF
+      NIP
+      1 LDI
+      DROP
+      24749 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      36 s() PUSH
+      GEQ
+      THROWANYIFNOT
+      SWAP
+                  <{
+                      <{ DUP SREFS }> PUSHCONT
+                      <{ LDREFRTOS }> PUSHCONT
+                      WHILE
+                      DEPTH
+                      HASHEXT_SHA256
+                  }> PUSHCONT
+                  1 1 CALLXARGS
+      26 s() PUSH
+      8 PUSHPOW2
+      s2 PUSH
+      32 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      DUP
+      ISNULL
+      NOT
+      IF:<{
+        NIP
+        __tact_not_null INLINECALLDICT
+        32 s() PUSH
+        32 PUSHINT
+        s2 PUSH
+        __tact_dict_get_uint_slice INLINECALLDICT
+        31510 PUSHINT
+        OVER
+        ISNULL
+        NOT
+        IF:<{
+          __tact_context_get_sender INLINECALLDICT
+          s0 s2 XCHG
+          __tact_not_null INLINECALLDICT
+          s1 s2 XCHG
+          SDEQ
+        }>ELSE<{
+          NIP
+          FALSE
+        }>
+        THROWANYIFNOT
+        s1 31 s() XCHG
+        32 PUSHINT
+        s1 s0 XCPU
+        s0 33 s() XCHG
+        1 PUSHINT
+        __tact_dict_set_uint_int INLINECALLDICT
+        32 PUSHINT
+            NOW
+        OVER
+        s4 29 s() XCHG
+        s2 s3 XCHG
+        s2 33 s() XCHG
+        __tact_dict_set_uint_uint INLINECALLDICT
+      }>ELSE<{
+        DROP
+        33 s() PUSH
+        32 PUSHINT
+        __tact_context_get_sender INLINECALLDICT
+        s2 35 s() XCHG
+        35 s() PUSH
+        SWAP
+        __tact_dict_set_uint_slice INLINECALLDICT
+        s1 32 s() XCHG
+        32 PUSHINT
+        SWAP
+        34 s() PUSH
+        s0 s4 XCHG2
+        1 PUSHINT
+        __tact_dict_set_uint_int INLINECALLDICT
+        32 PUSHINT
+        0 PUSHINT
+        OVER
+        s3 33 s() XCHG
+        35 s() PUSH
+        -ROT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        32 PUSHINT
+        0 PUSHINT
+        OVER
+        s3 32 s() XCHG
+        35 s() PUSH
+        -ROT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        32 PUSHINT
+            NOW
+        OVER
+        s3 31 s() XCHG
+        35 s() PUSH
+        -ROT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        32 PUSHINT
+            NOW
+        OVER
+        s3 30 s() XCHG
+        35 s() PUSH
+        -ROT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        s2 26 s() XCHG
+        8 PUSHPOW2
+        s0 s2 XCHG
+        s1 32 s() XCHG
+        s0 33 s() XCHG
+        32 PUSHINT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        s0 31 s() XCHG
+        INC
+        s0 31 s() XCHG
+        28 s() 29 s() XCHG
+        27 s() 28 s() XCHG
+        26 s() 27 s() XCHG
+        25 s() 26 s() XCHG
+        s0 24 s() XCHG
+        s0 25 s() XCHG
+      }>
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      s0 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      2 PUSHINT
+      $Reputation$_fun_cleanup INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c72410101010016000028000000004167656e7420726567697374657265642fa11489} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    2804297358 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      1 LDI
+      DROP
+      24749 PUSHINT
+      __tact_context_get INLINECALLDICT
+      $Context$_get_value INLINECALLDICT
+      36 s() PUSH
+      GEQ
+      THROWANYIFNOT
+      SWAP
+                  <{
+                      <{ DUP SREFS }> PUSHCONT
+                      <{ LDREFRTOS }> PUSHCONT
+                      WHILE
+                      DEPTH
+                      HASHEXT_SHA256
+                  }> PUSHCONT
+                  1 1 CALLXARGS
+      8 PUSHPOW2
+      27 s() PUSH
+      s0 s2 XCHG
+      32 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      27854 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      __tact_not_null INLINECALLDICT
+      32 PUSHINT
+      DUP
+      32 s() PUSH
+      s2 s3 s2 XCPUXC
+      __tact_dict_get_uint_uint INLINECALLDICT
+      DUP
+      ISNULL
+      IF:<{
+        27854 PUSHINT
+        THROWANY
+      }>
+      32 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      INC
+      OVER
+      s3 33 s() XCHG
+      33 s() PUSH
+      -ROT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      SWAP
+      IF:<{
+        32 PUSHINT
+        s0 s0 PUSH2
+        31 s() PUSH
+        -ROT
+        33 s() PUSH
+        SWAP
+        __tact_dict_get_uint_uint INLINECALLDICT
+        __tact_not_null INLINECALLDICT
+        INC
+        OVER
+        s3 31 s() XCHG
+        32 s() PUSH
+        -ROT
+        __tact_dict_set_uint_uint INLINECALLDICT
+        s0 28 s() XCHG
+      }>
+      32 PUSHINT
+          NOW
+      OVER
+      s4 29 s() XCHG
+      s2 s3 XCHG
+      s2 32 s() XCHG
+      __tact_dict_set_uint_uint INLINECALLDICT
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      s0 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      1 PUSHINT
+      $Reputation$_fun_cleanup INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001500002600000000526174696e67207265636f726465642ee0ec2f} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    1424124491 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      LDREF
+      SWAP
+      CTOS
+      SWAP
+      1 LDI
+      DROP
+      SWAP
+                  <{
+                      <{ DUP SREFS }> PUSHCONT
+                      <{ LDREFRTOS }> PUSHCONT
+                      WHILE
+                      DEPTH
+                      HASHEXT_SHA256
+                  }> PUSHCONT
+                  1 1 CALLXARGS
+      8 PUSHPOW2
+      27 s() PUSH
+      s0 s2 XCHG
+      32 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      27854 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      __tact_not_null INLINECALLDICT
+      32 s() PUSH
+      32 PUSHINT
+      s2 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      38820 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        SDEQ
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      s1 31 s() XCHG
+      32 PUSHINT
+      s1 s0 XCPU
+      s0 33 s() XCHG
+      1 PUSHINT
+      __tact_dict_set_uint_int INLINECALLDICT
+      32 PUSHINT
+          NOW
+      OVER
+      s4 29 s() XCHG
+      s2 s3 XCHG
+      s2 33 s() XCHG
+      __tact_dict_set_uint_uint INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001a00003000000000417661696c6162696c6974792075706461746564e46c702c} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      s0 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    344274104 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      32 LDU
+      256 LDU
+      DROP
+      32 s() PUSH
+      32 PUSHINT
+      s3 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      27854 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      7126 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      s0 s2 XCHG
+      __tact_not_null INLINECALLDICT
+      s1 s2 XCHG
+      SDEQ
+      THROWANYIFNOT
+      32 PUSHINT
+          NOW
+      OVER
+      s3 30 s() XCHG
+      s4 PUSH
+      -ROT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      25 s() PUSH
+      8 PUSHPOW2
+      29 s() PUSH
+      __tact_dict_get_uint_cell INLINECALLDICT
+          NEWC
+      s1 s3 XCHG
+      32 STU
+      s2 PUSH
+      ISNULL
+      NOT
+      IF:<{
+        1 PUSHINT
+        SWAP
+        1 STU
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        ROT
+            STREF
+      }>ELSE<{
+        s2 POP
+        0 PUSHINT
+        ROT
+        1 STU
+      }>
+      8 PUSHPOW2
+      SWAP
+          ENDC
+      s3 26 s() XCHG
+      s1 s2 XCHG
+      s1 28 s() XCHG
+      __tact_dict_set_uint_cell INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001800002c000000004361706162696c69747920696e6465786564c9cd7d50} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      s0 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    2266087279 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      8 LDU
+      DROP
+      DUP
+      50 GTINT
+      IF:<{
+        DROP
+        50 PUSHINT
+      }>
+      DUP
+      1 LESSINT
+      IF:<{
+        DROP
+        1 PUSHINT
+      }>
+      34 s() 36 s() XCHG
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      $Reputation$_fun_cleanup INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001700002a00000000436c65616e757020636f6d706c65746564bf41861e} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    796807257 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      LDMSGADDR
+      LDMSGADDR
+      LDMSGADDR
+      LDVARUINT16
+      32 LDU
+      DROP
+      s1 27 s() XCHG
+      32 PUSHINT
+      SWAP
+      22 s() PUSH
+      s0 s6 XCHG2
+      __tact_dict_set_uint_slice INLINECALLDICT
+      s1 25 s() XCHG
+      32 PUSHINT
+      SWAP
+      21 s() PUSH
+      s0 s4 XCHG2
+      __tact_dict_set_uint_slice INLINECALLDICT
+      s1 23 s() XCHG
+      32 PUSHINT
+      SWAP
+      20 s() PUSH
+      SWAP
+      s0 26 s() XCHG
+      __tact_dict_set_uint_slice INLINECALLDICT
+      s1 21 s() XCHG
+      32 PUSHINT
+      SWAP
+      19 s() PUSH
+      SWAP
+      s0 26 s() XCHG
+      257 PUSHINT
+      __tact_dict_set_uint_int INLINECALLDICT
+      32 PUSHINT
+      DUP
+      s3 21 s() XCHG
+      s1 s2 XCHG
+      19 s() PUSH
+      s0 s2 XCHG
+      s0 23 s() XCHG
+      SWAP
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s0 17 s() XCHG
+      32 PUSHINT
+      17 s() PUSH
+      FALSE
+      1 PUSHINT
+      __tact_dict_set_uint_int INLINECALLDICT
+      s0 16 s() XCHG
+      INC
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      20 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      19 s() 21 s() XCHG
+      17 s() 20 s() XCHG
+      16 s() 19 s() XCHG
+      s0 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      2 14 BLKSWAP
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    3214956934 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      LDMSGADDR
+      DROP
+      0 PUSHINT
+      WHILE:<{
+        DUP
+        19 s() PUSH
+        LESS
+      }>DO<{
+        24 s() PUSH
+        32 PUSHINT
+        s2 PUSH
+        __tact_dict_get_uint_slice INLINECALLDICT
+        DUP
+        ISNULL
+        NOT
+        IF:<{
+          __tact_not_null INLINECALLDICT
+          s2 PUSH
+          SDEQ
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IFJMP:<{
+          NIP
+          s1 18 s() XCHG
+          32 PUSHINT
+          SWAP
+          TRUE
+          1 PUSHINT
+          __tact_dict_set_uint_int INLINECALLDICT
+          33 s() 35 s() XCHG
+          32 s() 34 s() XCHG
+          31 s() 33 s() XCHG
+          30 s() 32 s() XCHG
+          29 s() 31 s() XCHG
+          28 s() 30 s() XCHG
+          27 s() 29 s() XCHG
+          26 s() 28 s() XCHG
+          25 s() 27 s() XCHG
+          24 s() 26 s() XCHG
+          23 s() 25 s() XCHG
+          22 s() 24 s() XCHG
+          21 s() 23 s() XCHG
+          20 s() 22 s() XCHG
+          19 s() 21 s() XCHG
+          18 s() 20 s() XCHG
+          s0 19 s() XCHG
+          16 s() 18 s() XCHG
+          s15 17 s() XCHG
+          s14 16 s() XCHG
+          s13 s15 XCHG
+          s12 s14 XCHG
+          s11 s13 XCHG
+          s10 s12 XCHG
+          s9 s11 XCHG
+          s8 s10 XCHG
+          s7 s9 XCHG
+          s6 s8 XCHG
+          s5 s7 XCHG
+          s4 s6 XCHG
+          s3 s5 XCHG
+          s4 s3 s0 XCHG3
+          s1 s2 XCHG
+          $Reputation$_contract_store INLINECALLDICT
+          RETALT
+        }>
+        INC
+      }>
+      2DROP
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      2 13 BLKSWAP
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    593874976 PUSHINT
+    EQUAL
+    IFJMP:<{
+      2DROP
+      26825 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      35 s() PUSH
+      SDEQ
+      THROWANYIFNOT
+      0 PUSHINT
+      130 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001400002400000000466565732077697468647261776e803215d2} B>boc PUSHREF
+      37 s() PUSH
+      4 -ROLL
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      2 13 BLKSWAP
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    2523776749 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      256 LDU
+      LDVARUINT16
+      32 LDU
+      DROP
+      4391 PUSHINT
+          NOW
+      s2 s(-1) PUXC
+      GREATER
+      THROWANYIFNOT
+      22978 PUSHINT
+      s2 PUSH
+      0 GTINT
+      THROWANYIFNOT
+      0 PUSHINT
+      267 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      40 s() PUSH
+      -ROT
+      257 PUSHINT
+      __tact_dict_get_slice_int INLINECALLDICT
+      DUP
+      ISNULL
+      NOT
+      IF:<{
+        NIP
+        __tact_not_null INLINECALLDICT
+      }>ELSE<{
+        DROP
+      }>
+      DUP
+      40 s() PUSH
+      GEQ
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        36 s() 38 s() XCHG
+        35 s() 37 s() XCHG
+        34 s() 38 s() XCHG
+        33 s() 37 s() XCHG
+        32 s() 38 s() XCHG
+        31 s() 37 s() XCHG
+        30 s() 38 s() XCHG
+        29 s() 37 s() XCHG
+        28 s() 38 s() XCHG
+        27 s() 37 s() XCHG
+        26 s() 38 s() XCHG
+        25 s() 37 s() XCHG
+        24 s() 38 s() XCHG
+        23 s() 37 s() XCHG
+        22 s() 38 s() XCHG
+        21 s() 37 s() XCHG
+        20 s() 38 s() XCHG
+        19 s() 37 s() XCHG
+        18 s() 38 s() XCHG
+        17 s() 37 s() XCHG
+        16 s() 38 s() XCHG
+        s15 37 s() XCHG
+        s14 38 s() XCHG
+        s13 37 s() XCHG
+        s12 38 s() XCHG
+        s11 37 s() XCHG
+        s10 38 s() XCHG
+        s9 37 s() XCHG
+        s8 38 s() XCHG
+        s7 37 s() XCHG
+        s6 38 s() XCHG
+        s5 37 s() XCHG
+        s4 38 s() XCHG
+        s3 37 s() XCHG
+        s2 39 s() XCHG
+        s1 40 s() XCHG
+        $Reputation$_fun_forceCleanupAgentIntents INLINECALLDICT
+        IF:<{
+          39 s() POP
+          267 PUSHINT
+          __tact_context_get_sender INLINECALLDICT
+          s2 PUSH
+          -ROT
+          257 PUSHINT
+          __tact_dict_get_slice_int INLINECALLDICT
+          DUP
+          ISNULL
+          NOT
+          IF:<{
+            __tact_not_null INLINECALLDICT
+          }>ELSE<{
+            DROP
+            0 PUSHINT
+          }>
+          s0 39 s() XCHG
+        }>
+        7480 PUSHINT
+        40 s() PUSH
+        s2 PUSH
+        LESS
+        THROWANYIFNOT
+        s0 39 s() XCHG
+        s1 38 s() XCHG
+        35 s() 37 s() XCHG
+        34 s() 36 s() XCHG
+        33 s() 35 s() XCHG
+        32 s() 34 s() XCHG
+        31 s() 33 s() XCHG
+        30 s() 32 s() XCHG
+        29 s() 31 s() XCHG
+        28 s() 30 s() XCHG
+        27 s() 29 s() XCHG
+        26 s() 28 s() XCHG
+        25 s() 27 s() XCHG
+        24 s() 26 s() XCHG
+        23 s() 25 s() XCHG
+        22 s() 24 s() XCHG
+        21 s() 23 s() XCHG
+        20 s() 22 s() XCHG
+        19 s() 21 s() XCHG
+        18 s() 20 s() XCHG
+        17 s() 19 s() XCHG
+        16 s() 18 s() XCHG
+        s15 17 s() XCHG
+        s14 16 s() XCHG
+        s13 s15 XCHG
+        s12 s14 XCHG
+        s11 s13 XCHG
+        s10 s12 XCHG
+        s9 s11 XCHG
+        s8 s10 XCHG
+        s7 s9 XCHG
+        s6 s8 XCHG
+        s5 s7 XCHG
+        s4 s6 XCHG
+        s3 s5 XCHG
+        s2 s4 XCHG
+      }>
+      32 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      s2 20 s() XCHG
+      s14 s(-1) PUXC
+      __tact_dict_set_uint_slice INLINECALLDICT
+      s0 17 s() XCHG
+      32 PUSHINT
+      s13 s4 PUSH2
+      8 PUSHPOW2
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s1 16 s() XCHG
+      32 PUSHINT
+      s0 s13 s3 XCPUXC
+      257 PUSHINT
+      __tact_dict_set_uint_int INLINECALLDICT
+      32 PUSHINT
+      DUP
+      s3 16 s() XCHG
+      s13 s0 s2 PUXC2
+      s0 18 s() XCHG
+      SWAP
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s0 s12 XCHG
+      32 PUSHINT
+      s11 PUSH
+      0 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s10 PUSH
+      INC
+      267 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      s0 19 s() XCHG
+      INC
+      s3 39 s() XCHG
+      s1 s2 XCHG
+      s1 19 s() XCHG
+      257 PUSHINT
+      __tact_dict_set_slice_int INLINECALLDICT
+      35 s() 37 s() XCHG
+      34 s() 36 s() XCHG
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      s15 18 s() XCHG
+      5 13 REVERSE
+      s12 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s1 s3 XCHG3
+      s0 s2 XCHG
+      $Reputation$_fun_addToIntentServiceIndex INLINECALLDICT
+      $Reputation$_fun_cleanupOneIntent INLINECALLDICT
+      1 PUSHINT
+      $Reputation$_fun_cleanup INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001600002800000000496e74656e742062726f616463617374468585fd} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    1834677927 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      32 LDU
+      LDVARUINT16
+      32 LDU
+      DROP
+      s13 PUSH
+      32 PUSHINT
+      s4 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      13316 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      26624 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      0 EQINT
+      THROWANYIFNOT
+      32 PUSHINT
+      s15 s(-1) s(-1) PUXCPU
+      s5 s(-1) PUXC
+      __tact_dict_get_uint_uint INLINECALLDICT
+      48272 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+            NOW
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        LESS
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      s15 PUSH
+      32 PUSHINT
+      s4 PUSH
+      257 PUSHINT
+      __tact_dict_get_uint_int INLINECALLDICT
+      35699 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        SWAP
+        __tact_not_null INLINECALLDICT
+        s3 s(-1) PUXC
+        LEQ
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      17 s() PUSH
+      32 PUSHINT
+      s4 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      34810 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        SDEQ
+        NOT
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      32 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      s6 PUSH
+      s3 s12 XCHG
+      SWAP
+      __tact_dict_set_uint_slice INLINECALLDICT
+      32 PUSHINT
+      DUP
+      s3 s10 XCHG
+      s6 s0 s2 PUXC2
+      s5 s5 XCHG2
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s1 s6 XCHG
+      32 PUSHINT
+      s0 s4 s8 XCPUXC
+      257 PUSHINT
+      __tact_dict_set_uint_int INLINECALLDICT
+      32 PUSHINT
+      DUP
+      s3 s6 XCHG
+      s4 s0 s2 PUXC2
+      s10 s10 XCHG2
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s0 s2 XCHG
+      32 PUSHINT
+      s2 PUSH
+      0 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      SWAP
+      INC
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001000001c000000004f666665722073656e74dbb5e99f} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      5 4 REVERSE
+      s5 s1 s3 XCHG3
+      s4 s2 XCHG2
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    931468685 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      32 LDU
+      DROP
+      s3 PUSH
+      32 PUSHINT
+      s2 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      50979 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      45503 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      0 EQINT
+      THROWANYIFNOT
+      32 PUSHINT
+      s7 s(-1) s(-1) PUXCPU
+      s3 s(-1) PUXC
+      __tact_dict_get_uint_uint INLINECALLDICT
+      40254 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      32 PUSHINT
+      OVER
+      __tact_not_null INLINECALLDICT
+      18 s() PUSH
+      -ROT
+      __tact_dict_get_uint_slice INLINECALLDICT
+      22320 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        s2 PUSH
+        __tact_not_null INLINECALLDICT
+        SDEQ
+      }>ELSE<{
+        FALSE
+      }>
+      THROWANYIFNOT
+      32 PUSHINT
+      s2 PUSH
+      __tact_not_null INLINECALLDICT
+      s15 PUSH
+      -ROT
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      26624 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        SWAP
+        __tact_not_null INLINECALLDICT
+        0 EQINT
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      32 PUSHINT
+      s2 PUSH
+      __tact_not_null INLINECALLDICT
+      OVER
+      17 s() PUSH
+      3 -ROLL
+      __tact_dict_get_uint_uint INLINECALLDICT
+      48272 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+            NOW
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        LESS
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      s0 s5 XCHG
+      32 PUSHINT
+      s3 PUSH
+      1 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      32 PUSHINT
+      s2 PUSH
+      __tact_not_null INLINECALLDICT
+      s2 s15 XCHG
+      1 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      32 PUSHINT
+      s2 PUSH
+      __tact_not_null INLINECALLDICT
+      OVER
+      s3 s15 XCHG
+      s5 s(-1) PUXC
+      __tact_dict_set_uint_uint INLINECALLDICT
+      s5 PUSH
+      ISNULL
+      NOT
+      IF:<{
+        s0 s5 XCHG
+        __tact_not_null INLINECALLDICT
+        s12 s13 XCHG
+        s5 s12 XCHG
+        s2 37 s() XCHG
+        s1 38 s() XCHG
+        $Reputation$_fun_decrementAgentIntents INLINECALLDICT
+        s0 37 s() XCHG
+        s1 36 s() XCHG
+        s4 s12 XCHG
+        s4 s11 XCHG
+      }>ELSE<{
+        s5 POP
+      }>
+      0 PUSHINT
+      WHILE:<{
+        s0 s4 PUSH2
+        LESS
+      }>DO<{
+        s0 s2 PUSH2
+        NEQ
+        IF:<{
+          32 PUSHINT
+          s9 s(-1) s(-1) PUXCPU
+          s3 s(-1) PUXC
+          __tact_dict_get_uint_uint INLINECALLDICT
+          s14 PUSH
+          32 PUSHINT
+          s3 PUSH
+          8 PUSHINT
+          __tact_dict_get_uint_uint INLINECALLDICT
+          OVER
+          ISNULL
+          NOT
+          IF:<{
+            SWAP
+            __tact_not_null INLINECALLDICT
+            s3 PUSH
+            __tact_not_null INLINECALLDICT
+            EQUAL
+          }>ELSE<{
+            NIP
+            FALSE
+          }>
+          IF:<{
+            DUP
+            ISNULL
+            NOT
+          }>ELSE<{
+            FALSE
+          }>
+          IF:<{
+            __tact_not_null INLINECALLDICT
+            0 EQINT
+          }>ELSE<{
+            DROP
+            FALSE
+          }>
+          IF:<{
+            s0 s13 XCHG
+            32 PUSHINT
+            s14 PUSH
+            2 PUSHINT
+            8 PUSHINT
+            __tact_dict_set_uint_uint INLINECALLDICT
+            s0 s13 XCHG
+          }>
+        }>
+        INC
+      }>
+      3 BLKDROP
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c72410101010014000024000000004f66666572206163636570746564cef7d167} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s9 s12 XCHG
+      s2 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      2SWAP
+      s1 s5 XCHG
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    484654478 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      32 LDU
+      DROP
+      s11 PUSH
+      32 PUSHINT
+      s2 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      13316 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      39791 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      1 EQINT
+      THROWANYIFNOT
+      s15 PUSH
+      32 PUSHINT
+      s2 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      22320 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        SDEQ
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      s1 s11 XCHG
+      32 PUSHINT
+      SWAP
+      2 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c72410101010012000020000000004465616c20736574746c6564491df8bc} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s0 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s0 s3 XCHG3
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    OVER
+    1000023198 PUSHINT
+    EQUAL
+    IFJMP:<{
+      NIP
+      32 LDU
+      DROP
+      s11 PUSH
+      32 PUSHINT
+      s2 PUSH
+      8 PUSHINT
+      __tact_dict_get_uint_uint INLINECALLDICT
+      13316 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      THROWANYIFNOT
+      52517 PUSHINT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      0 EQINT
+      THROWANYIFNOT
+      s15 PUSH
+      32 PUSHINT
+      s2 PUSH
+      __tact_dict_get_uint_slice INLINECALLDICT
+      22320 PUSHINT
+      OVER
+      ISNULL
+      NOT
+      IF:<{
+        __tact_context_get_sender INLINECALLDICT
+        s0 s2 XCHG
+        __tact_not_null INLINECALLDICT
+        s1 s2 XCHG
+        SDEQ
+      }>ELSE<{
+        NIP
+        FALSE
+      }>
+      THROWANYIFNOT
+      s0 s11 XCHG
+      32 PUSHINT
+      s12 PUSH
+      3 PUSHINT
+      8 PUSHINT
+      __tact_dict_set_uint_uint INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      35 s() 36 s() XCHG
+      34 s() 35 s() XCHG
+      33 s() 34 s() XCHG
+      32 s() 33 s() XCHG
+      31 s() 32 s() XCHG
+      30 s() 31 s() XCHG
+      29 s() 30 s() XCHG
+      28 s() 29 s() XCHG
+      27 s() 28 s() XCHG
+      26 s() 27 s() XCHG
+      25 s() 26 s() XCHG
+      24 s() 25 s() XCHG
+      23 s() 24 s() XCHG
+      22 s() 23 s() XCHG
+      21 s() 22 s() XCHG
+      20 s() 21 s() XCHG
+      19 s() 20 s() XCHG
+      18 s() 19 s() XCHG
+      17 s() 18 s() XCHG
+      16 s() 17 s() XCHG
+      s15 16 s() XCHG
+      s14 s15 XCHG
+      s1 s13 XCHG
+      s1 s14 XCHG
+      s11 s12 XCHG
+      s10 s11 XCHG
+      s9 s10 XCHG
+      s8 s9 XCHG
+      s7 s8 XCHG
+      s6 s7 XCHG
+      s5 s6 XCHG
+      s4 s5 XCHG
+      s3 s4 XCHG
+      s1 s3 s0 XCHG3
+      s1 37 s() XCHG
+      $Reputation$_fun_decrementAgentIntents INLINECALLDICT
+      0 PUSHINT
+      WHILE:<{
+        s0 s4 PUSH2
+        LESS
+      }>DO<{
+        32 PUSHINT
+        s9 s(-1) s(-1) PUXCPU
+        s3 s(-1) PUXC
+        __tact_dict_get_uint_uint INLINECALLDICT
+        s6 PUSH
+        32 PUSHINT
+        s3 PUSH
+        8 PUSHINT
+        __tact_dict_get_uint_uint INLINECALLDICT
+        OVER
+        ISNULL
+        NOT
+        IF:<{
+          SWAP
+          __tact_not_null INLINECALLDICT
+          39 s() PUSH
+          EQUAL
+        }>ELSE<{
+          NIP
+          FALSE
+        }>
+        IF:<{
+          DUP
+          ISNULL
+          NOT
+        }>ELSE<{
+          FALSE
+        }>
+        IF:<{
+          __tact_not_null INLINECALLDICT
+          0 EQINT
+        }>ELSE<{
+          DROP
+          FALSE
+        }>
+        IF:<{
+          s0 s5 XCHG
+          32 PUSHINT
+          s6 PUSH
+          2 PUSHINT
+          8 PUSHINT
+          __tact_dict_set_uint_uint INLINECALLDICT
+          s0 s5 XCHG
+        }>
+        INC
+      }>
+      DROP
+      36 s() POP
+      __tact_context_get_sender INLINECALLDICT
+      0 PUSHINT
+      66 PUSHINT
+      FALSE
+          B{b5ee9c7241010101001600002800000000496e74656e742063616e63656c6c6564258ac977} B>boc PUSHREF
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      34 s() 35 s() XCHG
+      33 s() 34 s() XCHG
+      32 s() 33 s() XCHG
+      31 s() 32 s() XCHG
+      30 s() 31 s() XCHG
+      29 s() 30 s() XCHG
+      28 s() 29 s() XCHG
+      27 s() 28 s() XCHG
+      26 s() 27 s() XCHG
+      25 s() 26 s() XCHG
+      24 s() 25 s() XCHG
+      23 s() 24 s() XCHG
+      22 s() 23 s() XCHG
+      21 s() 22 s() XCHG
+      20 s() 21 s() XCHG
+      19 s() 20 s() XCHG
+      18 s() 19 s() XCHG
+      17 s() 18 s() XCHG
+      16 s() 17 s() XCHG
+      s15 16 s() XCHG
+      15 ROLL
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    SWAP
+    2490013878 PUSHINT
+    EQUAL
+    IFJMP:<{
+      64 LDU
+      DROP
+      $DeployOk$_constructor_queryId INLINECALLDICT
+      NEWC
+      $DeployOk$_store_cell INLINECALLDICT
+      34 s() 36 s() XCHG
+      33 s() 35 s() XCHG
+      32 s() 34 s() XCHG
+      31 s() 33 s() XCHG
+      30 s() 32 s() XCHG
+      29 s() 31 s() XCHG
+      28 s() 30 s() XCHG
+      27 s() 29 s() XCHG
+      26 s() 28 s() XCHG
+      25 s() 27 s() XCHG
+      24 s() 26 s() XCHG
+      23 s() 25 s() XCHG
+      22 s() 24 s() XCHG
+      21 s() 23 s() XCHG
+      20 s() 22 s() XCHG
+      19 s() 21 s() XCHG
+      18 s() 20 s() XCHG
+      17 s() 19 s() XCHG
+      16 s() 18 s() XCHG
+      s15 17 s() XCHG
+      s14 16 s() XCHG
+      s13 s15 XCHG
+      s12 s14 XCHG
+      s11 s13 XCHG
+      s10 s12 XCHG
+      s9 s11 XCHG
+      s8 s10 XCHG
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+      $Reputation$_fun_notify INLINECALLDICT
+      $Reputation$_contract_store INLINECALLDICT
+    }>
+    15 BLKDROP
+    15 BLKDROP
+    7 BLKDROP
+    130 THROW
+  }>
+  __tact_selector_hack PROC:<{
+    @atend @ 1 {
+            execute current@ context@ current!
+            {
+                // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+                // We want to extract recv_internal/recv_external from the dict and select needed function
+                // not by jumping to the needed function by it's index, but by using usual IF statements.
+                }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+                <{ // Start of the new code builder
+                    SETCP0
+                    // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                    swap
+                    // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                    <s ref@
+                    // Extract the recv_internal from the dict
+                    dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                    swap
+                    // Delete the recv_internal from the dict
+                    0 swap @procdictkeylen idict- drop
+                    // Delete the recv_external from the dict (it's okay if it's not there)
+                    -1 swap @procdictkeylen idict- drop
+                    // Delete the __tact_selector_hack from the dict
+                    65535 swap @procdictkeylen idict- drop
+                    // Bring the code builder from the bottom of the stack
+                    // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                    depth 1- roll
+                    // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                    swap
+                    // Check if the dict is empty
+                    dup null?
+                    // Store a copy of this flag in the bottom of the stack
+                    dup depth 1- -roll
+                    {
+                        // If the dict is empty, just drop it (it will be null if it's empty)
+                        drop
+                    }
+                    {
+                        // If the dict is not empty, prepare continuation to be stored in c3
+                        <{
+                            // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                            swap @procdictkeylen DICTPUSHCONST
+                            // Jump to the needed function by it's index
+                            DICTIGETJMPZ
+                            // If such key is not found, throw 11 along with the key as an argument
+                            11 THROWARG
+                        }> PUSHCONT
+                        // Store the continuation in c3
+                        c3 POP
+                    } cond
+                    // Function id is on top of the (runtime) stack
+                    DUP IFNOTJMP:<{
+                        // place recv_internal here
+                        DROP swap @addop
+                    }>
+                    // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                    depth 1- roll
+                    {
+                        // If the dict is empty, throw 11
+                        11 THROWARG
+                    }
+                    {
+                        // If the dict is not empty, jump to continuation from c3
+                        c3 PUSH JMPX
+                    } cond
+                }> b>
+            } : }END>c
+            current@ context! current!
+        } does @atend !
+  }>
+}END>c

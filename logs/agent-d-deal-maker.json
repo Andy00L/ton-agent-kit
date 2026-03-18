@@ -1,0 +1,635 @@
+[
+  {
+    "timestamp": "2026-03-18T07:52:29.633Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "register_agent",
+    "params": {
+      "name": "deal-maker",
+      "capabilities": [
+        "escrow_management",
+        "negotiation"
+      ]
+    },
+    "result": {
+      "agentId": "agent_deal-maker",
+      "name": "deal-maker",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy",
+      "capabilities": [
+        "escrow_management",
+        "negotiation"
+      ],
+      "available": true,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "status": "registered (on-chain + local)",
+      "message": "Agent \"deal-maker\" registered on-chain at 0:53524459904871... and locally"
+    },
+    "success": true,
+    "durationMs": 41620,
+    "error": null,
+    "cycle": 0,
+    "phase": "setup"
+  },
+  {
+    "timestamp": "2026-03-18T07:52:29.754Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 112,
+    "error": null,
+    "cycle": 1,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T07:52:30.311Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 557,
+    "error": null,
+    "cycle": 1,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T07:52:30.738Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 427,
+    "error": null,
+    "cycle": 1,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T07:55:30.145Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 474,
+    "error": null,
+    "cycle": 2,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T07:55:30.702Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 557,
+    "error": null,
+    "cycle": 2,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T07:55:31.143Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 441,
+    "error": null,
+    "cycle": 2,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T07:58:29.970Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 298,
+    "error": null,
+    "cycle": 3,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T07:58:30.529Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 559,
+    "error": null,
+    "cycle": 3,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T07:58:30.996Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 467,
+    "error": null,
+    "cycle": 3,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:01:29.956Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 275,
+    "error": null,
+    "cycle": 4,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:01:30.497Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 541,
+    "error": null,
+    "cycle": 4,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:01:30.950Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 451,
+    "error": null,
+    "cycle": 4,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:04:29.946Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 250,
+    "error": null,
+    "cycle": 5,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:04:30.287Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 341,
+    "error": null,
+    "cycle": 5,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:04:30.739Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 452,
+    "error": null,
+    "cycle": 5,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:07:29.922Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 229,
+    "error": null,
+    "cycle": 6,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:07:30.448Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 526,
+    "error": null,
+    "cycle": 6,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:07:30.893Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 445,
+    "error": null,
+    "cycle": 6,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:10:29.996Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 287,
+    "error": null,
+    "cycle": 7,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:10:30.531Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 535,
+    "error": null,
+    "cycle": 7,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:10:30.972Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 441,
+    "error": null,
+    "cycle": 7,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:13:29.989Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 248,
+    "error": null,
+    "cycle": 8,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:13:30.531Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 542,
+    "error": null,
+    "cycle": 8,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:13:30.996Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 465,
+    "error": null,
+    "cycle": 8,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:16:30.005Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 267,
+    "error": null,
+    "cycle": 9,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:16:30.548Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 543,
+    "error": null,
+    "cycle": 9,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:16:30.988Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 440,
+    "error": null,
+    "cycle": 9,
+    "phase": "dispute"
+  },
+  {
+    "timestamp": "2026-03-18T08:19:30.013Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_balance",
+    "params": {},
+    "result": {
+      "balance": "2.811403866",
+      "balanceRaw": "2811403866",
+      "address": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+      "friendlyAddress": "0QBcXvTgCA2E2M-rSdZRayvBL2lrlTRL8cd1r2KHhwEzsIGy"
+    },
+    "success": true,
+    "durationMs": 253,
+    "error": null,
+    "cycle": 10,
+    "phase": "monitoring"
+  },
+  {
+    "timestamp": "2026-03-18T08:19:30.558Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "discover_intents",
+    "params": {},
+    "result": {
+      "intents": [],
+      "count": 0,
+      "total": 2,
+      "onChain": true,
+      "indexed": false,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c"
+    },
+    "success": true,
+    "durationMs": 545,
+    "error": null,
+    "cycle": 10,
+    "phase": "discovery"
+  },
+  {
+    "timestamp": "2026-03-18T08:19:30.998Z",
+    "agent": "deal-maker",
+    "wallet": "0:5c5ef4e0080d84d8cfab49d6516b2bc12f696b95344bf1c775af6287870133b0",
+    "action": "get_open_disputes",
+    "params": {
+      "limit": 10
+    },
+    "result": {
+      "disputes": [],
+      "count": 0,
+      "total": 3,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "message": "Found 0 open dispute(s)"
+    },
+    "success": true,
+    "durationMs": 440,
+    "error": null,
+    "cycle": 10,
+    "phase": "dispute"
+  }
+]

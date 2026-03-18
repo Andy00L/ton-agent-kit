@@ -3,7 +3,7 @@ import { mnemonicToPrivateKey } from "@ton/crypto";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
 import "dotenv/config";
 import { KeypairWallet } from "./packages/core/src/wallet";
-import { createPaymentServer, tonPaywall } from "./x402-middleware";
+import { createPaymentServer, tonPaywall } from "./packages/x402-middleware/src/index";
 import express from "express";
 
 async function main() {

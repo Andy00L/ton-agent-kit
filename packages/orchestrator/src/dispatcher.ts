@@ -3,7 +3,14 @@ import type { AgentConfig, Task, TaskResult, SwarmOptions } from "./types";
 import type { EventBus } from "./events";
 
 /**
- * Creates a promise that rejects after the given timeout.
+ * Wraps a promise with a timeout that rejects if the promise does not settle within the given duration.
+ *
+ * @typeParam T - The resolved type of the wrapped promise
+ * @param promise - The promise to wrap
+ * @param ms - Timeout duration in milliseconds
+ * @param label - Descriptive label included in the timeout error message
+ * @returns A promise that resolves or rejects with the original value, or rejects on timeout
+ * @since 1.0.0
  */
 function withTimeout<T>(
   promise: Promise<T>,
@@ -31,6 +38,8 @@ function withTimeout<T>(
 /**
  * Executes a validated task plan with parallel execution, dependency resolution,
  * retries with exponential backoff, and timeout enforcement.
+ *
+ * @since 1.0.0
  */
 export class Dispatcher {
   private maxRetries: number;
@@ -38,6 +47,13 @@ export class Dispatcher {
   private parallel: boolean;
   private events: EventBus;
 
+  /**
+   * Creates a new Dispatcher instance.
+   *
+   * @param opts - Swarm options controlling retries, timeouts, and parallelism
+   * @param events - Event bus for emitting task lifecycle events
+   * @since 1.0.0
+   */
   constructor(opts: SwarmOptions, events: EventBus) {
     this.maxRetries = opts.maxRetries ?? 2;
     this.taskTimeout = opts.taskTimeout ?? 30_000;
@@ -47,8 +63,15 @@ export class Dispatcher {
 
   /**
    * Execute all tasks respecting dependency order.
-   * Tasks without unmet dependencies run in parallel (Promise.allSettled).
-   * Results from completed dependencies are injected as `_context` in params.
+   * Tasks without unmet dependencies run in parallel (via `Promise.allSettled`).
+   * Results from completed dependencies are injected as `_context` in params,
+   * and matching result fields are auto-mapped to action parameter names.
+   *
+   * @param tasks - The validated task plan to execute
+   * @param agents - Map of agent name to {@link AgentConfig} containing the agent instances
+   * @returns An array of {@link TaskResult} objects, one per task, in completion order
+   * @throws {Error} If a deadlock is detected (no tasks ready but pending tasks remain)
+   * @since 1.0.0
    */
   async dispatch(
     tasks: Task[],

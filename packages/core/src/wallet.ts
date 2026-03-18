@@ -8,12 +8,30 @@ import {
 } from "@ton/ton";
 import type { WalletProvider } from "./types";
 
+/**
+ * Supported TON wallet contract versions.
+ *
+ * - `"V3R2"` - Wallet V3 revision 2 (legacy).
+ * - `"V4"` - Wallet V4 (widely supported).
+ * - `"V5R1"` - Wallet V5 revision 1 (latest, recommended).
+ *
+ * @since 1.0.0
+ */
 export type WalletVersion = "V3R2" | "V4" | "V5R1";
 
+/**
+ * Configuration options for creating a {@link KeypairWallet}.
+ *
+ * @since 1.0.0
+ */
 export interface WalletConfig {
+  /** The wallet contract version. Defaults to `"V5R1"`. */
   version?: WalletVersion;
+  /** The workchain ID. Defaults to `0` (basechain). */
   workchain?: number;
+  /** The target network. Affects address format and wallet ID. Defaults to `"mainnet"`. */
   network?: "testnet" | "mainnet";
+  /** Sub-wallet number for V5R1 wallets. Defaults to `0`. */
   subwalletNumber?: number;
 }
 
@@ -47,8 +65,34 @@ function createWalletContract(publicKey: Buffer, config: WalletConfig = {}) {
   }
 }
 
+/**
+ * A wallet backed by an Ed25519 keypair that can sign and send TON transactions.
+ *
+ * Supports wallet contract versions V3R2, V4, and V5R1. Create instances via the
+ * static factory methods rather than calling the private constructor directly.
+ *
+ * @example
+ * ```typescript
+ * import { KeypairWallet } from "@ton-agent-kit/core";
+ *
+ * // From a 24-word mnemonic
+ * const wallet = await KeypairWallet.fromMnemonic(mnemonic, {
+ *   version: "V5R1",
+ *   network: "testnet",
+ * });
+ *
+ * // Auto-detect the correct version from on-chain state
+ * const wallet2 = await KeypairWallet.autoDetect(mnemonic, tonClient, "mainnet");
+ *
+ * console.log(wallet.address.toString());
+ * ```
+ *
+ * @since 1.0.0
+ */
 export class KeypairWallet implements WalletProvider {
+  /** The wallet's on-chain address derived from the public key and contract version. */
   public address: Address;
+  /** The wallet contract version used by this instance. */
   public readonly version: WalletVersion;
   private keyPair: KeyPair;
   private walletConfig: WalletConfig;
@@ -62,6 +106,23 @@ export class KeypairWallet implements WalletProvider {
     this.address = contract.address;
   }
 
+  /**
+   * Create a wallet from a BIP-39 mnemonic phrase.
+   *
+   * @param mnemonic - The 24-word mnemonic as a string array.
+   * @param config - Optional wallet configuration (version, network, etc.).
+   * @returns A new `KeypairWallet` instance.
+   *
+   * @example
+   * ```typescript
+   * const wallet = await KeypairWallet.fromMnemonic(
+   *   "word1 word2 ... word24".split(" "),
+   *   { version: "V5R1", network: "testnet" },
+   * );
+   * ```
+   *
+   * @since 1.0.0
+   */
   static async fromMnemonic(
     mnemonic: string[],
     config: WalletConfig = {},
@@ -70,6 +131,15 @@ export class KeypairWallet implements WalletProvider {
     return new KeypairWallet(keyPair, config);
   }
 
+  /**
+   * Create a wallet from a raw 64-byte Ed25519 secret key (first 32 bytes secret, last 32 bytes public).
+   *
+   * @param secretKey - The 64-byte Ed25519 secret key buffer.
+   * @param config - Optional wallet configuration (version, network, etc.).
+   * @returns A new `KeypairWallet` instance.
+   *
+   * @since 1.0.0
+   */
   static fromSecretKey(
     secretKey: Buffer,
     config: WalletConfig = {},
@@ -79,6 +149,26 @@ export class KeypairWallet implements WalletProvider {
     return new KeypairWallet(keyPair, config);
   }
 
+  /**
+   * Auto-detect the correct wallet version by checking on-chain balances.
+   *
+   * Tries V5R1, V4, and V3R2 in order, returning the first version whose
+   * address has a non-zero balance. Falls back to V5R1 if no funded wallet is found.
+   *
+   * @param mnemonic - The 24-word mnemonic as a string array.
+   * @param client - A `TonClient4` instance for querying on-chain state.
+   * @param network - The target network. Defaults to `"mainnet"`.
+   * @returns A `KeypairWallet` using the detected (or default) wallet version.
+   *
+   * @example
+   * ```typescript
+   * const client = new TonClient4({ endpoint: "https://testnet-v4.tonhubapi.com" });
+   * const wallet = await KeypairWallet.autoDetect(mnemonic, client, "testnet");
+   * console.log(wallet.version); // e.g. "V5R1"
+   * ```
+   *
+   * @since 1.0.0
+   */
   static async autoDetect(
     mnemonic: string[],
     client: TonClient4,
@@ -113,15 +203,28 @@ export class KeypairWallet implements WalletProvider {
   }
 
   /**
-   * Set the RPC URL — called by TonAgentKit on init
+   * Set the RPC endpoint URL for this wallet. Called internally by {@link TonAgentKit}
+   * during initialization.
+   *
+   * @param rpcUrl - The TON HTTP API v4 endpoint URL.
+   *
+   * @since 1.0.0
    */
   setClient(rpcUrl: string): void {
     this.rpcUrl = rpcUrl;
   }
 
   /**
-   * Send messages using a fresh client every time.
-   * This is the proven pattern that works on both testnet and mainnet.
+   * Send one or more outgoing messages by creating a fresh `TonClient4` for each call.
+   *
+   * This pattern avoids stale connection state and is proven to work reliably
+   * on both testnet and mainnet.
+   *
+   * @param messages - The outgoing messages to send.
+   * @returns Resolves when the transfer has been submitted to the network.
+   * @throws {Error} When the RPC URL has not been set (wallet not attached to an agent).
+   *
+   * @since 1.0.0
    */
   async sendTransfer(messages: MessageRelaxed[]): Promise<void> {
     if (!this.rpcUrl) {
@@ -147,8 +250,14 @@ export class KeypairWallet implements WalletProvider {
   }
 
   /**
-   * Get the raw materials for handlers that need direct contract access.
-   * Returns everything needed to call sendTransfer on a fresh contract.
+   * Return the raw cryptographic credentials and wallet configuration.
+   *
+   * Intended for action handlers that need direct contract access (e.g. the
+   * low-level {@link sendTransaction} utility).
+   *
+   * @returns An object containing the secret key, public key, and wallet config.
+   *
+   * @since 1.0.0
    */
   getCredentials(): {
     secretKey: Buffer;
@@ -162,16 +271,41 @@ export class KeypairWallet implements WalletProvider {
     };
   }
 
+  /**
+   * Sign arbitrary data with the wallet's Ed25519 secret key.
+   *
+   * Useful for identity proofs and off-chain message signing.
+   *
+   * @param data - The raw data buffer to sign.
+   * @returns The 64-byte Ed25519 signature.
+   *
+   * @since 1.0.0
+   */
   async sign(data: Buffer): Promise<Buffer> {
     const { sign } = await import("@ton/crypto");
     return sign(data, this.keyPair.secretKey);
   }
 
   /**
-   * Generate multiple new wallets with fresh mnemonics.
-   * @param count - Number of wallets to generate
-   * @param options - Optional network setting (default: "mainnet")
-   * @returns Array of { wallet, mnemonic } objects
+   * Generate multiple new wallets, each with a fresh 24-word mnemonic.
+   *
+   * All generated wallets use V5R1. The mnemonics are printed to `console.warn`
+   * as a reminder to store them securely.
+   *
+   * @param count - Number of wallets to generate.
+   * @param options - Optional settings.
+   * @param options.network - The target network. Defaults to `"mainnet"`.
+   * @returns An array of `{ wallet, mnemonic }` objects.
+   *
+   * @example
+   * ```typescript
+   * const wallets = await KeypairWallet.generateMultiple(3, { network: "testnet" });
+   * for (const { wallet, mnemonic } of wallets) {
+   *   console.log(wallet.address.toString(), mnemonic.join(" "));
+   * }
+   * ```
+   *
+   * @since 1.0.0
    */
   static async generateMultiple(
     count: number,
@@ -195,6 +329,24 @@ export class KeypairWallet implements WalletProvider {
     return results;
   }
 
+  /**
+   * Derive the wallet addresses for all supported contract versions from a single mnemonic.
+   *
+   * Useful for showing the user all possible addresses for their seed phrase.
+   *
+   * @param mnemonic - The 24-word mnemonic as a string array.
+   * @param network - The target network. Defaults to `"mainnet"`.
+   * @returns A record mapping each {@link WalletVersion} to its user-friendly address string.
+   *
+   * @example
+   * ```typescript
+   * const addresses = await KeypairWallet.getAllAddresses(mnemonic, "testnet");
+   * console.log(addresses.V5R1); // "0QB3..."
+   * console.log(addresses.V4);   // "0QB7..."
+   * ```
+   *
+   * @since 1.0.0
+   */
   static async getAllAddresses(
     mnemonic: string[],
     network: "testnet" | "mainnet" = "mainnet",
@@ -218,14 +370,44 @@ export class KeypairWallet implements WalletProvider {
   }
 }
 
+/**
+ * A read-only wallet that can observe an address but cannot sign transactions.
+ *
+ * Useful for monitoring balances, querying on-chain state, or building
+ * read-only agent configurations.
+ *
+ * @example
+ * ```typescript
+ * const wallet = new ReadOnlyWallet("EQD...");
+ * const agent = new TonAgentKit(wallet);
+ * // agent can run read actions but will throw on write actions
+ * ```
+ *
+ * @since 1.0.0
+ */
 export class ReadOnlyWallet implements WalletProvider {
+  /** The observed wallet address. */
   public address: Address;
 
+  /**
+   * Create a read-only wallet for the given address.
+   *
+   * @param address - A TON address string or `Address` instance to observe.
+   *
+   * @since 1.0.0
+   */
   constructor(address: string | Address) {
     this.address =
       typeof address === "string" ? Address.parse(address) : address;
   }
 
+  /**
+   * Always throws because a read-only wallet has no signing key.
+   *
+   * @throws {Error} Always, with the message "ReadOnlyWallet cannot sign transactions."
+   *
+   * @since 1.0.0
+   */
   async sendTransfer(): Promise<void> {
     throw new Error("ReadOnlyWallet cannot sign transactions.");
   }

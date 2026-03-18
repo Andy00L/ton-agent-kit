@@ -6,6 +6,11 @@ import { z } from "zod";
 // Wallet Provider
 // ============================================================
 
+/**
+ * Abstract wallet interface for signing and sending TON transactions.
+ * Implemented by {@link KeypairWallet} and {@link ReadOnlyWallet}.
+ * @since 1.0.0
+ */
 export interface WalletProvider {
   /** The wallet's address on TON */
   address: Address;
@@ -19,6 +24,15 @@ export interface WalletProvider {
 // Action — a single autonomous operation an agent can perform
 // ============================================================
 
+/**
+ * A single blockchain operation that an agent can execute.
+ * Actions are the building blocks of the SDK — each plugin registers one or more actions.
+ * Created with {@link defineAction}.
+ *
+ * @typeParam TInput - The Zod-validated input type.
+ * @typeParam TOutput - The return type of the handler.
+ * @since 1.0.0
+ */
 export interface Action<TInput = any, TOutput = any> {
   /** Unique identifier, e.g. "transfer_ton" */
   name: string;
@@ -40,6 +54,11 @@ export interface Action<TInput = any, TOutput = any> {
 // Plugin — a collection of related actions
 // ============================================================
 
+/**
+ * A collection of related {@link Action}s that can be registered on a {@link TonAgentKit} instance.
+ * Created with {@link definePlugin}. Registered with `agent.use(plugin)`.
+ * @since 1.0.0
+ */
 export interface Plugin {
   /** Plugin name, e.g. "token", "defi" */
   name: string;
@@ -53,6 +72,11 @@ export interface Plugin {
 // Agent Context — what actions receive to interact with TON
 // ============================================================
 
+/**
+ * Runtime context passed to every action handler. Provides access to the wallet,
+ * blockchain client, network configuration, and API keys.
+ * @since 1.0.0
+ */
 export interface AgentContext {
   /** TON blockchain client */
   connection: TonClient4 | TonClient;
@@ -70,6 +94,11 @@ export interface AgentContext {
 // Agent Kit Configuration
 // ============================================================
 
+/**
+ * Configuration object passed to the TonAgentKit constructor.
+ * Supports arbitrary string keys for API keys and custom settings.
+ * @since 1.0.0
+ */
 export interface TonAgentKitConfig {
   /** Optional API keys for LLMs or services */
   OPENAI_API_KEY?: string;
@@ -77,12 +106,14 @@ export interface TonAgentKitConfig {
   [key: string]: string | undefined;
 }
 
+/** TON network identifier. Affects RPC endpoints, address formats, and explorer URLs. @since 1.0.0 */
 export type TonNetwork = "mainnet" | "testnet";
 
 // ============================================================
 // Action Result Types
 // ============================================================
 
+/** Result of a write transaction (transfer, swap, deploy, etc.). @since 1.0.0 */
 export interface TransactionResult {
   /** Transaction hash */
   txHash: string;
@@ -94,6 +125,7 @@ export interface TransactionResult {
   fee?: string;
 }
 
+/** Result of a balance query. @since 1.0.0 */
 export interface BalanceResult {
   /** Balance in TON (human-readable) */
   balance: string;
@@ -103,6 +135,7 @@ export interface BalanceResult {
   address: string;
 }
 
+/** Result of a Jetton (fungible token) balance query. @since 1.0.0 */
 export interface JettonBalanceResult {
   /** Balance in token units */
   balance: string;
@@ -116,6 +149,7 @@ export interface JettonBalanceResult {
   decimals: number;
 }
 
+/** Result of a DEX swap operation. @since 1.0.0 */
 export interface SwapResult extends TransactionResult {
   /** Amount sent */
   fromAmount: string;
@@ -129,6 +163,7 @@ export interface SwapResult extends TransactionResult {
   dex: "dedust" | "stonfi";
 }
 
+/** Metadata for a Jetton (fungible token) on TON. @since 1.0.0 */
 export interface JettonInfo {
   /** Jetton master address */
   address: string;
@@ -146,6 +181,7 @@ export interface JettonInfo {
   image?: string;
 }
 
+/** Metadata for an NFT on TON. @since 1.0.0 */
 export interface NftInfo {
   /** NFT address */
   address: string;
@@ -159,6 +195,7 @@ export interface NftInfo {
   metadata?: Record<string, any>;
 }
 
+/** Result of a TON DNS domain lookup. @since 1.0.0 */
 export interface DnsInfo {
   /** Domain name */
   domain: string;

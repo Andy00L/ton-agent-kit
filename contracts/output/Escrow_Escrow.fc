@@ -8,11 +8,29 @@
 ;; NOTE: declarations are sorted for optimal order
 ;;
 
+;; __tact_not_null
+forall X -> X __tact_not_null(X x) impure inline;
+
 ;; __tact_context_get
 (int, slice, int, slice) __tact_context_get() inline;
 
 ;; __tact_context_get_sender
 slice __tact_context_get_sender() inline;
+
+;; __tact_dict_get_slice_int
+int __tact_dict_get_slice_int(cell d, int kl, slice k, int vl) inline;
+
+;; __tact_dict_set_slice_int
+(cell, ()) __tact_dict_set_slice_int(cell d, int kl, slice k, int v, int vl) inline;
+
+;; __tact_dict_set_int_slice
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline;
+
+;; __tact_dict_get_int_int
+int __tact_dict_get_int_int(cell d, int kl, int k, int vl) inline;
+
+;; __tact_dict_set_int_int
+(cell, ()) __tact_dict_set_int_int(cell d, int kl, int k, int v, int vl) inline;
 
 ;; $DeployOk$_store
 builder $DeployOk$_store(builder build_0, (int) v) inline;
@@ -20,47 +38,74 @@ builder $DeployOk$_store(builder build_0, (int) v) inline;
 ;; $DeployOk$_store_cell
 cell $DeployOk$_store_cell((int) v, builder b) inline;
 
+;; $NotifyDisputeOpened$_store
+builder $NotifyDisputeOpened$_store(builder build_0, (slice, slice, slice, int, int) v) inline;
+
+;; $NotifyDisputeOpened$_store_cell
+cell $NotifyDisputeOpened$_store_cell((slice, slice, slice, int, int) v, builder b) inline;
+
+;; $NotifyDisputeSettled$_store
+builder $NotifyDisputeSettled$_store(builder build_0, (slice, int, int) v) inline;
+
+;; $NotifyDisputeSettled$_store_cell
+cell $NotifyDisputeSettled$_store_cell((slice, int, int) v, builder b) inline;
+
 ;; $Escrow$_store
-builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int) v) inline;
+builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) v) inline;
 
 ;; $Escrow$_load
-(slice, ((slice, slice, slice, int, int, int, int))) $Escrow$_load(slice sc_0) inline;
+(slice, ((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int))) $Escrow$_load(slice sc_0) inline;
 
 ;; $Context$_get_value
 _ $Context$_get_value((int, slice, int, slice) v) inline;
 
 ;; $EscrowData$_to_external
-(slice, slice, slice, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int)) v) inline;
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline;
 
 ;; $Escrow$init$_load
-(slice, ((slice, slice, slice, int))) $Escrow$init$_load(slice sc_0) inline;
+(slice, ((slice, slice, int, int, int, slice, int, int, int))) $Escrow$init$_load(slice sc_0) inline;
 
 ;; $Escrow$_contract_init
-(slice, slice, slice, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) impure inline;
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, int $deadline, int $minArbiters, int $minStake, slice $reputationContract, int $requireRepCollateral, int $minRepScore, int $baseSellerStake) impure inline;
 
 ;; $Escrow$_contract_load
-(slice, slice, slice, int, int, int, int) $Escrow$_contract_load() impure inline;
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $Escrow$_contract_load() impure inline;
 
 ;; $Escrow$_contract_store
-() $Escrow$_contract_store((slice, slice, slice, int, int, int, int) v) impure inline;
+() $Escrow$_contract_store((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) v) impure inline;
 
-;; $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded
-((slice, slice, slice, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded(slice $depositor, slice $beneficiary, slice $arbiter, int $amount, int $deadline, int $released, int $refunded) inline;
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $NotifyDisputeSettled$_constructor_escrowAddress_released_refunded
+((slice, int, int)) $NotifyDisputeSettled$_constructor_escrowAddress_released_refunded(slice $escrowAddress, int $released, int $refunded) inline;
+
+;; $Escrow$_fun_notifySettlement
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), ()) $Escrow$_fun_notifySettlement((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $Escrow$_fun_getTotalLoserStakes
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_getTotalLoserStakes((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $Escrow$_fun_getWinnerCount
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_getWinnerCount((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $EscrowData$_constructor_depositor_beneficiary_reputationContract_amount_deadline_released_refunded_deliveryConfirmed_disputed_votingDeadline_arbiterCount_votesRelease_votesRefund_minArbiters_minStake_sellerStake_sellerStaked_requireSellerStake_baseSellerStake_requireRepCollateral_minRepScore_autoReleaseAvailable_refundAvailable
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_reputationContract_amount_deadline_released_refunded_deliveryConfirmed_disputed_votingDeadline_arbiterCount_votesRelease_votesRefund_minArbiters_minStake_sellerStake_sellerStaked_requireSellerStake_baseSellerStake_requireRepCollateral_minRepScore_autoReleaseAvailable_refundAvailable(slice $depositor, slice $beneficiary, slice $reputationContract, int $amount, int $deadline, int $released, int $refunded, int $deliveryConfirmed, int $disputed, int $votingDeadline, int $arbiterCount, int $votesRelease, int $votesRefund, int $minArbiters, int $minStake, int $sellerStake, int $sellerStaked, int $requireSellerStake, int $baseSellerStake, int $requireRepCollateral, int $minRepScore, int $autoReleaseAvailable, int $refundAvailable) inline;
 
 ;; $Escrow$_fun_escrowData
-((slice, slice, slice, int, int, int, int), (slice, slice, slice, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int) $self) impure inline_ref;
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
 
 ;; $Escrow$_fun_balance
-((slice, slice, slice, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int) $self) impure inline_ref;
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
 
 ;; $MessageParameters$_constructor_bounce_to_value_mode_body
 ((int, cell, int, slice, int)) $MessageParameters$_constructor_bounce_to_value_mode_body(int $bounce, slice $to, int $value, int $mode, cell $body) inline;
 
 ;; $Escrow$_fun_notify
-((slice, slice, slice, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int) $self, cell $body) impure inline;
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self, cell $body) impure inline;
 
-;; $SendParameters$_constructor_to_value_mode_bounce_body
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+;; $NotifyDisputeOpened$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline
+((slice, slice, slice, int, int)) $NotifyDisputeOpened$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline(slice $escrowAddress, slice $depositor, slice $beneficiary, int $amount, int $votingDeadline) inline;
 
 ;; $DeployOk$_constructor_queryId
 ((int)) $DeployOk$_constructor_queryId(int $queryId) inline;
@@ -72,6 +117,18 @@ global slice __tact_context_sender;
 global cell __tact_child_contract_codes;
 global int __tact_randomized;
 
+forall X -> X __tact_not_null(X x) impure inline {
+    throw_if(128, null?(x)); return x;
+}
+
+(cell, int) __tact_dict_delete(cell dict, int key_len, slice index) asm(index dict key_len) """
+    DICTDEL
+""";
+
+(slice, int) __tact_dict_get(cell dict, int key_len, slice index) asm(index dict key_len) """
+    DICTGET NULLSWAPIFNOT
+""";
+
 (int, slice, int, slice) __tact_context_get() inline {
     return __tact_context;
 }
@@ -79,6 +136,55 @@ global int __tact_randomized;
 slice __tact_context_get_sender() inline {
     return __tact_context_sender;
 }
+
+int __tact_dict_get_slice_int(cell d, int kl, slice k, int vl) inline {
+    var (r, ok) = __tact_dict_get(d, kl, k);
+    if (ok) {
+        return r~load_int(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_slice_int(cell d, int kl, slice k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = __tact_dict_delete(d, kl, k);
+        return (r, ());
+    } else {
+        return (dict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
+    }
+}
+
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set(d, kl, k, v), ());
+    }
+}
+
+int __tact_dict_get_int_int(cell d, int kl, int k, int vl) inline {
+    var (r, ok) = idict_get?(d, kl, k);
+    if (ok) {
+        return r~load_int(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_int_int(cell d, int kl, int k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
+    }
+}
+
+slice $global_myAddress() impure asm """
+    MYADDR
+""";
 
 int $global_myBalance() impure asm """
     BALANCE FIRST
@@ -187,8 +293,8 @@ int $global_now() impure asm """
     NOW
 """;
 
-((slice, slice, slice, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int) $self, cell $body) impure inline {
-    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), ()) $Escrow$_fun_notify((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self, cell $body) impure inline {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
     slice $to = __tact_context_get_sender();
     int $bounce = false;
     if (false) {
@@ -197,11 +303,11 @@ int $global_now() impure asm """
         if (($balanceBeforeMessage < 0)) {
             $global_nativeReserve(0, 0);
             $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 130, $body));
-            return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), ());
+            return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), ());
         }
     }
     $global_message($MessageParameters$_constructor_bounce_to_value_mode_body($bounce, $to, 0, 66, $body));
-    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), ());
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), ());
 }
 
 ;; Escrow_Escrow.constants.fc
@@ -213,6 +319,51 @@ cell __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e
 ;; Cell NsPK790zn9WR7J8AKBntnq6iO1Wg5twdxOKC8FOoWjs=
 cell __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b() asm """
     B{b5ee9c7241010101001500002600000000457363726f7720726566756e646564fc3c9cce} B>boc PUSHREF
+""";
+
+;; Cell 5Q8BNJ1thsSV0yabhiReaUbw9M24GCueF6ZC5CAUasQ=
+cell __gen_cell_cell_e50f01349d6d86c495d3269b86245e6946f0f4cdb8182b9e17a642e420146ac4() asm """
+    B{b5ee9c72410101010022000040000000004175746f2d72656c656173656420616674657220646561646c696e657799cd52} B>boc PUSHREF
+""";
+
+;; Cell pY8DfhSKu6yNrkaownKfcetWjYpoQHPz3w2113bOTow=
+cell __gen_cell_cell_a58f037e148abbac8dae46a8c2729f71eb568d8a684073f3df0db5d776ce4e8c() asm """
+    B{b5ee9c724101010100140000240000000044697370757465206f70656e6564bdc4d07f} B>boc PUSHREF
+""";
+
+;; Cell VPNV7rmaFL01V1NIwqHvgm+JhwaLmAf7W5HOxDhz5A0=
+cell __gen_cell_cell_54f355eeb99a14bd35575348c2a1ef826f8987068b9807fb5b91cec43873e40d() asm """
+    B{b5ee9c7241010101001e0000380000000052656c6561736564206279206172626974657220766f7465013ce8c6} B>boc PUSHREF
+""";
+
+;; Cell 7nVXQt2nHEKSTy4Y045S6wBON9KEUT+gAI5yiT55Bmk=
+cell __gen_cell_cell_ee755742dda71c42924f2e18d38e52eb004e37d284513fa0008e72893e790669() asm """
+    B{b5ee9c7241010101001600002800000000566f74656420746f2072656c65617365358cb807} B>boc PUSHREF
+""";
+
+;; Cell NYiJXHwjIL2y3biA8Ez68wySh94Wgw2aXyhHwJXnsRQ=
+cell __gen_cell_cell_3588895c7c2320bdb2ddb880f04cfaf30c9287de16830d9a5f2847c095e7b114() asm """
+    B{b5ee9c7241010101001e00003800000000526566756e646564206279206172626974657220766f74659c355ced} B>boc PUSHREF
+""";
+
+;; Cell b7KucOdH390ttSJLD6dOqEHJiCgdyPTuOvld/UyNNL0=
+cell __gen_cell_cell_6fb2ae70e747dfdd2db5224b0fa74ea841c988281dc8f4ee3af95dfd4c8d34bd() asm """
+    B{b5ee9c7241010101001500002600000000566f74656420746f20726566756e64ba12d77f} B>boc PUSHREF
+""";
+
+;; Cell X0UIKITLIZ9PSXud+GMkzxjUCdrqzaMJm0/+tPOgQUA=
+cell __gen_cell_cell_5f45082884cb219f4f497b9df86324cf18d409daeacda3099b4ffeb4f3a04140() asm """
+    B{b5ee9c7241010101001d000036000000004172626974657220726577617264202877696e6e6572299d98478d} B>boc PUSHREF
+""";
+
+;; Cell h9+ntmIfvVG1ecQLS8TGWtyH0NqZVKN270lGCLZoZAo=
+cell __gen_cell_cell_87dfa7b6621fbd51b579c40b4bc4c65adc87d0da9954a376ef494608b668640a() asm """
+    B{b5ee9c7241010101001800002c0000000046616c6c6261636b3a2072656c6561736564d49357cb} B>boc PUSHREF
+""";
+
+;; Cell b+NPzCjCvMm6SBNIFcdm5T5FE9F6fXQpX4mOhLWY8x4=
+cell __gen_cell_cell_6fe34fcc28c2bcc9ba48134815c766e53e4513d17a7d74295f898e84b598f31e() asm """
+    B{b5ee9c7241010101001800002c0000000046616c6c6261636b3a20726566756e6465641488e914} B>boc PUSHREF
 """;
 
 ;; Escrow_Escrow.storage.fc
@@ -266,70 +417,168 @@ cell $DeployOk$_store_cell((int) v, builder b) inline {
 }
 
 ;;
-;; Type: EscrowData
-;; TLB: _ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = EscrowData
+;; Type: NotifyDisputeOpened
+;; Header: 0x2f7e5059
+;; TLB: notify_dispute_opened#2f7e5059 escrowAddress:address depositor:address beneficiary:address amount:coins votingDeadline:uint32 = NotifyDisputeOpened
 ;;
 
-(slice, slice, slice, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int)) v) inline {
-    var (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded) = v; 
-    return (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded);
-}
-
-((slice, slice, slice, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded(slice $depositor, slice $beneficiary, slice $arbiter, int $amount, int $deadline, int $released, int $refunded) inline {
-    return ($depositor, $beneficiary, $arbiter, $amount, $deadline, $released, $refunded);
-}
-
-;;
-;; Type: Escrow
-;; TLB: _ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = Escrow
-;;
-
-builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int) v) inline {
-    var (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded) = v;
+builder $NotifyDisputeOpened$_store(builder build_0, (slice, slice, slice, int, int) v) inline {
+    var (v'escrowAddress, v'depositor, v'beneficiary, v'amount, v'votingDeadline) = v;
+    build_0 = store_uint(build_0, 796807257, 32);
+    build_0 = build_0.store_slice(v'escrowAddress);
     build_0 = build_0.store_slice(v'depositor);
     build_0 = build_0.store_slice(v'beneficiary);
-    build_0 = build_0.store_slice(v'arbiter);
     build_0 = build_0.store_varuint16(v'amount);
-    build_0 = build_0.store_uint(v'deadline, 32);
+    build_0 = build_0.store_uint(v'votingDeadline, 32);
+    return build_0;
+}
+
+cell $NotifyDisputeOpened$_store_cell((slice, slice, slice, int, int) v, builder b) inline {
+    return $NotifyDisputeOpened$_store(b, v).end_cell();
+}
+
+((slice, slice, slice, int, int)) $NotifyDisputeOpened$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline(slice $escrowAddress, slice $depositor, slice $beneficiary, int $amount, int $votingDeadline) inline {
+    return ($escrowAddress, $depositor, $beneficiary, $amount, $votingDeadline);
+}
+
+;;
+;; Type: NotifyDisputeSettled
+;; Header: 0xbfa05986
+;; TLB: notify_dispute_settled#bfa05986 escrowAddress:address released:bool refunded:bool = NotifyDisputeSettled
+;;
+
+builder $NotifyDisputeSettled$_store(builder build_0, (slice, int, int) v) inline {
+    var (v'escrowAddress, v'released, v'refunded) = v;
+    build_0 = store_uint(build_0, 3214956934, 32);
+    build_0 = build_0.store_slice(v'escrowAddress);
     build_0 = build_0.store_int(v'released, 1);
     build_0 = build_0.store_int(v'refunded, 1);
     return build_0;
 }
 
-(slice, ((slice, slice, slice, int, int, int, int))) $Escrow$_load(slice sc_0) inline {
+cell $NotifyDisputeSettled$_store_cell((slice, int, int) v, builder b) inline {
+    return $NotifyDisputeSettled$_store(b, v).end_cell();
+}
+
+((slice, int, int)) $NotifyDisputeSettled$_constructor_escrowAddress_released_refunded(slice $escrowAddress, int $released, int $refunded) inline {
+    return ($escrowAddress, $released, $refunded);
+}
+
+;;
+;; Type: EscrowData
+;; TLB: _ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 minArbiters:uint8 minStake:coins sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 autoReleaseAvailable:bool refundAvailable:bool = EscrowData
+;;
+
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int) $EscrowData$_to_external(((slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline {
+    var (v'depositor, v'beneficiary, v'reputationContract, v'amount, v'deadline, v'released, v'refunded, v'deliveryConfirmed, v'disputed, v'votingDeadline, v'arbiterCount, v'votesRelease, v'votesRefund, v'minArbiters, v'minStake, v'sellerStake, v'sellerStaked, v'requireSellerStake, v'baseSellerStake, v'requireRepCollateral, v'minRepScore, v'autoReleaseAvailable, v'refundAvailable) = v; 
+    return (v'depositor, v'beneficiary, v'reputationContract, v'amount, v'deadline, v'released, v'refunded, v'deliveryConfirmed, v'disputed, v'votingDeadline, v'arbiterCount, v'votesRelease, v'votesRefund, v'minArbiters, v'minStake, v'sellerStake, v'sellerStaked, v'requireSellerStake, v'baseSellerStake, v'requireRepCollateral, v'minRepScore, v'autoReleaseAvailable, v'refundAvailable);
+}
+
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) $EscrowData$_constructor_depositor_beneficiary_reputationContract_amount_deadline_released_refunded_deliveryConfirmed_disputed_votingDeadline_arbiterCount_votesRelease_votesRefund_minArbiters_minStake_sellerStake_sellerStaked_requireSellerStake_baseSellerStake_requireRepCollateral_minRepScore_autoReleaseAvailable_refundAvailable(slice $depositor, slice $beneficiary, slice $reputationContract, int $amount, int $deadline, int $released, int $refunded, int $deliveryConfirmed, int $disputed, int $votingDeadline, int $arbiterCount, int $votesRelease, int $votesRefund, int $minArbiters, int $minStake, int $sellerStake, int $sellerStaked, int $requireSellerStake, int $baseSellerStake, int $requireRepCollateral, int $minRepScore, int $autoReleaseAvailable, int $refundAvailable) inline {
+    return ($depositor, $beneficiary, $reputationContract, $amount, $deadline, $released, $refunded, $deliveryConfirmed, $disputed, $votingDeadline, $arbiterCount, $votesRelease, $votesRefund, $minArbiters, $minStake, $sellerStake, $sellerStaked, $requireSellerStake, $baseSellerStake, $requireRepCollateral, $minRepScore, $autoReleaseAvailable, $refundAvailable);
+}
+
+;;
+;; Type: Escrow
+;; TLB: _ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 = Escrow
+;;
+
+builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) v) inline {
+    var (v'depositor, v'beneficiary, v'reputationContract, v'amount, v'deadline, v'released, v'refunded, v'deliveryConfirmed, v'disputed, v'votingDeadline, v'minArbiters, v'minStake, v'arbiters, v'arbiterIndex, v'stakes, v'voted, v'votes, v'arbiterCount, v'votesRelease, v'votesRefund, v'sellerStake, v'sellerStaked, v'requireSellerStake, v'baseSellerStake, v'requireRepCollateral, v'minRepScore) = v;
+    build_0 = build_0.store_slice(v'depositor);
+    build_0 = build_0.store_slice(v'beneficiary);
+    build_0 = build_0.store_slice(v'reputationContract);
+    build_0 = build_0.store_varuint16(v'amount);
+    build_0 = build_0.store_uint(v'deadline, 32);
+    build_0 = build_0.store_int(v'released, 1);
+    build_0 = build_0.store_int(v'refunded, 1);
+    build_0 = build_0.store_int(v'deliveryConfirmed, 1);
+    build_0 = build_0.store_int(v'disputed, 1);
+    build_0 = build_0.store_uint(v'votingDeadline, 32);
+    build_0 = build_0.store_uint(v'minArbiters, 8);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_varuint16(v'minStake);
+    build_1 = build_1.store_dict(v'arbiters);
+    build_1 = build_1.store_dict(v'arbiterIndex);
+    build_1 = build_1.store_dict(v'stakes);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_dict(v'voted);
+    build_2 = build_2.store_dict(v'votes);
+    build_2 = build_2.store_uint(v'arbiterCount, 16);
+    build_2 = build_2.store_uint(v'votesRelease, 16);
+    build_2 = build_2.store_uint(v'votesRefund, 16);
+    build_2 = build_2.store_varuint16(v'sellerStake);
+    build_2 = build_2.store_int(v'sellerStaked, 1);
+    build_2 = build_2.store_int(v'requireSellerStake, 1);
+    build_2 = build_2.store_varuint16(v'baseSellerStake);
+    build_2 = build_2.store_int(v'requireRepCollateral, 1);
+    build_2 = build_2.store_uint(v'minRepScore, 8);
+    build_1 = store_builder_ref(build_1, build_2);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int))) $Escrow$_load(slice sc_0) inline {
     var v'depositor = sc_0~load_msg_addr();
     var v'beneficiary = sc_0~load_msg_addr();
-    var v'arbiter = sc_0~load_msg_addr();
+    var v'reputationContract = sc_0~load_msg_addr();
     var v'amount = sc_0~load_varuint16();
     var v'deadline = sc_0~load_uint(32);
     var v'released = sc_0~load_int(1);
     var v'refunded = sc_0~load_int(1);
-    return (sc_0, (v'depositor, v'beneficiary, v'arbiter, v'amount, v'deadline, v'released, v'refunded));
+    var v'deliveryConfirmed = sc_0~load_int(1);
+    var v'disputed = sc_0~load_int(1);
+    var v'votingDeadline = sc_0~load_uint(32);
+    var v'minArbiters = sc_0~load_uint(8);
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'minStake = sc_1~load_varuint16();
+    var v'arbiters = sc_1~load_dict();
+    var v'arbiterIndex = sc_1~load_dict();
+    var v'stakes = sc_1~load_dict();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'voted = sc_2~load_dict();
+    var v'votes = sc_2~load_dict();
+    var v'arbiterCount = sc_2~load_uint(16);
+    var v'votesRelease = sc_2~load_uint(16);
+    var v'votesRefund = sc_2~load_uint(16);
+    var v'sellerStake = sc_2~load_varuint16();
+    var v'sellerStaked = sc_2~load_int(1);
+    var v'requireSellerStake = sc_2~load_int(1);
+    var v'baseSellerStake = sc_2~load_varuint16();
+    var v'requireRepCollateral = sc_2~load_int(1);
+    var v'minRepScore = sc_2~load_uint(8);
+    return (sc_0, (v'depositor, v'beneficiary, v'reputationContract, v'amount, v'deadline, v'released, v'refunded, v'deliveryConfirmed, v'disputed, v'votingDeadline, v'minArbiters, v'minStake, v'arbiters, v'arbiterIndex, v'stakes, v'voted, v'votes, v'arbiterCount, v'votesRelease, v'votesRefund, v'sellerStake, v'sellerStaked, v'requireSellerStake, v'baseSellerStake, v'requireRepCollateral, v'minRepScore));
 }
 
-(slice, ((slice, slice, slice, int))) $Escrow$init$_load(slice sc_0) inline {
+(slice, ((slice, slice, int, int, int, slice, int, int, int))) $Escrow$init$_load(slice sc_0) inline {
     var v'depositor = sc_0~load_msg_addr();
     var v'beneficiary = sc_0~load_msg_addr();
-    var v'arbiter = sc_0~load_msg_addr();
+    var v'deadline = sc_0~load_int(257);
     slice sc_1 = sc_0~load_ref().begin_parse();
-    var v'deadline = sc_1~load_int(257);
-    return (sc_0, (v'depositor, v'beneficiary, v'arbiter, v'deadline));
+    var v'minArbiters = sc_1~load_int(257);
+    var v'minStake = sc_1~load_int(257);
+    var v'reputationContract = sc_1~load_msg_addr();
+    var v'requireRepCollateral = sc_1~load_int(1);
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'minRepScore = sc_2~load_int(257);
+    var v'baseSellerStake = sc_2~load_int(257);
+    return (sc_0, (v'depositor, v'beneficiary, v'deadline, v'minArbiters, v'minStake, v'reputationContract, v'requireRepCollateral, v'minRepScore, v'baseSellerStake));
 }
 
-(slice, slice, slice, int, int, int, int) $Escrow$_contract_load() impure inline {
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $Escrow$_contract_load() impure inline {
     slice $sc = get_data().begin_parse();
     int $loaded = $sc~load_int(1);
     if ($loaded) {
         return $sc~$Escrow$_load();
     }
     else {
-        (slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) = $sc~$Escrow$init$_load();
+        (slice $depositor, slice $beneficiary, int $deadline, int $minArbiters, int $minStake, slice $reputationContract, int $requireRepCollateral, int $minRepScore, int $baseSellerStake) = $sc~$Escrow$init$_load();
         $sc.end_parse();
-        return $Escrow$_contract_init($depositor, $beneficiary, $arbiter, $deadline);
+        return $Escrow$_contract_init($depositor, $beneficiary, $deadline, $minArbiters, $minStake, $reputationContract, $requireRepCollateral, $minRepScore, $baseSellerStake);
     }
 }
 
-() $Escrow$_contract_store((slice, slice, slice, int, int, int, int) v) impure inline {
+() $Escrow$_contract_store((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) v) impure inline {
     builder b = begin_cell();
     b = b.store_int(true, 1);
     b = $Escrow$_store(b, v);
@@ -340,28 +589,92 @@ builder $Escrow$_store(builder build_0, (slice, slice, slice, int, int, int, int
 ;; Contract Escrow functions
 ;;
 
-(slice, slice, slice, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, slice $arbiter, int $deadline) impure inline {
-    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = (null(), null(), null(), null(), null(), null(), null());
+(slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $Escrow$_contract_init(slice $depositor, slice $beneficiary, int $deadline, int $minArbiters, int $minStake, slice $reputationContract, int $requireRepCollateral, int $minRepScore, int $baseSellerStake) impure inline {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = (null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null());
     $self'depositor = $depositor;
     $self'beneficiary = $beneficiary;
-    $self'arbiter = $arbiter;
-    $self'amount = 0;
+    $self'reputationContract = $reputationContract;
     $self'deadline = $deadline;
+    $self'minArbiters = $minArbiters;
+    $self'minStake = $minStake;
+    $self'amount = 0;
     $self'released = false;
     $self'refunded = false;
-    return ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded);
+    $self'deliveryConfirmed = false;
+    $self'disputed = false;
+    $self'votingDeadline = 0;
+    $self'arbiterCount = 0;
+    $self'votesRelease = 0;
+    $self'votesRefund = 0;
+    $self'sellerStake = 0;
+    $self'sellerStaked = false;
+    $self'requireSellerStake = $requireRepCollateral;
+    $self'baseSellerStake = $baseSellerStake;
+    $self'requireRepCollateral = $requireRepCollateral;
+    $self'minRepScore = $minRepScore;
+    return ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore);
 }
 
-((slice, slice, slice, int, int, int, int), (slice, slice, slice, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int) $self) impure inline_ref {
-    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
-    var $fresh$ret_0 = $EscrowData$_constructor_depositor_beneficiary_arbiter_amount_deadline_released_refunded($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded);
-    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), $fresh$ret_0);
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), ()) $Escrow$_fun_notifySettlement((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
+    if ($self'disputed) {
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'reputationContract, 20000000, 2, true, $NotifyDisputeSettled$_store_cell($NotifyDisputeSettled$_constructor_escrowAddress_released_refunded($global_myAddress(), $self'released, $self'refunded), begin_cell())));
+    }
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), ());
 }
 
-((slice, slice, slice, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int) $self) impure inline_ref {
-    var (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)) = $self;
-    var $fresh$ret_1 = $global_myBalance();
-    return (($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded), $fresh$ret_1);
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_getTotalLoserStakes((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
+    int $total = 0;
+    int $i = 0;
+    while (($i < $self'arbiterCount)) {
+        int $v = __tact_dict_get_int_int($self'votes, 257, $i, 1);
+        if ((~ null?($v))) {
+            int $won = ( (( ((__tact_not_null($v) == true)) ? ($self'released) : (false) )) ? (true) : (( ((__tact_not_null($v) == false)) ? ($self'refunded) : (false) )) );
+            ifnot ($won) {
+                int $s = __tact_dict_get_int_int($self'stakes, 257, $i, 257);
+                if (( ((~ null?($s))) ? ((__tact_not_null($s) > 0)) : (false) )) {
+                    $total = ($total + __tact_not_null($s));
+                }
+            }
+        }
+        $i = ($i + 1);
+    }
+    var $fresh$ret_0 = $total;
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), $fresh$ret_0);
+}
+
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_getWinnerCount((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
+    int $count = 0;
+    int $i = 0;
+    while (($i < $self'arbiterCount)) {
+        int $v = __tact_dict_get_int_int($self'votes, 257, $i, 1);
+        if ((~ null?($v))) {
+            int $won = ( (( ((__tact_not_null($v) == true)) ? ($self'released) : (false) )) ? (true) : (( ((__tact_not_null($v) == false)) ? ($self'refunded) : (false) )) );
+            if ($won) {
+                int $s = __tact_dict_get_int_int($self'stakes, 257, $i, 257);
+                if (( ((~ null?($s))) ? ((__tact_not_null($s) > 0)) : (false) )) {
+                    $count = ($count + 1);
+                }
+            }
+        }
+        $i = ($i + 1);
+    }
+    var $fresh$ret_1 = $count;
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), $fresh$ret_1);
+}
+
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)) $Escrow$_fun_escrowData((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
+    var $fresh$ret_2 = $EscrowData$_constructor_depositor_beneficiary_reputationContract_amount_deadline_released_refunded_deliveryConfirmed_disputed_votingDeadline_arbiterCount_votesRelease_votesRefund_minArbiters_minStake_sellerStake_sellerStaked_requireSellerStake_baseSellerStake_requireRepCollateral_minRepScore_autoReleaseAvailable_refundAvailable($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'minArbiters, $self'minStake, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore, ( (( (( (( (($global_now() >= $self'deadline)) ? ($self'deliveryConfirmed) : (false) )) ? ((~ $self'released)) : (false) )) ? ((~ $self'refunded)) : (false) )) ? ((~ $self'disputed)) : (false) ), ( (( (( (( (($global_now() >= $self'deadline)) ? ((~ $self'deliveryConfirmed)) : (false) )) ? ((~ $self'released)) : (false) )) ? ((~ $self'refunded)) : (false) )) ? ((~ $self'disputed)) : (false) ));
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), $fresh$ret_2);
+}
+
+((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int), int) $Escrow$_fun_balance((slice, slice, slice, int, int, int, int, int, int, int, int, int, cell, cell, cell, cell, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)) = $self;
+    var $fresh$ret_3 = $global_myBalance();
+    return (($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore), $fresh$ret_3);
 }
 
 ;;
@@ -400,52 +713,243 @@ _ %balance() method_id(104128) {
     __tact_context_sender = msg_sender_addr;
     
     ;; Load contract data
-    var ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded) = $Escrow$_contract_load();
+    var ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore) = $Escrow$_contract_load();
     
     ;; Handle bounced messages
     if (msg_bounced) { return (); }
     var op = in_msg~load_opcode_internal();
+    ;; Receive SellerStake message
+    if (op == 4053763055) {
+        var $msg = empty_tuple();
+        throw_unless(23632, ( equal_slices_bits(__tact_context_get_sender(), $self'beneficiary) ));
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(1933, $self'requireSellerStake);
+        throw_unless(59472, (~ $self'sellerStaked));
+        throw_unless(50968, ($Context$_get_value(__tact_context_get()) > 0));
+        $self'sellerStake = $Context$_get_value(__tact_context_get());
+        $self'sellerStaked = true;
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
     ;; Receive Deposit message
     if (op == 4171902866) {
         var $msg'queryId = in_msg~load_uint(64);
-        throw_unless(9342, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        if ($self'requireSellerStake) {
+            throw_unless(62001, $self'sellerStaked);
+        }
         $self'amount = ($self'amount + $Context$_get_value(__tact_context_get()));
-        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive DeliveryConfirmed message
+    if (op == 3537337858) {
+        var $msg'x402TxHash = in_msg~load_ref().begin_parse();
+        throw_unless(38875, ( equal_slices_bits(__tact_context_get_sender(), $self'depositor) ));
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        $self'deliveryConfirmed = true;
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
         return ();
     }
     
     ;; Receive Release message
     if (op == 408342921) {
         var $msg'queryId = in_msg~load_uint(64);
-        slice $sender = __tact_context_get_sender();
-        throw_unless(42435, ( (( equal_slices_bits($sender, $self'depositor) )) ? (true) : (( equal_slices_bits($sender, $self'arbiter) )) ));
         throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(25639, (~ $self'disputed));
+        throw_unless(44917, ( equal_slices_bits(__tact_context_get_sender(), $self'depositor) ));
         throw_unless(41415, ($self'amount > 0));
         $self'released = true;
         $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, 0, 130, false, __gen_cell_cell_e6a7464da59571d2c092207880f5d3dc58d214dd4491f7a2b674196180e4e240()));
-        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
         return ();
     }
     
     ;; Receive Refund message
     if (op == 2214270485) {
         var $msg'queryId = in_msg~load_uint(64);
-        slice $sender = __tact_context_get_sender();
-        int $pastDeadline = ($global_now() > $self'deadline);
-        throw_unless(9753, ( (( (( equal_slices_bits($sender, $self'depositor) )) ? (true) : (( equal_slices_bits($sender, $self'arbiter) )) )) ? (true) : ($pastDeadline) ));
         throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(25639, (~ $self'disputed));
         throw_unless(41415, ($self'amount > 0));
+        if (($global_now() < $self'deadline)) {
+            throw_unless(63309, ( equal_slices_bits(__tact_context_get_sender(), $self'depositor) ));
+        } elseifnot ($self'deliveryConfirmed) {
+        } else {
+            throw_unless(10757, false);
+        }
         $self'refunded = true;
         $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, 0, 130, false, __gen_cell_cell_36c3caefdd339fd591ec9f002819ed9eaea23b55a0e6dc1dc4e282f053a85a3b()));
-        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive AutoRelease message
+    if (op == 1179475699) {
+        var $msg = empty_tuple();
+        throw_unless(48201, ($global_now() >= $self'deadline));
+        throw_unless(52264, $self'deliveryConfirmed);
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(1185, (~ $self'disputed));
+        throw_unless(41415, ($self'amount > 0));
+        $self'released = true;
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, 0, 130, false, __gen_cell_cell_e50f01349d6d86c495d3269b86245e6946f0f4cdb8182b9e17a642e420146ac4()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive OpenDispute message
+    if (op == 2663435750) {
+        var $msg = empty_tuple();
+        throw_unless(57996, ( (( equal_slices_bits(__tact_context_get_sender(), $self'depositor) )) ? (true) : (( equal_slices_bits(__tact_context_get_sender(), $self'beneficiary) )) ));
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(44631, (~ $self'disputed));
+        $self'disputed = true;
+        $self'votingDeadline = ($global_now() + 259200);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'reputationContract, 30000000, 2, true, $NotifyDisputeOpened$_store_cell($NotifyDisputeOpened$_constructor_escrowAddress_depositor_beneficiary_amount_votingDeadline($global_myAddress(), $self'depositor, $self'beneficiary, $self'amount, $self'votingDeadline), begin_cell())));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_a58f037e148abbac8dae46a8c2729f71eb568d8a684073f3df0db5d776ce4e8c()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive JoinDispute message
+    if (op == 3263842436) {
+        var $msg = empty_tuple();
+        throw_unless(22362, $self'disputed);
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(15501, ($global_now() < $self'votingDeadline));
+        throw_unless(3977, ($self'arbiterCount < 100));
+        throw_unless(15591, ( ~ equal_slices_bits(__tact_context_get_sender(), $self'depositor) ));
+        throw_unless(37120, ( ~ equal_slices_bits(__tact_context_get_sender(), $self'beneficiary) ));
+        int $existing = __tact_dict_get_slice_int($self'arbiterIndex, 267, __tact_context_get_sender(), 257);
+        throw_unless(25931, null?($existing));
+        int $actualStake = $Context$_get_value(__tact_context_get());
+        throw_unless(9959, ($actualStake >= $self'minStake));
+        int $idx = $self'arbiterCount;
+        $self'arbiters~__tact_dict_set_int_slice(257, $idx, __tact_context_get_sender());
+        $self'arbiterIndex~__tact_dict_set_slice_int(267, __tact_context_get_sender(), $idx, 257);
+        $self'stakes~__tact_dict_set_int_int(257, $idx, $actualStake, 257);
+        $self'voted~__tact_dict_set_int_int(257, $idx, false, 1);
+        $self'arbiterCount = ($idx + 1);
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive VoteRelease message
+    if (op == 44752475) {
+        var $msg = empty_tuple();
+        throw_unless(22362, $self'disputed);
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(21498, ($self'arbiterCount >= $self'minArbiters));
+        int $idx = __tact_dict_get_slice_int($self'arbiterIndex, 267, __tact_context_get_sender(), 257);
+        throw_unless(18953, (~ null?($idx)));
+        int $idxVal = __tact_not_null($idx);
+        int $hasVoted = __tact_dict_get_int_int($self'voted, 257, $idxVal, 1);
+        throw_unless(9603, (~ null?($hasVoted)));
+        throw_unless(59369, (__tact_not_null($hasVoted) == false));
+        $self'voted~__tact_dict_set_int_int(257, $idxVal, true, 1);
+        $self'votes~__tact_dict_set_int_int(257, $idxVal, true, 1);
+        $self'votesRelease = ($self'votesRelease + 1);
+        int $majority = (($self'arbiterCount / 2) + 1);
+        if (($self'votesRelease >= $majority)) {
+            $self'released = true;
+            ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_notifySettlement();
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, 0, 130, false, __gen_cell_cell_54f355eeb99a14bd35575348c2a1ef826f8987068b9807fb5b91cec43873e40d()));
+        } else {
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_ee755742dda71c42924f2e18d38e52eb004e37d284513fa0008e72893e790669()));
+        }
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive VoteRefund message
+    if (op == 1287417331) {
+        var $msg = empty_tuple();
+        throw_unless(22362, $self'disputed);
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(21498, ($self'arbiterCount >= $self'minArbiters));
+        int $idx = __tact_dict_get_slice_int($self'arbiterIndex, 267, __tact_context_get_sender(), 257);
+        throw_unless(18953, (~ null?($idx)));
+        int $idxVal = __tact_not_null($idx);
+        int $hasVoted = __tact_dict_get_int_int($self'voted, 257, $idxVal, 1);
+        throw_unless(9603, (~ null?($hasVoted)));
+        throw_unless(59369, (__tact_not_null($hasVoted) == false));
+        $self'voted~__tact_dict_set_int_int(257, $idxVal, true, 1);
+        $self'votes~__tact_dict_set_int_int(257, $idxVal, false, 1);
+        $self'votesRefund = ($self'votesRefund + 1);
+        int $majority = (($self'arbiterCount / 2) + 1);
+        if (($self'votesRefund >= $majority)) {
+            $self'refunded = true;
+            ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_notifySettlement();
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, 0, 130, false, __gen_cell_cell_3588895c7c2320bdb2ddb880f04cfaf30c9287de16830d9a5f2847c095e7b114()));
+        } else {
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 66, false, __gen_cell_cell_6fb2ae70e747dfdd2db5224b0fa74ea841c988281dc8f4ee3af95dfd4c8d34bd()));
+        }
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive ClaimReward message
+    if (op == 2151883269) {
+        var $msg = empty_tuple();
+        throw_unless(26711, ( ($self'released) ? (true) : ($self'refunded) ));
+        int $idx = __tact_dict_get_slice_int($self'arbiterIndex, 267, __tact_context_get_sender(), 257);
+        throw_unless(18953, (~ null?($idx)));
+        int $idxVal = __tact_not_null($idx);
+        int $myStake = __tact_dict_get_int_int($self'stakes, 257, $idxVal, 257);
+        throw_unless(9603, (~ null?($myStake)));
+        throw_unless(40307, (__tact_not_null($myStake) > 0));
+        int $hasVoted = __tact_dict_get_int_int($self'voted, 257, $idxVal, 1);
+        throw_unless(29889, ( ((~ null?($hasVoted))) ? ((__tact_not_null($hasVoted) == true)) : (false) ));
+        int $myVote = __tact_not_null(__tact_dict_get_int_int($self'votes, 257, $idxVal, 1));
+        int $wonVote = ( (( (($myVote == true)) ? ($self'released) : (false) )) ? (true) : (( (($myVote == false)) ? ($self'refunded) : (false) )) );
+        $self'stakes~__tact_dict_set_int_int(257, $idxVal, 0, 257);
+        if ($wonVote) {
+            int $loserTotal = ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_getTotalLoserStakes();
+            int $winnerCount = ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_getWinnerCount();
+            int $bonus = 0;
+            if (($winnerCount > 0)) {
+                $bonus = ($loserTotal / $winnerCount);
+            }
+            int $payout = (__tact_not_null($myStake) + $bonus);
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), $payout, 2, false, __gen_cell_cell_5f45082884cb219f4f497b9df86324cf18d409daeacda3099b4ffeb4f3a04140()));
+        }
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
+        return ();
+    }
+    
+    ;; Receive FallbackSettle message
+    if (op == 3702460484) {
+        var $msg = empty_tuple();
+        throw_unless(22362, $self'disputed);
+        throw_unless(5721, ( ((~ $self'released)) ? ((~ $self'refunded)) : (false) ));
+        throw_unless(55595, ($global_now() >= $self'votingDeadline));
+        if (( (($self'arbiterCount < $self'minArbiters)) ? (true) : (($self'votesRelease == $self'votesRefund)) )) {
+            if ($self'deliveryConfirmed) {
+                $self'released = true;
+            } else {
+                $self'refunded = true;
+            }
+        } elseif (($self'votesRelease > $self'votesRefund)) {
+            $self'released = true;
+        } else {
+            $self'refunded = true;
+        }
+        ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_notifySettlement();
+        if ($self'released) {
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'beneficiary, 0, 130, false, __gen_cell_cell_87dfa7b6621fbd51b579c40b4bc4c65adc87d0da9954a376ef494608b668640a()));
+        } else {
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'depositor, 0, 130, false, __gen_cell_cell_6fe34fcc28c2bcc9ba48134815c766e53e4513d17a7d74295f898e84b598f31e()));
+        }
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
         return ();
     }
     
     ;; Receive Deploy message
     if (op == 0x946a98b6) {
         var $deploy'queryId = in_msg~load_uint(64);
-        ($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded)~$Escrow$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId), begin_cell()));
-        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'arbiter, $self'amount, $self'deadline, $self'released, $self'refunded));
+        ($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore)~$Escrow$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId), begin_cell()));
+        $Escrow$_contract_store(($self'depositor, $self'beneficiary, $self'reputationContract, $self'amount, $self'deadline, $self'released, $self'refunded, $self'deliveryConfirmed, $self'disputed, $self'votingDeadline, $self'minArbiters, $self'minStake, $self'arbiters, $self'arbiterIndex, $self'stakes, $self'voted, $self'votes, $self'arbiterCount, $self'votesRelease, $self'votesRefund, $self'sellerStake, $self'sellerStaked, $self'requireSellerStake, $self'baseSellerStake, $self'requireRepCollateral, $self'minRepScore));
         return ();
     }
     

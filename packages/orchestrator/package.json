@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/orchestrator",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Multi-agent orchestration for TON — N agents collaborate on complex goals with parallel execution, dependency resolution, and fault tolerance",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -14,8 +14,21 @@
   "dependencies": {
     "openai": ">=4.0.0"
   },
-  "keywords": ["ton", "blockchain", "ai", "agent", "orchestrator", "swarm", "multi-agent"],
+  "keywords": [
+    "ton",
+    "blockchain",
+    "ai",
+    "agent",
+    "orchestrator",
+    "swarm",
+    "multi-agent"
+  ],
   "license": "MIT",
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/Andy00L/ton-agent-kit.git" }
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Andy00L/ton-agent-kit.git"
+  }
 }

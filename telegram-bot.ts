@@ -7,10 +7,13 @@ import { KeypairWallet } from "./packages/core/src/wallet";
 import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
 import DefiPlugin from "./packages/plugin-defi/src/index";
 import DnsPlugin from "./packages/plugin-dns/src/index";
+import NftPlugin from "./packages/plugin-nft/src/index";
 import EscrowPlugin from "./packages/plugin-escrow/src/index";
 import IdentityPlugin from "./packages/plugin-identity/src/index";
 import StakingPlugin from "./packages/plugin-staking/src/index";
 import TokenPlugin from "./packages/plugin-token/src/index";
+import PaymentsPlugin from "./packages/plugin-payments/src/index";
+import AgentCommPlugin from "./packages/plugin-agent-comm/src/index";
 
 // ============================================================
 // Config
@@ -96,10 +99,13 @@ async function main() {
     .use(TokenPlugin)
     .use(DefiPlugin)
     .use(DnsPlugin)
+    .use(NftPlugin)
     .use(StakingPlugin)
     .use(EscrowPlugin)
     .use(IdentityPlugin)
-    .use(AnalyticsPlugin);
+    .use(AnalyticsPlugin)
+    .use(PaymentsPlugin)
+    .use(AgentCommPlugin);
 
   const openai = new OpenAI({
     apiKey: OPENAI_KEY,
@@ -125,35 +131,49 @@ async function main() {
       ? "https://tonviewer.com"
       : "https://testnet.tonviewer.com";
 
-  const SYSTEM_PROMPT = `You are TON Agent Kit Bot — an AI agent connected to the TON blockchain via Telegram.
+  const SYSTEM_PROMPT = `You are TON Agent Kit Bot. An AI agent on the TON blockchain, running inside Telegram.
 
 Wallet: ${friendlyAddr}
 Network: ${NETWORK}
-Actions: ${agent
-    .getAvailableActions()
-    .map((a: any) => a.name)
-    .join(", ")}
+Actions: ${agent.actionCount}
+
+You have ${agent.actionCount} blockchain actions in 12 plugins:
+
+WALLET & TOKENS: get_balance, get_jetton_balance, transfer_ton, transfer_jetton, deploy_jetton, get_jetton_info, simulate_transaction
+Use these for balance checks, sending TON/tokens, deploying new tokens, simulating transfers.
+
+DEFI: swap_dedust, swap_stonfi, swap_best_price, get_price, create_dca_order, create_limit_order, cancel_order, get_yield_pools, yield_deposit, yield_withdraw, get_staking_pools, get_token_trust
+swap_best_price compares DeDust and STON.fi and picks the better rate.
+
+DNS: resolve_domain, lookup_address, get_domain_info
+
+NFT: get_nft_info, get_nft_collection, transfer_nft
+
+STAKING: stake_ton, unstake_ton, get_staking_info
+
+ESCROW & DISPUTES: create_escrow, deposit_to_escrow, release_escrow, refund_escrow, get_escrow_info, confirm_delivery, auto_release_escrow, open_dispute, join_dispute, vote_release, vote_refund, claim_reward, fallback_settle, seller_stake_escrow
+Each escrow deploys its own smart contract. Disputes use multi-arbiter voting.
+
+AGENT NETWORK: register_agent, discover_agent, get_agent_reputation, deploy_reputation_contract, withdraw_reputation_fees, process_pending_ratings, get_open_disputes, trigger_cleanup, get_agent_cleanup_info
+
+AGENT COMMUNICATION: broadcast_intent, discover_intents, send_offer, get_offers, accept_offer, settle_deal, cancel_intent
+Intents = "I need service X, budget Y." Offers = "I can do it for Z." Settlement releases payment with rating.
+
+ANALYTICS: get_transaction_history, get_wallet_info, get_portfolio_metrics, get_equity_curve, wait_for_transaction, subscribe_webhook, call_contract_method, get_accounts_bulk
+get_portfolio_metrics returns PnL, ROI, win rate, drawdown. get_accounts_bulk queries multiple wallets in one call.
+
+PAYMENTS: pay_for_resource, get_delivery_proof
 
 RULES:
-1. Execute actions IMMEDIATELY when asked. Never ask "are you sure?" — the system handles approval buttons automatically.
-2. Format responses for Telegram HTML:
-   - Use <b>bold</b> for labels and important values
-   - Use <code>address</code> for addresses and hashes
-   - Use line breaks for readability
-   - Keep responses concise — no walls of text
-3. Format TON amounts to 4 decimal places
-4. When showing addresses, prefer the user-friendly format (EQ... or UQ...) and truncate: first 8 + last 6 chars
-5. After a transfer, always mention the explorer link
-6. For balance checks, show the amount prominently
-7. For escrow operations, clearly show the escrow ID and status
-8. For errors, explain what went wrong in plain language
-
-FORMATTING EXAMPLES:
-- Balance: "💰 <b>Balance:</b> 2.3456 TON"
-- Transfer: "✅ <b>Sent 1.0000 TON</b> to <code>0QClVW...07VR9</code>"
-- Price: "📊 <b>USDT:</b> $1.00 (0.7670 TON)"
-- Domain: "🌐 <b>foundation.ton</b> → <code>0:5541...9a57</code>"
-- Escrow: "🔒 <b>Escrow created</b>\nID: <code>escrow_abc123</code>\nAmount: 0.05 TON"`;
+1. Execute actions IMMEDIATELY. Never ask "are you sure?" The system handles approval buttons.
+2. Format for Telegram HTML: <b>bold</b> for labels, <code>mono</code> for addresses/hashes.
+3. Format TON amounts to 4 decimal places.
+4. Truncate addresses: first 8 + last 6 chars.
+5. After transfers, show explorer link.
+6. For intents/offers, show service, budget, deadline clearly.
+7. For disputes, show escrow ID, status, voting progress.
+8. For portfolio, show PnL, ROI, win rate cleanly.
+9. Keep responses concise.`;
 
   // ── Onboarding: /start ──
   bot.command("start", async (ctx) => {
@@ -173,15 +193,18 @@ FORMATTING EXAMPLES:
         `\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `\n` +
-        `⚡ <b>Quick start</b> — try these:\n` +
+        `${agent.actionCount} actions across 12 plugins.\n` +
+        `Ask me anything in natural language.\n` +
         `\n` +
         `💰 <i>"What's my balance?"</i>\n` +
-        `📤 <i>"Send 0.01 TON to 0QBQ-vTF..."</i>\n` +
+        `📤 <i>"Send 0.01 TON to 0QBQ..."</i>\n` +
+        `📊 <i>"USDT price?"</i>\n` +
         `🌐 <i>"Resolve foundation.ton"</i>\n` +
-        `📊 <i>"What's the price of USDT?"</i>\n` +
-        `📜 <i>"Show my last 3 transactions"</i>\n` +
-        `🔒 <i>"Create escrow for 0.05 TON to 0QBQ..."</i>\n` +
-        `🪪 <i>"Register agent trading-bot"</i>\n` +
+        `📈 <i>"My portfolio metrics"</i>\n` +
+        `🤝 <i>"Broadcast intent for price_feed"</i>\n` +
+        `💹 <i>"Swap 5 TON to USDT best price"</i>\n` +
+        `⚖️ <i>"Any open disputes?"</i>\n` +
+        `🔬 <i>"Simulate sending 10 TON to 0QBQ..."</i>\n` +
         `\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `\n` +
@@ -197,43 +220,105 @@ FORMATTING EXAMPLES:
   // ── Help command ──
   bot.command("help", async (ctx) => {
     await ctx.reply(
-      `<b>📖 Commands</b>\n` +
+      `<b>📖 TON Agent Kit</b>. ${agent.actionCount} actions.\n` +
         `\n` +
-        `<b>💰 Wallet</b>\n` +
-        `• Check balance\n` +
-        `• Send TON to any address\n` +
-        `• View transaction history\n` +
-        `• Get wallet info\n` +
+        `━━━ <b>💰 Wallet</b> ━━━━━━━━━━\n` +
+        `Balance, transfers, jettons, deploy tokens, simulate TX\n` +
         `\n` +
-        `<b>📈 DeFi</b>\n` +
-        `• Get token prices (USDT, etc.)\n` +
-        `• Swap tokens on DeDust/STON.fi\n` +
+        `━━━ <b>📈 DeFi</b> ━━━━━━━━━━━━\n` +
+        `Prices, swaps (DeDust + STON.fi), best-price router, DCA, limit orders, yield, staking pools\n` +
         `\n` +
-        `<b>🌐 DNS</b>\n` +
-        `• Resolve .ton domains\n` +
-        `• Reverse lookup addresses\n` +
+        `━━━ <b>🌐 DNS</b> ━━━━━━━━━━━━━\n` +
+        `Resolve .ton domains, reverse lookup\n` +
         `\n` +
-        `<b>🔒 Escrow</b>\n` +
-        `• Create trustless escrow deals\n` +
-        `• Deposit, release, or refund\n` +
-        `• List all active escrows\n` +
+        `━━━ <b>🖼️ NFT</b> ━━━━━━━━━━━━━\n` +
+        `NFT info, collections, transfer\n` +
         `\n` +
-        `<b>🪪 Identity</b>\n` +
-        `• Register as an AI agent\n` +
-        `• Discover other agents\n` +
-        `• Check agent reputation\n` +
+        `━━━ <b>🔒 Escrow</b> ━━━━━━━━━━\n` +
+        `Create deals, deposit, release, refund, disputes, arbitration, seller stake\n` +
         `\n` +
-        `<b>💎 Staking</b>\n` +
-        `• View staking positions\n` +
-        `• Stake/unstake TON\n` +
+        `━━━ <b>🤝 Agent Network</b> ━━━━\n` +
+        `Register agents, discover by capability, reputation, intents, offers, deals\n` +
         `\n` +
-        `<b>⚙️ Settings</b>\n` +
-        `<b>TX auto</b> — skip approval buttons\n` +
-        `<b>TX confirm</b> — require approval\n` +
+        `━━━ <b>📊 Analytics</b> ━━━━━━━━\n` +
+        `Portfolio metrics, equity curve, TX history, bulk queries, contract calls\n` +
         `\n` +
-        `<i>Just type what you want in natural language!</i>`,
+        `━━━ <b>💎 Staking</b> ━━━━━━━━━━\n` +
+        `Stake, unstake, view positions\n` +
+        `\n` +
+        `━━━ <b>⚙️ Settings</b> ━━━━━━━━━\n` +
+        `<b>TX auto</b> . skip approval\n` +
+        `<b>TX confirm</b> . require approval\n` +
+        `\n` +
+        `━━━ <b>📋 Commands</b> ━━━━━━━━━\n` +
+        `/wallet . balance + address\n` +
+        `/agents . registered agents\n` +
+        `/intents . open intents\n` +
+        `/portfolio . 7-day portfolio\n` +
+        `\n` +
+        `<i>Or just type what you need.</i>`,
       { parse_mode: "HTML" },
     );
+  });
+
+  // ── /agents command ──
+  bot.command("agents", async (ctx) => {
+    try {
+      const result = (await agent.runAction("discover_agent", {})) as any;
+      const agents = result?.agents || [];
+      if (agents.length === 0) {
+        await safeReply(ctx, `🤝 No agents registered yet.`);
+        return;
+      }
+      let msg = `<b>🤝 Registered Agents</b> (${agents.length})\n\n`;
+      for (const a of agents.slice(0, 10)) {
+        const caps = (a.capabilities || []).join(", ");
+        msg += `<b>${escapeHtml(a.name || "unknown")}</b>\n`;
+        msg += `Capabilities: ${escapeHtml(caps || "none")}\n`;
+        msg += `Reputation: ${a.reputation?.score || 0}/100\n\n`;
+      }
+      await safeReply(ctx, msg);
+    } catch (err: any) {
+      await safeReply(ctx, `⚠️ ${escapeHtml(err.message.slice(0, 200))}`);
+    }
+  });
+
+  // ── /intents command ──
+  bot.command("intents", async (ctx) => {
+    try {
+      const result = (await agent.runAction("discover_intents", {})) as any;
+      const intents = result?.intents || [];
+      if (intents.length === 0) {
+        await safeReply(ctx, `📡 No open intents right now.`);
+        return;
+      }
+      let msg = `<b>📡 Open Intents</b> (${intents.length})\n\n`;
+      for (const i of intents.slice(0, 10)) {
+        msg += `#${i.intentIndex} <b>${escapeHtml(i.serviceHash?.slice(0, 10) || "?")}</b>\n`;
+        msg += `Budget: ${i.budget || "?"}\nDeadline: ${i.deadline || "?"}\n\n`;
+      }
+      await safeReply(ctx, msg);
+    } catch (err: any) {
+      await safeReply(ctx, `⚠️ ${escapeHtml(err.message.slice(0, 200))}`);
+    }
+  });
+
+  // ── /portfolio command ──
+  bot.command("portfolio", async (ctx) => {
+    try {
+      const r = (await agent.runAction("get_portfolio_metrics", { days: 7 })) as any;
+      await safeReply(ctx,
+        `<b>📊 Portfolio (7 days)</b>\n\n` +
+        `PnL: <b>${r.netPnL || "0"} TON</b>\n` +
+        `ROI: <b>${r.roi || "0"}%</b>\n` +
+        `Win Rate: <b>${r.winRate || "0"}%</b>\n` +
+        `Max Drawdown: <b>${r.maxDrawdown || "0"} TON</b>\n` +
+        `Transactions: ${r.totalTransactions || 0}\n` +
+        `Balance: <b>${r.currentBalance || "?"} TON</b>`
+      );
+    } catch (err: any) {
+      await safeReply(ctx, `⚠️ ${escapeHtml(err.message.slice(0, 200))}`);
+    }
   });
 
   // ── Wallet command (quick balance check) ──
@@ -303,16 +388,24 @@ FORMATTING EXAMPLES:
 
     let message = `🔔 <b>Approval required</b>\n\n`;
     if (action === "transfer_ton") {
-      message += `📤 Send <b>${formatTon(params.amount)} TON</b>\n`;
-      message += `📍 To: <code>${escapeHtml(params.to)}</code>`;
-      if (params.comment)
-        message += `\n💬 Comment: ${escapeHtml(params.comment)}`;
+      message += `📤 <b>Transfer</b>\nSend: <b>${formatTon(params.amount)} TON</b>\nTo: <code>${escapeHtml(params.to || "")}</code>`;
+      if (params.comment) message += `\nComment: ${escapeHtml(params.comment)}`;
     } else if (action === "create_escrow") {
-      message += `🔒 Create escrow: <b>${formatTon(params.amount)} TON</b>\n`;
-      message += `📍 Beneficiary: <code>${escapeHtml(params.beneficiary)}</code>`;
+      message += `🔒 <b>Create Escrow</b>\nAmount: <b>${formatTon(params.amount)} TON</b>\nBeneficiary: <code>${escapeHtml(params.beneficiary || "")}</code>`;
+    } else if (action.startsWith("swap_")) {
+      message += `🔄 <b>Swap</b>\nFrom: ${escapeHtml(params.fromToken || "TON")}\nAmount: ${escapeHtml(params.amount || "?")}\nTo: ${escapeHtml(params.toToken || "?")}`;
+    } else if (action === "broadcast_intent") {
+      message += `📡 <b>Broadcast Intent</b>\nService: ${escapeHtml(params.service || "?")}\nBudget: ${escapeHtml(params.budget || "?")} TON`;
+    } else if (action === "open_dispute") {
+      message += `⚖️ <b>Open Dispute</b>\nEscrow: <code>${escapeHtml(params.escrowId || "?")}</code>`;
+    } else if (action === "accept_offer") {
+      message += `🤝 <b>Accept Offer</b>\nOffer #${params.offerIndex || "?"}`;
+    } else if (action === "deposit_to_escrow") {
+      message += `🔒 <b>Deposit to Escrow</b>\nEscrow: <code>${escapeHtml(params.escrowId || "?")}</code>\nAmount: ${escapeHtml(params.amount || "?")} TON`;
+    } else if (action === "stake_ton" || action === "unstake_ton") {
+      message += `💎 <b>${action === "stake_ton" ? "Stake" : "Unstake"}</b>\nAmount: ${escapeHtml(params.amount || "?")} TON`;
     } else {
-      message += `⚡ Action: <code>${escapeHtml(action)}</code>\n`;
-      message += `📋 Params: <code>${escapeHtml(JSON.stringify(params).slice(0, 200))}</code>`;
+      message += `⚡ <b>${escapeHtml(action)}</b>\n<code>${escapeHtml(JSON.stringify(params).slice(0, 200))}</code>`;
     }
 
     await bot.api.sendMessage(chatId, message, {
@@ -410,9 +503,13 @@ FORMATTING EXAMPLES:
           // HITL check
           let approved = true;
           const mode = userTxMode.get(chatId) || "confirm";
-          const needsApproval =
-            (fnName === "transfer_ton" || fnName === "create_escrow") &&
-            mode === "confirm";
+          const HITL_ACTIONS = new Set([
+            "transfer_ton", "transfer_jetton", "create_escrow", "deposit_to_escrow",
+            "release_escrow", "refund_escrow", "open_dispute", "accept_offer",
+            "stake_ton", "unstake_ton", "swap_dedust", "swap_stonfi", "swap_best_price",
+            "broadcast_intent", "join_dispute", "seller_stake_escrow",
+          ]);
+          const needsApproval = HITL_ACTIONS.has(fnName) && mode === "confirm";
 
           if (needsApproval) {
             approved = await requestApproval(chatId, fnName, fnParams);
@@ -501,9 +598,12 @@ FORMATTING EXAMPLES:
   });
 
   await bot.api.setMyCommands([
-    { command: "start", description: "Welcome & quick start" },
-    { command: "help", description: "All commands & capabilities" },
-    { command: "wallet", description: "Check balance & wallet info" },
+    { command: "start", description: "Welcome and quick start" },
+    { command: "help", description: "All 68 actions and capabilities" },
+    { command: "wallet", description: "Balance and wallet info" },
+    { command: "agents", description: "Registered agents on the network" },
+    { command: "intents", description: "Open service intents" },
+    { command: "portfolio", description: "7-day portfolio metrics" },
   ]);
 
   // Start with concurrent processing (needed for HITL)

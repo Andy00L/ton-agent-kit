@@ -1,9 +1,9 @@
 # Tact compilation report
 Contract: Escrow
-BoC Size: 796 bytes
+BoC Size: 5154 bytes
 
 ## Structures (Structs and Messages)
-Total structures: 20
+Total structures: 31
 
 ### DataSize
 TL-B: `_ cells:int257 bits:int257 refs:int257 = DataSize`
@@ -77,13 +77,57 @@ Signature: `Release{queryId:uint64}`
 TL-B: `refund#83fb1615 queryId:uint64 = Refund`
 Signature: `Refund{queryId:uint64}`
 
+### DeliveryConfirmed
+TL-B: `delivery_confirmed#d2d77e02 x402TxHash:^string = DeliveryConfirmed`
+Signature: `DeliveryConfirmed{x402TxHash:^string}`
+
+### AutoRelease
+TL-B: `auto_release#464d5ef3  = AutoRelease`
+Signature: `AutoRelease{}`
+
+### OpenDispute
+TL-B: `open_dispute#9ec0cde6  = OpenDispute`
+Signature: `OpenDispute{}`
+
+### JoinDispute
+TL-B: `join_dispute#c28a4884  = JoinDispute`
+Signature: `JoinDispute{}`
+
+### VoteRelease
+TL-B: `vote_release#02aade5b  = VoteRelease`
+Signature: `VoteRelease{}`
+
+### VoteRefund
+TL-B: `vote_refund#4cbc6df3  = VoteRefund`
+Signature: `VoteRefund{}`
+
+### ClaimReward
+TL-B: `claim_reward#80432205  = ClaimReward`
+Signature: `ClaimReward{}`
+
+### FallbackSettle
+TL-B: `fallback_settle#dcaf1044  = FallbackSettle`
+Signature: `FallbackSettle{}`
+
+### SellerStake
+TL-B: `seller_stake#f19f83ef  = SellerStake`
+Signature: `SellerStake{}`
+
+### NotifyDisputeOpened
+TL-B: `notify_dispute_opened#2f7e5059 escrowAddress:address depositor:address beneficiary:address amount:coins votingDeadline:uint32 = NotifyDisputeOpened`
+Signature: `NotifyDisputeOpened{escrowAddress:address,depositor:address,beneficiary:address,amount:coins,votingDeadline:uint32}`
+
+### NotifyDisputeSettled
+TL-B: `notify_dispute_settled#bfa05986 escrowAddress:address released:bool refunded:bool = NotifyDisputeSettled`
+Signature: `NotifyDisputeSettled{escrowAddress:address,released:bool,refunded:bool}`
+
 ### EscrowData
-TL-B: `_ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = EscrowData`
-Signature: `EscrowData{depositor:address,beneficiary:address,arbiter:address,amount:coins,deadline:uint32,released:bool,refunded:bool}`
+TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 minArbiters:uint8 minStake:coins sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 autoReleaseAvailable:bool refundAvailable:bool = EscrowData`
+Signature: `EscrowData{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,minArbiters:uint8,minStake:coins,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,autoReleaseAvailable:bool,refundAvailable:bool}`
 
 ### Escrow$Data
-TL-B: `_ depositor:address beneficiary:address arbiter:address amount:coins deadline:uint32 released:bool refunded:bool = Escrow`
-Signature: `Escrow{depositor:address,beneficiary:address,arbiter:address,amount:coins,deadline:uint32,released:bool,refunded:bool}`
+TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 = Escrow`
+Signature: `Escrow{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,minArbiters:uint8,minStake:coins,arbiters:dict<int, address>,arbiterIndex:dict<address, int>,stakes:dict<int, int>,voted:dict<int, bool>,votes:dict<int, bool>,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8}`
 
 ## Get methods
 Total get methods: 2
@@ -131,11 +175,38 @@ No arguments
 * 135: Code of a contract was not found
 * 136: Invalid standard address
 * 138: Not a basechain address
+* 1185: Disputed — waiting for arbiter vote
+* 1933: Seller stake not required
+* 3977: Max arbiters reached
 * 5721: Already settled
-* 9342: Escrow already settled
-* 9753: Not authorized and deadline not passed
+* 9603: Not registered
+* 9959: Stake too low
+* 10757: Delivery confirmed — open a dispute to contest
+* 15501: Voting period ended
+* 15591: Depositor cannot be arbiter
+* 18953: Not an arbiter
+* 21498: Not enough arbiters yet
+* 22362: No active dispute
+* 23632: Only beneficiary (seller) can stake
+* 25639: Disputed — use voting
+* 25931: Already joined
+* 26711: Not settled yet
+* 29889: Did not vote
+* 37120: Beneficiary cannot be arbiter
+* 38875: Only depositor can confirm delivery
+* 40307: Already claimed or no stake
 * 41415: No funds
-* 42435: Not authorized
+* 44631: Already disputed
+* 44917: Only depositor can release
+* 48201: Deadline not reached
+* 50968: Must send TON as stake
+* 52264: Delivery not confirmed by buyer
+* 55595: Voting period not ended
+* 57996: Only depositor or beneficiary
+* 59369: Already voted
+* 59472: Already staked
+* 62001: Seller must stake first
+* 63309: Only depositor can refund before deadline
 
 ## Trait inheritance diagram
 

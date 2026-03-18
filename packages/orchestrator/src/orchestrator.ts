@@ -6,6 +6,10 @@ import { EventBus } from "./events";
 
 /**
  * Reads an env variable, falling back to parsing .env file directly.
+ *
+ * @param key - The environment variable name to look up
+ * @returns The value of the variable, or an empty string if not found
+ * @since 1.0.0
  */
 function readEnvKey(key: string): string {
   try {
@@ -37,6 +41,8 @@ function readEnvKey(key: string): string {
  * const result = await orch.swarm("Check my balance and swap 1 TON for USDT");
  * console.log(result.summary);
  * ```
+ *
+ * @since 1.0.0
  */
 export class Orchestrator {
   private agents: Map<string, AgentConfig> = new Map();
@@ -44,6 +50,15 @@ export class Orchestrator {
   private baseURL: string | undefined;
   private model: string;
 
+  /**
+   * Creates a new Orchestrator instance for coordinating multi-agent swarms.
+   *
+   * @param opts - Optional configuration for the LLM backend
+   * @param opts.apiKey - OpenAI-compatible API key (falls back to OPENAI_API_KEY env var or .env file)
+   * @param opts.baseURL - Custom base URL for the LLM API (falls back to OPENAI_BASE_URL env var)
+   * @param opts.model - LLM model identifier (falls back to AI_MODEL env var, defaults to "gpt-4o")
+   * @since 1.0.0
+   */
   constructor(opts?: { apiKey?: string; baseURL?: string; model?: string }) {
     this.apiKey =
       opts?.apiKey ||
@@ -61,6 +76,8 @@ export class Orchestrator {
    * @param role - Description of what this agent does (used by the planner LLM)
    * @param agentInstance - A TonAgentKit instance with plugins already registered
    * @returns this (chainable)
+   * @throws {Error} If the agent has no available actions
+   * @since 1.0.0
    */
   agent(name: string, role: string, agentInstance: any): this {
     const actions = agentInstance.getAvailableActions();
@@ -89,6 +106,8 @@ export class Orchestrator {
    * @param goal - Natural language description of what to accomplish
    * @param options - Execution options (timeouts, retries, callbacks, etc.)
    * @returns Aggregated swarm result with plan, results, and summary
+   * @throws {Error} If no agents have been registered
+   * @since 1.0.0
    */
   async swarm(goal: string, options?: SwarmOptions): Promise<SwarmResult> {
     if (this.agents.size === 0) {
@@ -154,6 +173,9 @@ export class Orchestrator {
 
   /**
    * Get all registered agent configurations.
+   *
+   * @returns An array of all registered {@link AgentConfig} objects
+   * @since 1.0.0
    */
   getAgents(): AgentConfig[] {
     return [...this.agents.values()];
@@ -161,7 +183,10 @@ export class Orchestrator {
 
   /**
    * Remove a registered agent by name.
+   *
+   * @param name - The unique name of the agent to remove
    * @returns this (chainable)
+   * @since 1.0.0
    */
   removeAgent(name: string): this {
     this.agents.delete(name);
@@ -170,6 +195,12 @@ export class Orchestrator {
 
   /**
    * Call LLM to generate a natural language summary of the swarm results.
+   *
+   * @param goal - The original natural language goal
+   * @param results - Array of task results to summarize
+   * @param opts - Swarm options containing LLM configuration
+   * @returns A human-readable summary string; falls back to a generic message on LLM failure
+   * @since 1.0.0
    */
   private async summarize(
     goal: string,

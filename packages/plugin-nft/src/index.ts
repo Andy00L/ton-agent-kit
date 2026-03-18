@@ -141,10 +141,32 @@ const getCollectionAction = defineAction<
 // ============================================================
 // Plugin export
 // ============================================================
+
+/**
+ * NFT Plugin -- Non-fungible token operations on TON.
+ *
+ * Provides actions for inspecting individual NFT items, transferring NFTs
+ * between wallets, and querying NFT collection metadata.
+ *
+ * Actions:
+ * - `get_nft_info` -- Get NFT metadata, owner, collection, and initialization status
+ * - `transfer_nft` -- Transfer an NFT to another wallet address
+ * - `get_nft_collection` -- Get information about an NFT collection (name, description, item count)
+ *
+ * @example
+ * ```typescript
+ * import NftPlugin from "@ton-agent-kit/plugin-nft";
+ * const agent = new TonAgentKit(wallet, rpcUrl).use(NftPlugin);
+ * const nft = await agent.runAction("get_nft_info", { nftAddress: "EQBx..." });
+ * ```
+ *
+ * @since 1.0.0
+ */
 const NftPlugin = definePlugin({
   name: "nft",
   actions: [getNftInfoAction, transferNftAction, getCollectionAction],
 });
 
+/** @since 1.0.0 */
 export default NftPlugin;
 export { getNftInfoAction, transferNftAction, getCollectionAction as getNftCollectionAction, getCollectionAction };
