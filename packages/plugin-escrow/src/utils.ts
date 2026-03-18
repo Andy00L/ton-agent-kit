@@ -78,7 +78,7 @@ export async function deployEscrowContract(
   await sendTransaction(agent, [
     internal({
       to: escrow.address,
-      value: toNano("0.05"),
+      value: toNano("0.12"),
       bounce: false,
       init: escrow.init!,
       body: deployBody,
@@ -94,28 +94,28 @@ export async function depositToContract(agent: AgentContext, contractAddress: Ad
 
 export async function releaseContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeRelease({ $$type: "Release", queryId: 0n })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function refundContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeRefund({ $$type: "Refund", queryId: 0n })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function confirmDeliveryOnContract(agent: AgentContext, contractAddress: Address, x402TxHash: string): Promise<void> {
   const body = beginCell().store(storeDeliveryConfirmed({ $$type: "DeliveryConfirmed", x402TxHash })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function autoReleaseOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeAutoRelease({ $$type: "AutoRelease" })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function openDisputeOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeOpenDispute({ $$type: "OpenDispute" })).endCell();
-  // 0.05 TON: 0.02 escrow gas + 0.03 for cross-contract notification to reputation
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.05"), bounce: true, body })]);
+  // 0.15 TON: escrow gas + cross-contract notification to reputation. Excess refunded.
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.15"), bounce: true, body })]);
 }
 
 export async function joinDisputeOnContract(agent: AgentContext, contractAddress: Address, stakeAmount: string): Promise<void> {
@@ -125,22 +125,22 @@ export async function joinDisputeOnContract(agent: AgentContext, contractAddress
 
 export async function voteReleaseOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeVoteRelease({ $$type: "VoteRelease" })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function voteRefundOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeVoteRefund({ $$type: "VoteRefund" })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function claimRewardOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeClaimReward({ $$type: "ClaimReward" })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function fallbackSettleOnContract(agent: AgentContext, contractAddress: Address): Promise<void> {
   const body = beginCell().store(storeFallbackSettle({ $$type: "FallbackSettle" })).endCell();
-  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.02"), bounce: true, body })]);
+  await sendTransaction(agent, [internal({ to: contractAddress, value: toNano("0.12"), bounce: true, body })]);
 }
 
 export async function sellerStakeOnContract(agent: AgentContext, contractAddress: Address, stakeAmount: string): Promise<void> {

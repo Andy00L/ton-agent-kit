@@ -60,16 +60,17 @@ export const broadcastIntentAction = defineAction({
       await sendTransaction(agent, [
         internal({
           to: Address.parse(contractAddr),
-          value: toNano("0.03"),
+          value: toNano("0.12"),
           bounce: true,
           body,
         }),
       ]);
 
       // Wait for on-chain confirmation then read intentCount to get the index
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 8000));
 
       let intentIndex = -1;
+      let onChainError: string | null = null;
       try {
         const countRes = await callContractGetter(
           apiBase,
@@ -81,8 +82,12 @@ export const broadcastIntentAction = defineAction({
         if (countRes?.stack?.[0]?.num) {
           const raw = countRes.stack[0].num;
           intentIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
+        } else {
+          onChainError = "Contract getter returned no data — contract may be frozen or nonexistent";
         }
-      } catch {}
+      } catch (e: any) {
+        onChainError = `Contract unreachable: ${e.message?.slice(0, 100)}`;
+      }
 
       return {
         intentIndex,
@@ -91,8 +96,9 @@ export const broadcastIntentAction = defineAction({
         budget: params.budget,
         deadline: new Date(deadlineMs).toISOString(),
         requirements: params.requirements || null,
-        status: "open",
-        onChain: true,
+        status: intentIndex >= 0 ? "open" : "failed",
+        onChain: intentIndex >= 0,
+        onChainError,
         contractAddress: contractAddr,
       };
     } catch (err: any) {

@@ -35,6 +35,13 @@ export type {
   WalletProvider,
 } from "./types";
 
+/** Gas estimation for contract calls */
+export { estimateGas, DEFAULT_GAS, CROSS_CONTRACT_GAS } from "./gas";
+
+/** Post-TX contract verification */
+export { verifyContractExecution } from "./verify";
+export type { VerifyResult } from "./verify";
+
 /** Utility functions — address formatting, unit conversion, transaction helpers */
 export {
   explorerAddressUrl,

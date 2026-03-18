@@ -25,9 +25,12 @@ struct DisputeInfo { escrowAddress: Address; depositor: Address; beneficiary: Ad
 struct AgentCleanupInfo { index: Int as uint32; exists: Bool; score: Int as uint16; totalRatings: Int as uint32; registeredAt: Int as uint32; lastActive: Int as uint32; daysSinceActive: Int as uint32; daysSinceRegistered: Int as uint32; eligibleForCleanup: Bool; cleanupReason: Int as uint8; }
 struct IntentData { buyer: Address; serviceHash: Int as uint256; budget: Int as coins; deadline: Int as uint32; status: Int as uint8; acceptedOffer: Int as uint32; isExpired: Bool; }
 struct OfferData { seller: Address; intentIndex: Int as uint32; price: Int as coins; deliveryTime: Int as uint32; status: Int as uint8; }
+struct StorageInfo { storageFund: Int as coins; totalCells: Int as uint32; annualCost: Int as coins; yearsCovered: Int as uint32; }
 
 // ── Contract ──
 contract Reputation with Deployable {
+    override const storageReserve: Int = ton("0.05");
+
     owner: Address;
     fee: Int as coins;
     agentCount: Int as uint32;
@@ -72,6 +75,10 @@ contract Reputation with Deployable {
     agentActiveIntents: map<Address, Int>;
     maxIntentsPerAgent: Int as uint8;
 
+    // Self-funding pools
+    storageFund: Int as coins;
+    accumulatedFees: Int as coins;
+
     init(owner: Address) {
         self.owner = owner;
         self.fee = ton("0.01");
@@ -82,6 +89,8 @@ contract Reputation with Deployable {
         self.offerCount = 0;
         self.intentCleanupCursor = 0;
         self.maxIntentsPerAgent = 10;
+        self.storageFund = 0;
+        self.accumulatedFees = 0;
     }
 
     // ── Register ──
@@ -107,7 +116,16 @@ contract Reputation with Deployable {
             self.agentCount = self.agentCount + 1;
         }
         self.cleanup(2);
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Agent registered".asComment() });
+        self.storageFund = self.storageFund + ton("0.015");
+        self.accumulatedFees = self.accumulatedFees + self.fee;
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: Rate) {
@@ -122,7 +140,16 @@ contract Reputation with Deployable {
         if (msg.success) { self.agentSuccesses.set(idx, self.agentSuccesses.get(idx)!! + 1); }
         self.agentLastActive.set(idx, now());
         self.cleanup(1);
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Rating recorded".asComment() });
+        self.storageFund = self.storageFund + ton("0.003");
+        self.accumulatedFees = self.accumulatedFees + self.fee;
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: UpdateAvailability) {
@@ -134,7 +161,15 @@ contract Reputation with Deployable {
         require(agentOwner != null && sender() == agentOwner!!, "Only the agent owner can update availability");
         self.agentAvailable.set(idx, msg.available);
         self.agentLastActive.set(idx, now());
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Availability updated".asComment() });
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: IndexCapability) {
@@ -148,7 +183,15 @@ contract Reputation with Deployable {
         if (existing != null) { builder = builder.storeUint(1, 1); builder = builder.storeRef(existing!!); }
         else { builder = builder.storeUint(0, 1); }
         self.capabilityIndex.set(msg.capabilityHash, builder.endCell());
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Capability indexed".asComment() });
+        self.storageFund = self.storageFund + ton("0.005");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: TriggerCleanup) {
@@ -156,7 +199,14 @@ contract Reputation with Deployable {
         if (max > 50) { max = 50; }
         if (max < 1) { max = 1; }
         self.cleanup(max);
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Cleanup completed".asComment() });
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: NotifyDisputeOpened) {
@@ -168,20 +218,66 @@ contract Reputation with Deployable {
         self.disputeDeadlines.set(idx, msg.votingDeadline);
         self.disputeSettled.set(idx, false);
         self.disputeCount = idx + 1;
+        self.storageFund = self.storageFund + ton("0.005");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: NotifyDisputeSettled) {
         let i: Int = 0;
         while (i < self.disputeCount) {
             let addr: Address? = self.openDisputes.get(i);
-            if (addr != null && addr!! == msg.escrowAddress) { self.disputeSettled.set(i, true); return; }
+            if (addr != null && addr!! == msg.escrowAddress) { self.disputeSettled.set(i, true); }
             i = i + 1;
         }
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: Withdraw) {
         require(sender() == self.owner, "Only owner can withdraw");
-        send(SendParameters{ to: self.owner, value: 0, mode: SendRemainingBalance | SendIgnoreErrors, bounce: false, body: "Fees withdrawn".asComment() });
+
+        // 20-year rule: calculate how many years storageFund covers
+        let totalCells: Int = self.agentCount * 3 + self.intentCount * 2;
+        let annualCost: Int = totalCells * 240; // nanoTON per cell per year
+
+        let withdrawableFromReserve: Int = 0;
+        if (annualCost == 0) {
+            withdrawableFromReserve = self.storageFund;
+            self.storageFund = 0;
+        } else if (annualCost > 0) {
+            let yearsCovered: Int = self.storageFund / annualCost;
+            if (yearsCovered > 20) {
+                let keep20: Int = annualCost * 20;
+                withdrawableFromReserve = self.storageFund - keep20;
+                self.storageFund = keep20;
+            }
+        }
+
+        let totalWithdraw: Int = self.accumulatedFees + withdrawableFromReserve;
+        require(totalWithdraw > ton("0.005"), "Nothing to withdraw");
+        self.accumulatedFees = 0;
+
+        send(SendParameters{
+            to: self.owner,
+            value: totalWithdraw,
+            mode: SendIgnoreErrors,
+            bounce: false,
+            body: "Fees withdrawn".asComment()
+        });
     }
 
     // ── Intent/Offer Handlers ──
@@ -216,7 +312,15 @@ contract Reputation with Deployable {
         self.addToIntentServiceIndex(msg.serviceHash, idx);
         self.cleanupOneIntent();
         self.cleanup(1);
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Intent broadcast".asComment() });
+        self.storageFund = self.storageFund + ton("0.01");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: SendOffer) {
@@ -236,7 +340,15 @@ contract Reputation with Deployable {
         self.offerDeliveryTimes.set(idx, msg.deliveryTime);
         self.offerStatuses.set(idx, 0);
         self.offerCount = idx + 1;
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Offer sent".asComment() });
+        self.storageFund = self.storageFund + ton("0.005");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: AcceptOffer) {
@@ -266,7 +378,15 @@ contract Reputation with Deployable {
             }
             i = i + 1;
         }
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Offer accepted".asComment() });
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: SettleDeal) {
@@ -276,7 +396,15 @@ contract Reputation with Deployable {
         let buyer: Address? = self.intents.get(msg.intentIndex);
         require(buyer != null && sender() == buyer!!, "Not the intent owner");
         self.intentStatuses.set(msg.intentIndex, 2);
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Deal settled".asComment() });
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: CancelIntent) {
@@ -294,7 +422,15 @@ contract Reputation with Deployable {
             if (oIdx != null && oIdx!! == msg.intentIndex && oSt != null && oSt!! == 0) { self.offerStatuses.set(i, 2); }
             i = i + 1;
         }
-        send(SendParameters{ to: sender(), value: 0, mode: SendRemainingValue | SendIgnoreErrors, bounce: false, body: "Intent cancelled".asComment() });
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     // ── Cleanup ──
@@ -483,4 +619,22 @@ contract Reputation with Deployable {
     get fun offerData(index: Int): OfferData {
         return OfferData{ seller: self.offers.get(index)!!, intentIndex: self.offerIntents.get(index)!!, price: self.offerPrices.get(index)!!, deliveryTime: self.offerDeliveryTimes.get(index)!!, status: self.offerStatuses.get(index)!! };
     }
+
+    get fun storageInfo(): StorageInfo {
+        let totalCells: Int = self.agentCount * 3 + self.intentCount * 2;
+        let annualCost: Int = totalCells * 240;
+        let yearsCovered: Int = 0;
+        if (annualCost > 0) {
+            yearsCovered = self.storageFund / annualCost;
+        }
+        return StorageInfo{
+            storageFund: self.storageFund,
+            totalCells: totalCells,
+            annualCost: annualCost,
+            yearsCovered: yearsCovered
+        };
+    }
+
+    get fun storageFundBalance(): Int { return self.storageFund; }
+    get fun accumulatedFeesBalance(): Int { return self.accumulatedFees; }
 }

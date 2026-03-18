@@ -30,7 +30,7 @@ export const cancelIntentAction = defineAction({
       await sendTransaction(agent, [
         internal({
           to: Address.parse(contractAddr),
-          value: toNano("0.02"),
+          value: toNano("0.12"),
           bounce: true,
           body,
         }),

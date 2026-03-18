@@ -234,9 +234,21 @@ await arbiter2.runAction("claim_reward", { escrowId: escrow.escrowId });
 // arbiter3 did not vote with majority, stake is forfeited
 ```
 
+## Self-Funding Model
+
+Each escrow contract accumulates a `storageFund` from operations:
+- SellerStake, Deposit, DeliveryConfirmed, JoinDispute, VoteRelease, VoteRefund: +0.003 TON
+- OpenDispute: +0.005 TON
+
+The `nativeReserve` protects all held funds: `amount + sellerStake + totalArbiterStakes + storageFund + 0.01`. Everything above this is refunded to the sender as "Excess". The contract sets `override const storageReserve: Int = ton("0.05")` to survive deployment.
+
+No 20-year rule -- escrow contracts are short-lived (one deal) and settle to 0 via Release/Refund.
+
+See [Gas System](./gas-system.md) for the full pattern.
+
 ## Limitations
 
-- Each escrow deploys a new contract (~0.05 TON deployment fee). Not economical for micro-transactions below 0.5 TON.
+- Each escrow deploys a new contract (~0.12 TON deployment fee). Not economical for micro-transactions below 0.5 TON.
 - Arbiter rewards are split equally among winners regardless of stake size.
 - Fallback settlement uses simple majority or delivery-status. No weighted voting by stake amount.
 - No on-chain delivery verification. `confirm_delivery` trusts the buyer. Disputes are the only recourse.

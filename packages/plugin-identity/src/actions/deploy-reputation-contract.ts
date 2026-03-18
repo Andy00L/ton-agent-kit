@@ -42,7 +42,7 @@ export const deployReputationContractAction = defineAction({
       await sendTransaction(agent, [
         internal({
           to: reputation.address,
-          value: toNano("0.05"),
+          value: toNano("0.12"),
           bounce: false,
           init: reputation.init!,
           body: deployBody,

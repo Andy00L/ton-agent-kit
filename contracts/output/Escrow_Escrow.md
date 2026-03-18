@@ -1,6 +1,6 @@
 # Tact compilation report
 Contract: Escrow
-BoC Size: 5154 bytes
+BoC Size: 6012 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 31
@@ -126,8 +126,8 @@ TL-B: `_ depositor:address beneficiary:address reputationContract:address amount
 Signature: `EscrowData{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,minArbiters:uint8,minStake:coins,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,autoReleaseAvailable:bool,refundAvailable:bool}`
 
 ### Escrow$Data
-TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 = Escrow`
-Signature: `Escrow{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,minArbiters:uint8,minStake:coins,arbiters:dict<int, address>,arbiterIndex:dict<address, int>,stakes:dict<int, int>,voted:dict<int, bool>,votes:dict<int, bool>,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8}`
+TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 totalArbiterStakes:coins storageFund:coins = Escrow`
+Signature: `Escrow{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,minArbiters:uint8,minStake:coins,arbiters:dict<int, address>,arbiterIndex:dict<address, int>,stakes:dict<int, int>,voted:dict<int, bool>,votes:dict<int, bool>,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,totalArbiterStakes:coins,storageFund:coins}`
 
 ## Get methods
 Total get methods: 2
