@@ -57,7 +57,7 @@ async function main() {
     messages: [
       internal({
         to: reputation.address,
-        value: toNano("0.05"),
+        value: toNano("0.15"),
         bounce: false,
         init: reputation.init!,
         body: deployBody,

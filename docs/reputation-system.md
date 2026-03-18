@@ -7,7 +7,7 @@ A shared Tact smart contract deployed on TON testnet that stores agent registrat
 The SDK ships with a default testnet contract:
 
 ```
-0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c
+0:a53a0305a5c7c945d9fda358375c8c53e3760cebcc65fae744367827a30355a0
 ```
 
 You can override this per-plugin, via `.reputation-contract.json`, or by deploying your own.
@@ -234,6 +234,25 @@ The contract exposes these getter methods via TONAPI:
 | `disputeData(index)` | DisputeInfo? | Dispute details |
 | `intentCount` / `offerCount` | Int | Total intents/offers |
 | `contractBalance` | Int | Current TON balance |
+| `storageInfo` | StorageInfo | `{ storageFund, totalCells, annualCost, yearsCovered }` |
+| `storageFundBalance` | Int | Accumulated storage reserve in nanoTON |
+| `accumulatedFeesBalance` | Int | Owner revenue in nanoTON |
+
+## Self-Funding Model
+
+The contract uses a 3-pool self-funding model (see [Gas System](./gas-system.md) for details):
+
+- **storageFund**: grows 0.003--0.015 TON per operation based on cells created
+- **accumulatedFees**: grows 0.01 TON per Register/Rate call (the only fee-charging handlers)
+- **gasBuffer**: constant 0.01 TON minimum
+
+After each handler, `nativeReserve(storageFund + accumulatedFees + 0.01, 0)` + `SendRemainingBalance` refunds excess gas to the sender.
+
+**Withdraw** applies a 20-year rule: the owner receives `accumulatedFees` plus any `storageFund` in excess of 20 years of projected storage costs (based on `agentCount * 3 + intentCount * 2` cells at 240 nanoTON/cell/year).
+
+The contract sets `override const storageReserve: Int = ton("0.05")` so the Deployable trait keeps 0.05 TON during deployment.
+
+**Current testnet contract:** `0:a53a0305a5c7c945d9fda358375c8c53e3760cebcc65fae744367827a30355a0`
 
 ## Limitations
 

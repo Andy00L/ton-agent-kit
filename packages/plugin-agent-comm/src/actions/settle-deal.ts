@@ -34,7 +34,7 @@ export const settleDealAction = defineAction({
       await sendTransaction(agent, [
         internal({
           to: Address.parse(contractAddr),
-          value: toNano("0.03"),
+          value: toNano("0.12"),
           bounce: true,
           body,
         }),

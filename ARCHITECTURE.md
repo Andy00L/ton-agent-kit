@@ -177,23 +177,26 @@ Each package is independently versioned and published with its own `package.json
 
 ### Current Versions
 
-| Package                           | Version |
-| --------------------------------- | ------- |
-| `@ton-agent-kit/core`             | 1.0.4   |
-| `@ton-agent-kit/plugin-token`     | 1.0.2   |
-| `@ton-agent-kit/plugin-defi`      | 1.1.0   |
-| `@ton-agent-kit/plugin-escrow`    | 1.0.3   |
-| `@ton-agent-kit/x402-middleware`  | 1.0.2   |
-| `@ton-agent-kit/orchestrator`     | 1.0.0   |
-| `@ton-agent-kit/plugin-dns`       | 1.0.1   |
-| `@ton-agent-kit/plugin-nft`       | 1.0.1   |
-| `@ton-agent-kit/plugin-staking`   | 1.0.1   |
-| `@ton-agent-kit/plugin-identity`  | 1.0.1   |
-| `@ton-agent-kit/plugin-analytics` | 1.0.1   |
-| `@ton-agent-kit/plugin-payments`  | 1.0.1   |
-| `@ton-agent-kit/mcp-server`       | 1.0.1   |
-| `@ton-agent-kit/langchain`        | 1.0.0   |
-| `@ton-agent-kit/ai-tools`         | 1.0.0   |
+| Package                            | Version |
+| ---------------------------------- | ------- |
+| `@ton-agent-kit/core`              | 1.2.2   |
+| `@ton-agent-kit/plugin-token`      | 1.1.1   |
+| `@ton-agent-kit/plugin-defi`       | 1.2.2   |
+| `@ton-agent-kit/plugin-dns`        | 1.0.3   |
+| `@ton-agent-kit/plugin-nft`        | 1.0.3   |
+| `@ton-agent-kit/plugin-staking`    | 1.0.3   |
+| `@ton-agent-kit/plugin-analytics`  | 1.1.1   |
+| `@ton-agent-kit/plugin-escrow`     | 1.5.0   |
+| `@ton-agent-kit/plugin-identity`   | 1.5.0   |
+| `@ton-agent-kit/plugin-payments`   | 1.0.3   |
+| `@ton-agent-kit/plugin-agent-comm` | 1.2.0   |
+| `@ton-agent-kit/plugin-memory`     | 1.0.2   |
+| `@ton-agent-kit/orchestrator`      | 1.1.1   |
+| `@ton-agent-kit/strategies`        | 1.0.1   |
+| `@ton-agent-kit/x402-middleware`   | 1.1.1   |
+| `@ton-agent-kit/mcp-server`        | 1.1.1   |
+| `@ton-agent-kit/langchain`         | 1.0.2   |
+| `@ton-agent-kit/ai-tools`          | 1.0.2   |
 
 ### Peer Dependencies
 
@@ -277,55 +280,90 @@ if (requestedAmount > currentBalance - 0.01) {
 
 ---
 
-## All 37 Actions -- Status
+## All 72 Actions -- Status
 
-| #   | Plugin    | Action                    | Method                         | Status                      |
-| --- | --------- | ------------------------- | ------------------------------ | --------------------------- |
-| 1   | Token     | `get_balance`             | TonClient4 + TONAPI fallback   | Live testnet + mainnet      |
-| 2   | Token     | `get_jetton_balance`      | TONAPI                         | Live                        |
-| 3   | Token     | `transfer_ton`            | sendTransfer + balance guard   | Live (TX confirmed)         |
-| 4   | Token     | `transfer_jetton`         | sendTransfer                   | Schema validated            |
-| 5   | Token     | `deploy_jetton`           | sendTransfer                   | Live (AgentCoin deployed)   |
-| 6   | Token     | `get_jetton_info`         | TONAPI                         | Schema validated            |
-| 7   | DeFi      | `swap_dedust`             | DeDust SDK                     | Live                        |
-| 8   | DeFi      | `swap_stonfi`             | STON.fi SDK                    | Live                        |
-| 9   | DeFi      | `get_price`               | TONAPI rates                   | Live ($1.00 USDT)           |
-| 10  | DeFi      | `create_dca_order`        | swap.coffee Strategies API     | Primitive                   |
-| 11  | DeFi      | `create_limit_order`      | swap.coffee Strategies API     | Primitive                   |
-| 12  | DeFi      | `cancel_order`            | swap.coffee Strategies API     | Primitive                   |
-| 13  | DeFi      | `get_yield_pools`         | swap.coffee Yield API          | Primitive                   |
-| 14  | DeFi      | `yield_deposit`           | swap.coffee + on-chain LP      | Primitive                   |
-| 15  | DeFi      | `yield_withdraw`          | swap.coffee + on-chain LP burn | Primitive                   |
-| 16  | DeFi      | `get_staking_pools`       | swap.coffee Staking API        | Primitive                   |
-| 17  | DeFi      | `get_token_trust`         | DYOR.io API                    | Primitive                   |
-| 18  | NFT       | `get_nft_info`            | TONAPI                         | Live                        |
-| 19  | NFT       | `get_nft_collection`      | TONAPI                         | Live ("Telegram Usernames") |
-| 20  | NFT       | `transfer_nft`            | sendTransfer                   | Schema validated            |
-| 21  | DNS       | `resolve_domain`          | TONAPI DNS                     | Live (foundation.ton)       |
-| 22  | DNS       | `lookup_address`          | TONAPI DNS                     | Live                        |
-| 23  | DNS       | `get_domain_info`         | TONAPI DNS                     | Live                        |
-| 24  | Staking   | `stake_ton`               | sendTransfer + op code         | Schema validated            |
-| 25  | Staking   | `unstake_ton`             | sendTransfer + op code         | Schema validated            |
-| 26  | Staking   | `get_staking_info`        | TONAPI staking                 | Live                        |
-| 27  | Analytics | `get_transaction_history` | TONAPI events                  | Live                        |
-| 28  | Analytics | `get_wallet_info`         | TONAPI accounts                | Live                        |
-| 29  | Escrow    | `create_escrow`           | Deploy Tact contract on-chain  | Live (on-chain)             |
-| 30  | Escrow    | `deposit_to_escrow`       | Send TON to escrow contract    | Live (on-chain)             |
-| 31  | Escrow    | `release_escrow`          | Release message to contract    | Live (on-chain)             |
-| 32  | Escrow    | `refund_escrow`           | Refund message to contract     | Live (on-chain)             |
-| 33  | Escrow    | `get_escrow_info`         | Read on-chain contract state   | Live (on-chain)             |
-| 34  | Identity  | `register_agent`          | JSON registry                  | Live                        |
-| 35  | Identity  | `discover_agent`          | Registry search                | Live                        |
-| 36  | Identity  | `get_agent_reputation`    | Registry + scoring             | Live                        |
-| 37  | Payments  | `pay_for_resource`        | HTTP + sendTransfer            | Live                        |
+| #   | Plugin     | Action                       | Method                                  | Status                      |
+| --- | ---------- | ---------------------------- | --------------------------------------- | --------------------------- |
+| 1   | Token      | `get_balance`                | TonClient4 + TONAPI fallback            | Live testnet + mainnet      |
+| 2   | Token      | `get_jetton_balance`         | TONAPI                                  | Live                        |
+| 3   | Token      | `transfer_ton`               | sendTransfer + balance guard            | Live (TX confirmed)         |
+| 4   | Token      | `transfer_jetton`            | sendTransfer                            | Schema validated            |
+| 5   | Token      | `deploy_jetton`              | sendTransfer                            | Live (AgentCoin deployed)   |
+| 6   | Token      | `get_jetton_info`            | TONAPI                                  | Schema validated            |
+| 7   | Token      | `simulate_transaction`       | Balance + fee estimation                | Live                        |
+| 8   | DeFi       | `swap_dedust`                | DeDust SDK                              | Live                        |
+| 9   | DeFi       | `swap_stonfi`                | STON.fi SDK                             | Live                        |
+| 10  | DeFi       | `get_price`                  | TONAPI rates                            | Live ($1.00 USDT)           |
+| 11  | DeFi       | `create_dca_order`           | swap.coffee Strategies API              | Primitive                   |
+| 12  | DeFi       | `create_limit_order`         | swap.coffee Strategies API              | Primitive                   |
+| 13  | DeFi       | `cancel_order`               | swap.coffee Strategies API              | Primitive                   |
+| 14  | DeFi       | `get_yield_pools`            | swap.coffee Yield API                   | Primitive                   |
+| 15  | DeFi       | `yield_deposit`              | swap.coffee + on-chain LP               | Primitive                   |
+| 16  | DeFi       | `yield_withdraw`             | swap.coffee + on-chain LP burn          | Primitive                   |
+| 17  | DeFi       | `get_staking_pools`          | swap.coffee Staking API                 | Primitive                   |
+| 18  | DeFi       | `get_token_trust`            | DYOR.io API                             | Primitive                   |
+| 19  | DeFi       | `swap_best_price`            | Omniston aggregator                     | Primitive                   |
+| 20  | NFT        | `get_nft_info`               | TONAPI                                  | Live                        |
+| 21  | NFT        | `get_nft_collection`         | TONAPI                                  | Live ("Telegram Usernames") |
+| 22  | NFT        | `transfer_nft`               | sendTransfer                            | Schema validated            |
+| 23  | DNS        | `resolve_domain`             | TONAPI DNS                              | Live (foundation.ton)       |
+| 24  | DNS        | `lookup_address`             | TONAPI DNS                              | Live                        |
+| 25  | DNS        | `get_domain_info`            | TONAPI DNS                              | Live                        |
+| 26  | Staking    | `get_staking_info`           | TONAPI staking                          | Live                        |
+| 27  | Staking    | `stake_ton`                  | sendTransfer + op code                  | Schema validated            |
+| 28  | Staking    | `unstake_ton`                | sendTransfer + op code                  | Schema validated            |
+| 29  | Analytics  | `get_transaction_history`    | TONAPI events                           | Live                        |
+| 30  | Analytics  | `get_wallet_info`            | TONAPI accounts                         | Live                        |
+| 31  | Analytics  | `get_portfolio_metrics`      | TONAPI events + computation             | Live                        |
+| 32  | Analytics  | `get_equity_curve`           | TONAPI events + computation             | Live                        |
+| 33  | Analytics  | `wait_for_transaction`       | TONAPI streaming                        | Live                        |
+| 34  | Analytics  | `subscribe_webhook`          | TONAPI webhooks                         | Schema validated            |
+| 35  | Analytics  | `call_contract_method`       | TONAPI get-method                       | Live                        |
+| 36  | Analytics  | `get_accounts_bulk`          | TONAPI bulk accounts                    | Live                        |
+| 37  | Escrow     | `create_escrow`              | Deploy Tact contract on-chain           | Live (on-chain)             |
+| 38  | Escrow     | `deposit_to_escrow`          | Send TON to escrow contract             | Live (on-chain)             |
+| 39  | Escrow     | `release_escrow`             | Release message to contract             | Live (on-chain)             |
+| 40  | Escrow     | `refund_escrow`              | Refund message to contract              | Live (on-chain)             |
+| 41  | Escrow     | `get_escrow_info`            | Read on-chain contract state            | Live (on-chain)             |
+| 42  | Escrow     | `confirm_delivery`           | DeliveryConfirmed message               | Live (on-chain)             |
+| 43  | Escrow     | `auto_release_escrow`        | AutoRelease message                     | Live (on-chain)             |
+| 44  | Escrow     | `open_dispute`               | OpenDispute + cross-contract notify     | Live (on-chain)             |
+| 45  | Escrow     | `join_dispute`               | JoinDispute with arbiter stake          | Live (on-chain)             |
+| 46  | Escrow     | `vote_release`               | VoteRelease with majority check         | Live (on-chain)             |
+| 47  | Escrow     | `vote_refund`                | VoteRefund with majority check          | Live (on-chain)             |
+| 48  | Escrow     | `claim_reward`               | ClaimReward with winner/loser payout    | Live (on-chain)             |
+| 49  | Escrow     | `fallback_settle`            | FallbackSettle after 72h deadline       | Live (on-chain)             |
+| 50  | Escrow     | `seller_stake_escrow`        | SellerStake for bidirectional escrow    | Live (on-chain)             |
+| 51  | Identity   | `register_agent`             | On-chain Register + local JSON          | Live (on-chain)             |
+| 52  | Identity   | `discover_agent`             | On-chain getters + local search         | Live                        |
+| 53  | Identity   | `get_agent_reputation`       | On-chain getter + local scoring         | Live                        |
+| 54  | Identity   | `deploy_reputation_contract` | Deploy Tact contract on-chain           | Live (on-chain)             |
+| 55  | Identity   | `withdraw_reputation_fees`   | Withdraw with 20-year rule              | Live (on-chain)             |
+| 56  | Identity   | `process_pending_ratings`    | Process queued ratings                  | Live                        |
+| 57  | Identity   | `get_open_disputes`          | On-chain dispute registry               | Live                        |
+| 58  | Identity   | `trigger_cleanup`            | TriggerCleanup message                  | Live (on-chain)             |
+| 59  | Identity   | `get_agent_cleanup_info`     | On-chain cleanup eligibility check      | Live                        |
+| 60  | Payments   | `pay_for_resource`           | HTTP + sendTransfer + x402 flow         | Live                        |
+| 61  | Payments   | `get_delivery_proof`         | Proof lookup                            | Live                        |
+| 62  | AgentComm  | `broadcast_intent`           | On-chain BroadcastIntent message        | Live (on-chain)             |
+| 63  | AgentComm  | `discover_intents`           | On-chain intent getters                 | Live                        |
+| 64  | AgentComm  | `send_offer`                 | On-chain SendOffer message              | Live (on-chain)             |
+| 65  | AgentComm  | `get_offers`                 | On-chain offer getters                  | Live                        |
+| 66  | AgentComm  | `accept_offer`               | On-chain AcceptOffer message            | Live (on-chain)             |
+| 67  | AgentComm  | `settle_deal`                | On-chain SettleDeal message             | Live (on-chain)             |
+| 68  | AgentComm  | `cancel_intent`              | On-chain CancelIntent message           | Live (on-chain)             |
+| 69  | Memory     | `save_context`               | Persistent JSON file store              | Live                        |
+| 70  | Memory     | `get_context`                | Persistent JSON file store              | Live                        |
+| 71  | Memory     | `list_context`               | Persistent JSON file store              | Live                        |
+| 72  | Memory     | `delete_context`             | Persistent JSON file store              | Live                        |
 
-> **Primitive** status: Actions are implemented, schema-validated, and have Zod schemas. They require external API keys (SWAP_COFFEE_API_KEY or DYOR_API_KEY) and have not been tested on-chain yet.
+> **Primitive** status: Actions are implemented, schema-validated, and have Zod schemas. They require external API keys (SWAP_COFFEE_API_KEY or DYOR_API_KEY) and have not been tested live on-chain yet.
 
 ---
 
 ## DeFi Plugin -- Expanded Design (v1.1.0)
 
-The DeFi plugin grew from 3 to 11 actions in v1.1.0, adding 8 advanced primitives:
+The DeFi plugin grew from 3 to 12 actions, adding advanced primitives including Omniston aggregator:
 
 ### Live Actions (3)
 

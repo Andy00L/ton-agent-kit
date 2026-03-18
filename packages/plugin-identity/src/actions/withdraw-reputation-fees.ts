@@ -27,7 +27,7 @@ export function createWithdrawReputationFeesAction(contractAddress?: string) {
         await sendTransaction(agent, [
           internal({
             to: Address.parse(addr),
-            value: toNano("0.02"),
+            value: toNano("0.12"),
             bounce: true,
             body,
           }),

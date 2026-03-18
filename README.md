@@ -673,11 +673,11 @@ tonPaywall({
 
 ## Telegram Bot
 
-AI agent bot with natural language, HITL approval, and **37 blockchain actions** via `toAITools()`.
+AI agent bot with natural language, HITL approval, and **68 blockchain actions** via `toAITools()`.
 
 ### Features:
 
-- 37 actions via natural language using `toAITools()` for proper LLM schemas
+- 68 actions via natural language using `toAITools()` for proper LLM schemas
 - **HITL approval** -- transfers > 0.05 TON require Approve/Reject inline buttons
 - **TX mode control** -- `TX auto` (skip buttons) / `TX confirm` (require approval)
 - **Balance guard** -- prevents sending more than available balance
@@ -714,6 +714,32 @@ Bot:  Insufficient balance. You have approximately 2.93 TON.
 # Add to .env: TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, AI_MODEL
 bun run telegram-bot.ts
 ```
+
+---
+
+## Self-Funded Contracts and Gas Refunds
+
+Both Tact smart contracts (Reputation and Escrow) are **self-funded** -- they accumulate a storage reserve from each operation and refund excess gas to the sender.
+
+**How it works:**
+
+1. User sends 0.12 TON with each call (configurable via `DEFAULT_GAS`)
+2. The contract processes the operation, adds a storage fee to `storageFund` (0.003--0.015 TON depending on cells created)
+3. For fee-charging handlers (Register, Rate), `accumulatedFees` grows by `self.fee` (0.01 TON)
+4. `nativeReserve(storageFund + accumulatedFees + 0.01, 0)` keeps the three pools: storage fund, owner fees, gas buffer
+5. `SendRemainingBalance` returns everything else to the sender as "Excess"
+6. Both contracts set `override const storageReserve: Int = ton("0.05")` so the Deployable trait keeps 0.05 TON during deploy
+
+**Result:** Users pay ~0.03--0.06 TON per call (gas + fees), not the full 0.12 TON. The contract self-funds its storage for years.
+
+**Withdraw with 20-year rule:** The owner can withdraw `accumulatedFees` plus any `storageFund` excess beyond 20 years of projected storage costs.
+
+| Contract | Testnet Address | Deploy |
+|---|---|---|
+| Reputation (shared) | `0:a53a0305a5c7c945d9fda358375c8c53e3760cebcc65fae744367827a30355a0` | `bun run contracts/deploy-reputation.ts` |
+| Escrow (per-deal) | Deployed per-deal via `create_escrow` action | Via SDK |
+
+**Getters:** `storageInfo()` returns `{ storageFund, totalCells, annualCost, yearsCovered }`. `storageFundBalance()` and `accumulatedFeesBalance()` return plain integers.
 
 ---
 
@@ -841,7 +867,7 @@ graph TD
     subgraph "TON Agent Kit SDK"
         PS[Plugin System .use chain]
         WA[Wallet V3/V4/V5 auto-detect]
-        AR[Action Registry 37 actions]
+        AR[Action Registry 68 actions]
         AT[toAITools - Zod v4 schemas]
         RL[runLoop - autonomous runtime]
     end
@@ -946,7 +972,7 @@ ton-agent-kit/
 │   ├── mcp-server/               # Claude Desktop integration
 │   └── x402-server/              # Paywall any API
 ├── mcp-server.ts                 # Standalone MCP server (37 tools)
-├── telegram-bot.ts               # Telegram bot with HITL (37 actions)
+├── telegram-bot.ts               # Telegram bot with HITL (68 actions)
 ├── demo-agent-commerce.ts        # Multi-agent commerce (2 wallets, 8 steps)
 ├── demo-runloop.ts               # Autonomous runtime (5 scenarios)
 ├── test-all-actions.ts           # Full test suite (13 sections)

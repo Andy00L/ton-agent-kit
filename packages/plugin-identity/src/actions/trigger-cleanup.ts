@@ -27,7 +27,7 @@ export const triggerCleanupAction = defineAction({
     await sendTransaction(agent, [
       internal({
         to: Address.parse(addr),
-        value: toNano("0.03"),
+        value: toNano("0.12"),
         bounce: true,
         body,
       }),

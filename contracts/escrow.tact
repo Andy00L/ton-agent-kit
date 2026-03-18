@@ -68,6 +68,8 @@ struct EscrowData {
 }
 
 contract Escrow with Deployable {
+    override const storageReserve: Int = ton("0.05");
+
     depositor: Address;
     beneficiary: Address;
     reputationContract: Address;
@@ -99,6 +101,8 @@ contract Escrow with Deployable {
     baseSellerStake: Int as coins;
     requireRepCollateral: Bool;
     minRepScore: Int as uint8;
+    totalArbiterStakes: Int as coins;
+    storageFund: Int as coins;
 
     init(
         depositor: Address,
@@ -132,6 +136,8 @@ contract Escrow with Deployable {
         self.baseSellerStake = baseSellerStake;
         self.requireRepCollateral = requireRepCollateral;
         self.minRepScore = minRepScore;
+        self.totalArbiterStakes = 0;
+        self.storageFund = 0;
     }
 
     // Seller deposits their stake (skin in the game)
@@ -143,6 +149,15 @@ contract Escrow with Deployable {
         require(context().value > 0, "Must send TON as stake");
         self.sellerStake = context().value;
         self.sellerStaked = true;
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     // Buyer deposits — gated by seller stake if required
@@ -151,12 +166,22 @@ contract Escrow with Deployable {
             require(self.sellerStaked, "Seller must stake first");
         }
         self.amount = self.amount + context().value;
+        self.storageFund = self.storageFund + ton("0.003");
     }
 
     receive(msg: DeliveryConfirmed) {
         require(sender() == self.depositor, "Only depositor can confirm delivery");
         require(!self.released && !self.refunded, "Already settled");
         self.deliveryConfirmed = true;
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     // Release — seller gets deal + their stake back (SendRemainingBalance)
@@ -213,6 +238,7 @@ contract Escrow with Deployable {
         require(!self.disputed, "Already disputed");
         self.disputed = true;
         self.votingDeadline = now() + 259200;
+        self.storageFund = self.storageFund + ton("0.005");
         send(SendParameters{
             to: self.reputationContract, value: ton("0.03"),
             mode: SendIgnoreErrors, bounce: true,
@@ -222,10 +248,13 @@ contract Escrow with Deployable {
                 votingDeadline: self.votingDeadline
             }.toCell()
         });
+        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
         send(SendParameters{
-            to: sender(), value: 0,
-            mode: SendRemainingValue | SendIgnoreErrors, bounce: false,
-            body: "Dispute opened".asComment()
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
         });
     }
 
@@ -246,6 +275,16 @@ contract Escrow with Deployable {
         self.stakes.set(idx, actualStake);
         self.voted.set(idx, false);
         self.arbiterCount = idx + 1;
+        self.totalArbiterStakes = self.totalArbiterStakes + actualStake;
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: VoteRelease) {
@@ -271,10 +310,14 @@ contract Escrow with Deployable {
                 body: "Released by arbiter vote".asComment()
             });
         } else {
+            self.storageFund = self.storageFund + ton("0.003");
+            nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
             send(SendParameters{
-                to: sender(), value: 0,
-                mode: SendRemainingValue | SendIgnoreErrors, bounce: false,
-                body: "Voted to release".asComment()
+                to: sender(),
+                value: 0,
+                mode: SendRemainingBalance | SendIgnoreErrors,
+                bounce: false,
+                body: "Excess".asComment()
             });
         }
     }
@@ -302,10 +345,14 @@ contract Escrow with Deployable {
                 body: "Refunded by arbiter vote".asComment()
             });
         } else {
+            self.storageFund = self.storageFund + ton("0.003");
+            nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
             send(SendParameters{
-                to: sender(), value: 0,
-                mode: SendRemainingValue | SendIgnoreErrors, bounce: false,
-                body: "Voted to refund".asComment()
+                to: sender(),
+                value: 0,
+                mode: SendRemainingBalance | SendIgnoreErrors,
+                bounce: false,
+                body: "Excess".asComment()
             });
         }
     }
@@ -322,6 +369,7 @@ contract Escrow with Deployable {
         require(hasVoted != null && hasVoted!! == true, "Did not vote");
         let myVote: Bool = self.votes.get(idxVal)!!;
         let wonVote: Bool = (myVote == true && self.released) || (myVote == false && self.refunded);
+        self.totalArbiterStakes = self.totalArbiterStakes - myStake!!;
         self.stakes.set(idxVal, 0);
         if (wonVote) {
             let loserTotal: Int = self.getTotalLoserStakes();
@@ -335,6 +383,14 @@ contract Escrow with Deployable {
                 body: "Arbiter reward (winner)".asComment()
             });
         }
+        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
     }
 
     receive(msg: FallbackSettle) {

@@ -1,9 +1,9 @@
 # Tact compilation report
 Contract: Reputation
-BoC Size: 13784 bytes
+BoC Size: 14528 bytes
 
 ## Structures (Structs and Messages)
-Total structures: 32
+Total structures: 33
 
 ### DataSize
 TL-B: `_ cells:int257 bits:int257 refs:int257 = DataSize`
@@ -129,12 +129,16 @@ Signature: `IntentData{buyer:address,serviceHash:uint256,budget:coins,deadline:u
 TL-B: `_ seller:address intentIndex:uint32 price:coins deliveryTime:uint32 status:uint8 = OfferData`
 Signature: `OfferData{seller:address,intentIndex:uint32,price:coins,deliveryTime:uint32,status:uint8}`
 
+### StorageInfo
+TL-B: `_ storageFund:coins totalCells:uint32 annualCost:coins yearsCovered:uint32 = StorageInfo`
+Signature: `StorageInfo{storageFund:coins,totalCells:uint32,annualCost:coins,yearsCovered:uint32}`
+
 ### Reputation$Data
-TL-B: `_ owner:address fee:coins agentCount:uint32 agentOwners:dict<uint32, address> agentAvailable:dict<uint32, bool> agentTotalTasks:dict<uint32, uint32> agentSuccesses:dict<uint32, uint32> agentRegisteredAt:dict<uint32, uint32> agentLastActive:dict<uint32, uint32> nameToIndex:dict<uint256, uint32> capabilityIndex:dict<uint256, ^cell> openDisputes:dict<uint32, address> disputeDepositors:dict<uint32, address> disputeBeneficiaries:dict<uint32, address> disputeAmounts:dict<uint32, int> disputeDeadlines:dict<uint32, uint32> disputeSettled:dict<uint32, bool> disputeCount:uint32 cleanupCursor:uint32 intents:dict<uint32, address> intentServiceHashes:dict<uint32, uint256> intentBudgets:dict<uint32, int> intentDeadlines:dict<uint32, uint32> intentStatuses:dict<uint32, uint8> intentAcceptedOffer:dict<uint32, uint32> intentCount:uint32 intentsByService:dict<uint256, ^cell> offers:dict<uint32, address> offerIntents:dict<uint32, uint32> offerPrices:dict<uint32, int> offerDeliveryTimes:dict<uint32, uint32> offerStatuses:dict<uint32, uint8> offerCount:uint32 intentCleanupCursor:uint32 agentActiveIntents:dict<address, int> maxIntentsPerAgent:uint8 = Reputation`
-Signature: `Reputation{owner:address,fee:coins,agentCount:uint32,agentOwners:dict<uint32, address>,agentAvailable:dict<uint32, bool>,agentTotalTasks:dict<uint32, uint32>,agentSuccesses:dict<uint32, uint32>,agentRegisteredAt:dict<uint32, uint32>,agentLastActive:dict<uint32, uint32>,nameToIndex:dict<uint256, uint32>,capabilityIndex:dict<uint256, ^cell>,openDisputes:dict<uint32, address>,disputeDepositors:dict<uint32, address>,disputeBeneficiaries:dict<uint32, address>,disputeAmounts:dict<uint32, int>,disputeDeadlines:dict<uint32, uint32>,disputeSettled:dict<uint32, bool>,disputeCount:uint32,cleanupCursor:uint32,intents:dict<uint32, address>,intentServiceHashes:dict<uint32, uint256>,intentBudgets:dict<uint32, int>,intentDeadlines:dict<uint32, uint32>,intentStatuses:dict<uint32, uint8>,intentAcceptedOffer:dict<uint32, uint32>,intentCount:uint32,intentsByService:dict<uint256, ^cell>,offers:dict<uint32, address>,offerIntents:dict<uint32, uint32>,offerPrices:dict<uint32, int>,offerDeliveryTimes:dict<uint32, uint32>,offerStatuses:dict<uint32, uint8>,offerCount:uint32,intentCleanupCursor:uint32,agentActiveIntents:dict<address, int>,maxIntentsPerAgent:uint8}`
+TL-B: `_ owner:address fee:coins agentCount:uint32 agentOwners:dict<uint32, address> agentAvailable:dict<uint32, bool> agentTotalTasks:dict<uint32, uint32> agentSuccesses:dict<uint32, uint32> agentRegisteredAt:dict<uint32, uint32> agentLastActive:dict<uint32, uint32> nameToIndex:dict<uint256, uint32> capabilityIndex:dict<uint256, ^cell> openDisputes:dict<uint32, address> disputeDepositors:dict<uint32, address> disputeBeneficiaries:dict<uint32, address> disputeAmounts:dict<uint32, int> disputeDeadlines:dict<uint32, uint32> disputeSettled:dict<uint32, bool> disputeCount:uint32 cleanupCursor:uint32 intents:dict<uint32, address> intentServiceHashes:dict<uint32, uint256> intentBudgets:dict<uint32, int> intentDeadlines:dict<uint32, uint32> intentStatuses:dict<uint32, uint8> intentAcceptedOffer:dict<uint32, uint32> intentCount:uint32 intentsByService:dict<uint256, ^cell> offers:dict<uint32, address> offerIntents:dict<uint32, uint32> offerPrices:dict<uint32, int> offerDeliveryTimes:dict<uint32, uint32> offerStatuses:dict<uint32, uint8> offerCount:uint32 intentCleanupCursor:uint32 agentActiveIntents:dict<address, int> maxIntentsPerAgent:uint8 storageFund:coins accumulatedFees:coins = Reputation`
+Signature: `Reputation{owner:address,fee:coins,agentCount:uint32,agentOwners:dict<uint32, address>,agentAvailable:dict<uint32, bool>,agentTotalTasks:dict<uint32, uint32>,agentSuccesses:dict<uint32, uint32>,agentRegisteredAt:dict<uint32, uint32>,agentLastActive:dict<uint32, uint32>,nameToIndex:dict<uint256, uint32>,capabilityIndex:dict<uint256, ^cell>,openDisputes:dict<uint32, address>,disputeDepositors:dict<uint32, address>,disputeBeneficiaries:dict<uint32, address>,disputeAmounts:dict<uint32, int>,disputeDeadlines:dict<uint32, uint32>,disputeSettled:dict<uint32, bool>,disputeCount:uint32,cleanupCursor:uint32,intents:dict<uint32, address>,intentServiceHashes:dict<uint32, uint256>,intentBudgets:dict<uint32, int>,intentDeadlines:dict<uint32, uint32>,intentStatuses:dict<uint32, uint8>,intentAcceptedOffer:dict<uint32, uint32>,intentCount:uint32,intentsByService:dict<uint256, ^cell>,offers:dict<uint32, address>,offerIntents:dict<uint32, uint32>,offerPrices:dict<uint32, int>,offerDeliveryTimes:dict<uint32, uint32>,offerStatuses:dict<uint32, uint8>,offerCount:uint32,intentCleanupCursor:uint32,agentActiveIntents:dict<address, int>,maxIntentsPerAgent:uint8,storageFund:coins,accumulatedFees:coins}`
 
 ## Get methods
-Total get methods: 15
+Total get methods: 18
 
 ## agentData
 Argument: index
@@ -180,6 +184,15 @@ Argument: index
 
 ## offerData
 Argument: index
+
+## storageInfo
+No arguments
+
+## storageFundBalance
+No arguments
+
+## accumulatedFeesBalance
+No arguments
 
 ## Exit codes
 * 2: Stack underflow
@@ -234,6 +247,7 @@ Argument: index
 * 38820: Only the agent owner can update availability
 * 39791: Intent not in accepted state
 * 40254: Offer has no intent
+* 40636: Nothing to withdraw
 * 45503: Offer not pending
 * 48272: Intent expired
 * 50979: Offer not found

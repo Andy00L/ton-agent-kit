@@ -19,7 +19,7 @@ export interface ReputationConfig {
  * These are used when no factory parameter or local config is found.
  */
 export const DEFAULT_REPUTATION_CONTRACTS: Record<string, string> = {
-  testnet: "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+  testnet: "0:a53a0305a5c7c945d9fda358375c8c53e3760cebcc65fae744367827a30355a0",
 };
 
 /**
