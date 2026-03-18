@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/plugin-nft",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "NFT plugin for TON Agent Kit — mint, transfer, and manage NFT collections",
   "main": "src/index.ts",
   "types": "src/index.ts",

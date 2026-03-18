@@ -9,6 +9,15 @@
         "debug": false,
         "external": false
       }
+    },
+    {
+      "name": "Reputation",
+      "path": "./reputation.tact",
+      "output": "./output",
+      "options": {
+        "debug": false,
+        "external": false
+      }
     }
   ]
 }

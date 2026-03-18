@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Address } from "@ton/core";
+import { Address, toNano } from "@ton/core";
 import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
 import {
   loadEscrows,
@@ -7,11 +7,14 @@ import {
   deployEscrowContract,
   type EscrowRecord,
 } from "../utils";
+import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
 
 export const createEscrowAction = defineAction<
   {
     beneficiary: string;
     amount: string;
+    minArbiters?: number;
+    minStake?: string;
     description?: string;
     deadlineTimestamp?: number;
     deadlineDays?: number;
@@ -23,31 +26,24 @@ export const createEscrowAction = defineAction<
   name: "create_escrow",
   description:
     "Create a new on-chain escrow deal. Deploys a Tact Escrow contract to TON. " +
-    "The beneficiary receives funds when released. " +
-    "Deadline can be set via deadlineTimestamp (exact Unix timestamp), deadlineDays, deadlineHours, or deadlineMinutes. " +
-    "Priority: timestamp > days > hours > minutes. Defaults to 60 minutes if none provided.",
+    "No arbiters needed upfront — they self-select by staking during disputes. " +
+    "minArbiters sets the minimum arbiters needed for voting (default 3). " +
+    "minStake sets the minimum stake per arbiter in TON (default 0.5).",
   schema: z.object({
     beneficiary: z
       .string()
       .describe("Address of the beneficiary (who receives funds)"),
     amount: z.string().describe("Amount of TON to escrow"),
+    minArbiters: z.coerce.number().optional().describe("Minimum arbiters for dispute voting. Default 3."),
+    minStake: z.string().optional().describe("Minimum stake per arbiter in TON. Default 0.5."),
+    requireRepCollateral: z.boolean().optional().describe("Require reputation-based collateral from seller. Default false."),
+    minRepScore: z.coerce.number().optional().describe("Minimum rep score for seller (0-100). Default 30. Only if requireRepCollateral=true."),
+    baseSellerStake: z.string().optional().describe("Base seller stake in TON before rep adjustment. Default 0.5. Only if requireRepCollateral=true."),
     description: z.string().optional().describe("Description of the deal"),
-    deadlineTimestamp: z.coerce
-      .number()
-      .optional()
-      .describe("Exact deadline as Unix timestamp (seconds). Takes highest priority."),
-    deadlineDays: z.coerce
-      .number()
-      .optional()
-      .describe("Deadline in days from now (e.g., 90 for ~3 months)"),
-    deadlineHours: z.coerce
-      .number()
-      .optional()
-      .describe("Deadline in hours from now (e.g., 24 for 1 day)"),
-    deadlineMinutes: z.coerce
-      .number()
-      .optional()
-      .describe("Deadline in minutes from now (e.g., 60 for 1 hour). Default if nothing else set."),
+    deadlineTimestamp: z.coerce.number().optional().describe("Exact deadline as Unix timestamp (seconds)."),
+    deadlineDays: z.coerce.number().optional().describe("Deadline in days from now"),
+    deadlineHours: z.coerce.number().optional().describe("Deadline in hours from now"),
+    deadlineMinutes: z.coerce.number().optional().describe("Deadline in minutes from now. Default 60."),
   }) as any,
   handler: async (agent, params) => {
     const escrowId = `escrow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -66,27 +62,42 @@ export const createEscrowAction = defineAction<
 
     const depositor = agent.wallet.address;
     const beneficiary = Address.parse(params.beneficiary);
-    const arbiter = agent.wallet.address; // Agent is arbiter by default
+    const minArbiters = params.minArbiters || 3;
+    const minStakeNano = toNano(params.minStake || "0.5");
 
-    // Deploy a new Escrow contract on-chain
+    // Layer 3+4: Rep collateral
+    const requireRepCollateral = params.requireRepCollateral || false;
+    const minRepScore = params.minRepScore || 30;
+    const baseSellerStake = params.baseSellerStake || "0.5";
+    const baseSellerStakeNano = toNano(baseSellerStake);
+
+    // Resolve reputation contract for cross-contract notifications
+    const repAddr = resolveContractAddress(undefined, agent.network);
+    const reputationContract = repAddr ? Address.parse(repAddr) : depositor; // fallback
+
     const contractAddress = await deployEscrowContract(
       agent,
       depositor,
       beneficiary,
-      arbiter,
       BigInt(deadline),
+      BigInt(minArbiters),
+      minStakeNano,
+      reputationContract,
+      requireRepCollateral,
+      BigInt(minRepScore),
+      baseSellerStakeNano,
     );
 
-    // Save to JSON index (escrowId → contract address mapping)
     const escrow: EscrowRecord = {
       id: escrowId,
       contractAddress: contractAddress.toRawString(),
       depositor: depositor.toRawString(),
       beneficiary: params.beneficiary,
-      arbiter: arbiter.toRawString(),
       amount: params.amount,
       deadline,
       deadlineISO: new Date(deadline * 1000).toISOString(),
+      minArbiters,
+      minStake: params.minStake || "0.5",
       description: params.description || "",
       status: "created",
       createdAt: new Date().toISOString(),
@@ -103,10 +114,17 @@ export const createEscrowAction = defineAction<
       friendlyContract: toFriendlyAddress(contractAddress, agent.network),
       beneficiary: params.beneficiary,
       friendlyBeneficiary: toFriendlyAddress(beneficiary, agent.network),
+      minArbiters,
+      minStake: params.minStake || "0.5",
       amount: params.amount + " TON",
       deadline: escrow.deadlineISO,
+      requireRepCollateral,
+      minRepScore: requireRepCollateral ? minRepScore : "disabled",
+      baseSellerStake: requireRepCollateral ? baseSellerStake + " TON" : "not required",
       description: params.description || "",
-      nextStep: `Deposit ${params.amount} TON using deposit_to_escrow with escrowId: ${escrowId}`,
+      nextStep: requireRepCollateral
+        ? `Seller must stake first using seller_stake_escrow, then deposit ${params.amount} TON`
+        : `Deposit ${params.amount} TON using deposit_to_escrow with escrowId: ${escrowId}`,
     };
   },
 });

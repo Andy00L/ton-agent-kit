@@ -39,6 +39,36 @@ export const releaseEscrowAction = defineAction<{ escrowId: string }, any>({
     escrow.status = "released";
     saveEscrows(escrows);
 
+    // Save pending bidirectional ratings (non-critical)
+    try {
+      await (agent as any).runAction("save_context", {
+        key: `pending_rating_${params.escrowId}_buyer`,
+        namespace: "pending_ratings",
+        value: JSON.stringify({
+          escrowId: params.escrowId,
+          raterRole: "buyer",
+          targetAddress: escrow.beneficiary,
+          suggestedSuccess: true,
+          escrowOutcome: "released",
+          timestamp: Date.now(),
+        }),
+      });
+    } catch {}
+    try {
+      await (agent as any).runAction("save_context", {
+        key: `pending_rating_${params.escrowId}_seller`,
+        namespace: "pending_ratings",
+        value: JSON.stringify({
+          escrowId: params.escrowId,
+          raterRole: "seller",
+          targetAddress: escrow.depositor,
+          suggestedSuccess: true,
+          escrowOutcome: "released",
+          timestamp: Date.now(),
+        }),
+      });
+    } catch {}
+
     return {
       escrowId: params.escrowId,
       status: "released (on-chain)",

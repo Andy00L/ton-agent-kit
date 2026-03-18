@@ -140,10 +140,33 @@ const getDomainInfoAction = defineAction<
 // ============================================================
 // Plugin export
 // ============================================================
+
+/**
+ * DNS Plugin -- TON DNS domain resolution and reverse lookups.
+ *
+ * Resolves human-readable `.ton` domain names to wallet addresses, performs
+ * reverse lookups from addresses to domains, and retrieves detailed domain
+ * registration information including expiration dates.
+ *
+ * Actions:
+ * - `resolve_domain` -- Resolve a `.ton` domain name to its associated wallet address
+ * - `lookup_address` -- Reverse lookup: find the `.ton` domain for a wallet address
+ * - `get_domain_info` -- Get detailed domain registration info (owner, expiry, etc.)
+ *
+ * @example
+ * ```typescript
+ * import DnsPlugin from "@ton-agent-kit/plugin-dns";
+ * const agent = new TonAgentKit(wallet, rpcUrl).use(DnsPlugin);
+ * const info = await agent.runAction("resolve_domain", { domain: "alice.ton" });
+ * ```
+ *
+ * @since 1.0.0
+ */
 const DnsPlugin = definePlugin({
   name: "dns",
   actions: [resolveDomainAction, lookupAddressAction, getDomainInfoAction],
 });
 
+/** @since 1.0.0 */
 export default DnsPlugin;
 export { resolveDomainAction, lookupAddressAction, getDomainInfoAction };

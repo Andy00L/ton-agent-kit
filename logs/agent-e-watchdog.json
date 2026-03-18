@@ -1,0 +1,34 @@
+[
+  {
+    "timestamp": "2026-03-18T07:22:04.907Z",
+    "agent": "watchdog",
+    "action": "register_agent",
+    "params": {
+      "name": "watchdog",
+      "capabilities": [
+        "monitoring",
+        "cleanup"
+      ]
+    },
+    "result": {
+      "agentId": "agent_watchdog",
+      "name": "watchdog",
+      "address": "0:158694419e012189a69e518dcca11e5af2df2bb58f663ada19ba82f1c133d9d4",
+      "friendlyAddress": "0QAVhpRBngEhiaaeUY3MoR5a8t8rtY9mOtoZuoLxwTPZ1LC-",
+      "capabilities": [
+        "monitoring",
+        "cleanup"
+      ],
+      "available": true,
+      "onChain": true,
+      "contractAddress": "0:5352445990487167d19102e3d1ed2715d69263972ef014bdc1a7561230e2087c",
+      "status": "registered (on-chain + local)",
+      "message": "Agent \"watchdog\" registered on-chain at 0:53524459904871... and locally"
+    },
+    "success": true,
+    "durationMs": 32510,
+    "error": null,
+    "cycle": 0,
+    "phase": "setup"
+  }
+]

@@ -1,6 +1,6 @@
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, sendTransaction } from "@ton-agent-kit/core";
 import { Address, beginCell, internal, toNano } from "@ton/core";
-import { TonClient4, WalletContractV5R1 } from "@ton/ton";
+
 import { z } from "zod";
 
 export const stakeTonAction = defineAction({
@@ -13,21 +13,6 @@ export const stakeTonAction = defineAction({
   }),
   handler: async (agent, params) => {
     const poolAddr = Address.parse(params.poolAddress);
-    const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
-    const networkId = agent.network === "testnet" ? -3 : -239;
-    const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-    const walletContract = freshClient.open(
-      WalletContractV5R1.create({
-        workchain: 0,
-        publicKey,
-        walletId: {
-          networkGlobalId: networkId,
-          workchain: 0,
-          subwalletNumber: 0,
-        },
-      }),
-    );
-    const seqno = await walletContract.getSeqno();
 
     // Staking deposit message: send TON with a deposit op code
     const depositBody = beginCell()
@@ -35,18 +20,14 @@ export const stakeTonAction = defineAction({
       .storeUint(0, 64) // query_id
       .endCell();
 
-    await walletContract.sendTransfer({
-      seqno,
-      secretKey,
-      messages: [
-        internal({
-          to: poolAddr,
-          value: toNano(params.amount),
-          bounce: true,
-          body: depositBody,
-        }),
-      ],
-    });
+    await sendTransaction(agent, [
+      internal({
+        to: poolAddr,
+        value: toNano(params.amount),
+        bounce: true,
+        body: depositBody,
+      }),
+    ]);
 
     return {
       status: "sent",

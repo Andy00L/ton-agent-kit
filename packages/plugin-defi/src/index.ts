@@ -10,22 +10,38 @@ import { yieldDepositAction } from "./actions/yield-deposit";
 import { yieldWithdrawAction } from "./actions/yield-withdraw";
 import { getStakingPoolsAction } from "./actions/get-staking-pools";
 import { getTokenTrustAction } from "./actions/get-token-trust";
+import { swapBestPriceAction } from "./actions/swap-best-price";
 
 /**
- * DeFi Plugin — DEX swaps, prices, liquidity, DCA, limit orders, yield, staking, and trust scores on TON
+ * DeFi Plugin -- DEX swaps, price feeds, DCA, limit orders, yield farming,
+ * staking pools, and token trust scores on TON.
+ *
+ * Aggregates multiple DEX protocols (DeDust, STON.fi, swap.coffee, Omniston)
+ * behind a unified action interface, enabling agents to trade, earn yield,
+ * and evaluate token risk in a single plugin.
  *
  * Actions:
- * - swap_dedust: Swap tokens on DeDust
- * - swap_stonfi: Swap tokens on STON.fi
- * - get_price: Get token price from DEX pools
- * - create_dca_order: Create a Dollar Cost Averaging order (swap.coffee)
- * - create_limit_order: Create a limit order (swap.coffee)
- * - cancel_order: Cancel an active DCA or limit order (swap.coffee)
- * - get_yield_pools: List yield farming / liquidity pools (swap.coffee)
- * - yield_deposit: Deposit into a yield farming pool
- * - yield_withdraw: Withdraw from a yield farming pool
- * - get_staking_pools: List staking pools with APR (swap.coffee)
- * - get_token_trust: Get token trust score (DYOR.io)
+ * - `swap_dedust` -- Swap tokens on DeDust DEX
+ * - `swap_stonfi` -- Swap tokens on STON.fi DEX
+ * - `get_price` -- Get token price from DEX pools
+ * - `create_dca_order` -- Create a Dollar Cost Averaging order (swap.coffee)
+ * - `create_limit_order` -- Create a limit order (swap.coffee)
+ * - `cancel_order` -- Cancel an active DCA or limit order (swap.coffee)
+ * - `get_yield_pools` -- List yield farming / liquidity pools (swap.coffee)
+ * - `yield_deposit` -- Deposit into a yield farming pool
+ * - `yield_withdraw` -- Withdraw from a yield farming pool
+ * - `get_staking_pools` -- List staking pools with APR (swap.coffee)
+ * - `get_token_trust` -- Get token trust score (DYOR.io)
+ * - `swap_best_price` -- Swap at best price across all DEXes (Omniston aggregator)
+ *
+ * @example
+ * ```typescript
+ * import DefiPlugin from "@ton-agent-kit/plugin-defi";
+ * const agent = new TonAgentKit(wallet, rpcUrl).use(DefiPlugin);
+ * const price = await agent.runAction("get_price", { token: "EQBynBO23..." });
+ * ```
+ *
+ * @since 1.0.0
  */
 const DefiPlugin = definePlugin({
   name: "defi",
@@ -41,9 +57,11 @@ const DefiPlugin = definePlugin({
     yieldWithdrawAction,
     getStakingPoolsAction,
     getTokenTrustAction,
+    swapBestPriceAction,
   ],
 });
 
+/** @since 1.0.0 */
 export default DefiPlugin;
 export {
   swapDedustAction,
@@ -57,4 +75,5 @@ export {
   yieldWithdrawAction,
   getStakingPoolsAction,
   getTokenTrustAction,
+  swapBestPriceAction,
 };

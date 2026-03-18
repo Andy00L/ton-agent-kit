@@ -1,4 +1,8 @@
-/** A single task in the execution plan */
+/**
+ * A single task in the execution plan, representing one action to be performed by a specific agent.
+ *
+ * @since 1.0.0
+ */
 export interface Task {
   /** Unique identifier for this task */
   id: string;
@@ -14,7 +18,11 @@ export interface Task {
   description?: string;
 }
 
-/** Result of a single task execution */
+/**
+ * Result of a single task execution, including timing and error information.
+ *
+ * @since 1.0.0
+ */
 export interface TaskResult {
   /** ID of the task that produced this result */
   taskId: string;
@@ -32,7 +40,11 @@ export interface TaskResult {
   timestamp: number;
 }
 
-/** Configuration for a registered agent */
+/**
+ * Configuration for a registered agent within the orchestrator.
+ *
+ * @since 1.0.0
+ */
 export interface AgentConfig {
   /** Unique name for this agent */
   name: string;
@@ -44,7 +56,12 @@ export interface AgentConfig {
   capabilities: string[];
 }
 
-/** Options for the swarm execution */
+/**
+ * Options for configuring swarm execution behavior, including LLM settings,
+ * retry policies, parallelism, and lifecycle callbacks.
+ *
+ * @since 1.0.0
+ */
 export interface SwarmOptions {
   /** OpenAI API key (falls back to env) */
   apiKey?: string;
@@ -74,7 +91,12 @@ export interface SwarmOptions {
   onComplete?: (results: TaskResult[]) => void;
 }
 
-/** Final result returned by Orchestrator.swarm() */
+/**
+ * Final aggregated result returned by {@link Orchestrator.swarm}, containing the plan,
+ * individual task results, a natural language summary, and execution statistics.
+ *
+ * @since 1.0.0
+ */
 export interface SwarmResult {
   /** The original goal that was decomposed */
   goal: string;

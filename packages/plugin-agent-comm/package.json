@@ -1,0 +1,5 @@
+{
+  "name": "@ton-agent-kit/plugin-agent-comm",
+  "version": "1.0.1",
+  "main": "src/index.ts"
+}
