@@ -20,6 +20,10 @@ export function createGetAgentReputationAction(contractAddress?: string) {
         .union([z.boolean(), z.string()])
         .optional()
         .describe("If addTask is true, whether the task was successful"),
+      dealIndex: z
+        .union([z.number(), z.string()])
+        .optional()
+        .describe("Deal index from SettleDeal that authorizes this rating (required for on-chain rating)"),
     }),
     handler: async (agent, params) => {
       const addTask = typeof params.addTask === "string" ? params.addTask === "true" : params.addTask;
@@ -44,7 +48,8 @@ export function createGetAgentReputationAction(contractAddress?: string) {
 
           // If rating, send Rate message
           if (addTask) {
-            const body = buildRateBody(agentName, success !== false);
+            const dealIdx = typeof params.dealIndex === "string" ? parseInt(params.dealIndex, 10) : (params.dealIndex ?? 0);
+            const body = buildRateBody(agentName, success !== false, dealIdx);
 
             await sendTransaction(agent, [
               internal({

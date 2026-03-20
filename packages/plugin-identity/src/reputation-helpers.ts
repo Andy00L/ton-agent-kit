@@ -47,12 +47,18 @@ export function buildRegisterBody(name: string, capabilities: string, available:
 
 /**
  * Build a Rate message body for the Reputation contract.
+ * FIX 3: Added dealIndex parameter for deal-based rating authorization.
+ *
+ * @param agentName - Name of the agent being rated.
+ * @param success - Whether the task was successful.
+ * @param dealIndex - The deal index from SettleDeal that authorizes this rating.
  */
-export function buildRateBody(agentName: string, success: boolean): Cell {
+export function buildRateBody(agentName: string, success: boolean, dealIndex: number = 0): Cell {
   const b = beginCell();
   b.storeUint(OP_RATE, 32);
   b.storeStringRefTail(agentName);
   b.storeBit(success);
+  b.storeUint(dealIndex, 32);
   return b.endCell();
 }
 

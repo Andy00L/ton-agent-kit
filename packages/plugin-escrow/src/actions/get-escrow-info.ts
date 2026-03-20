@@ -57,6 +57,7 @@ export const getEscrowInfoAction = defineAction<{ escrowId?: string }, any>({
             minRepScore: Number(onChain.minRepScore),
             autoReleaseAvailable: onChain.autoReleaseAvailable,
             refundAvailable: onChain.refundAvailable,
+            x402ProofHash: onChain.x402ProofHash || "",
             status: onChain.released
               ? "released"
               : onChain.refunded

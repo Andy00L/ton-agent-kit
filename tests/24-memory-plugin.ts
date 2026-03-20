@@ -1,10 +1,7 @@
+// tests/24-memory-plugin.ts — Wrapped from test-memory.ts
 /**
- * ╔══════════════════════════════════════════════════════════════╗
- * ║     TON Agent Kit — Memory Plugin Test Suite                ║
- * ║     InMemoryStore · FileMemoryStore · Plugin integration    ║
- * ╚══════════════════════════════════════════════════════════════╝
- *
- * Run: bun run test-memory.ts
+ * Memory Plugin Test Suite
+ * InMemoryStore, FileMemoryStore, Plugin integration
  */
 
 import { readFileSync, existsSync, unlinkSync } from "fs";
@@ -17,11 +14,11 @@ const getEnv = (key: string) =>
 
 process.env.TON_MNEMONIC = getEnv("TON_MNEMONIC");
 
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import { InMemoryStore } from "./packages/plugin-memory/src/stores/memory-store";
-import { FileMemoryStore } from "./packages/plugin-memory/src/stores/file-store";
-import { createMemoryPlugin } from "./packages/plugin-memory/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import { InMemoryStore } from "../packages/plugin-memory/src/stores/memory-store";
+import { FileMemoryStore } from "../packages/plugin-memory/src/stores/file-store";
+import { createMemoryPlugin } from "../packages/plugin-memory/src/index";
 
 // ══════════════════════════════════════════════════════════════
 //  Test Framework
@@ -65,6 +62,13 @@ async function test(name: string, fn: () => Promise<any>): Promise<any> {
   }
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 // ══════════════════════════════════════════════════════════════
 //  Main
 // ══════════════════════════════════════════════════════════════
@@ -80,9 +84,7 @@ async function main() {
   Timestamp: ${new Date().toISOString()}
 ${"─".repeat(W)}`);
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 1: InMemoryStore unit tests
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 1: InMemoryStore unit tests
   header("🗄️", 1, "InMemoryStore", "Direct store unit tests");
 
   const mem = new InMemoryStore();
@@ -196,9 +198,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("InMemoryStore");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 2: FileMemoryStore tests
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 2: FileMemoryStore tests
   header("📁", 2, "FileMemoryStore", "File-based persistence");
 
   const tmpPath = join(tmpdir(), `test-agent-memory-${Date.now()}.json`);
@@ -270,15 +270,12 @@ ${"─".repeat(W)}`);
 
   sectionEnd("FileMemoryStore");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 3: Plugin integration tests
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 3: Plugin integration tests
   header("🔌", 3, "Plugin Integration", "Full agent.runAction tests");
 
   const mnemonic = process.env.TON_MNEMONIC;
   if (!mnemonic) {
-    console.error("❌ Set TON_MNEMONIC in .env");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC in .env");
   }
 
   const wallet = await KeypairWallet.fromMnemonic(mnemonic.split(" "), {
@@ -371,9 +368,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Plugin Integration");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 4: Default namespace tests
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 4: Default namespace tests
   header("📌", 4, "Default Namespace", "Verify namespace defaults to 'default'");
 
   await test("save without namespace → default", async () => {
@@ -406,9 +401,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Default Namespace");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 5: LLM tool integration
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 5: LLM tool integration
   header("🤖", 5, "LLM Tool Integration", "toAITools() format verification");
 
   const tools = agent.toAITools();
@@ -454,14 +447,12 @@ ${"─".repeat(W)}`);
 
   sectionEnd("LLM Tool Integration");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SUMMARY
-  // ══════════════════════════════════════════════════════════════
-
+  // SUMMARY
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const total = passed + failed;
 
   console.log(`
+
 
 ╔${"═".repeat(W - 2)}╗
 ║${" ".repeat(Math.floor((W - 32) / 2))}🧠 Memory Plugin Test Results${" ".repeat(Math.ceil((W - 32) / 2))}║
@@ -503,12 +494,29 @@ ${"─".repeat(W)}`);
   } else {
     console.log(`\n  ⚠️  ${failed} test(s) need attention.\n`);
   }
-
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal:", err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  passed = 0;
+  failed = 0;
+  errors.length = 0;
+  sectionResults.length = 0;
+  sectionPassed = 0;
+  sectionFailed = 0;
+  try {
+    await main();
+  } catch (err: any) {
+    failed++;
+    errors.push(`FATAL: ${err.message}`);
+  }
+  return { passed, failed, errors: [...errors], duration: Date.now() - start };
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

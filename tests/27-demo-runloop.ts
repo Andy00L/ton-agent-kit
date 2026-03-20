@@ -1,25 +1,19 @@
+// tests/27-demo-runloop.ts — Wrapped from demo-runloop.ts
 /**
- * TON Agent Kit — Autonomous Agent Runtime Demo
- *
+ * Autonomous Agent Runtime Demo
  * Runs 5 demo scenarios in sequence, each fully autonomous.
- * The agent receives a natural-language goal, plans which actions to call,
- * executes them, and returns a summary.
- *
- * Usage:
- *   bun run demo-runloop.ts              # run all 5 scenarios
- *   bun run demo-runloop.ts "custom goal" # run a single custom goal
  */
 
 import { readFileSync } from "fs";
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import DefiPlugin from "./packages/plugin-defi/src/index";
-import DnsPlugin from "./packages/plugin-dns/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
-import StakingPlugin from "./packages/plugin-staking/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import DefiPlugin from "../packages/plugin-defi/src/index";
+import DnsPlugin from "../packages/plugin-dns/src/index";
+import AnalyticsPlugin from "../packages/plugin-analytics/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
+import StakingPlugin from "../packages/plugin-staking/src/index";
 
 // Read .env manually (dotenv doesn't reliably load under bun)
 const envContent = readFileSync(".env", "utf-8");
@@ -252,12 +246,18 @@ async function runScenario(
   };
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 // ── Main ─────────────────────────────────────────────────────
 
 async function main() {
   if (!MNEMONIC) {
-    console.error("❌ Set TON_MNEMONIC in .env");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC in .env");
   }
 
   // ── Header ──
@@ -292,24 +292,6 @@ async function main() {
   console.log(`     Max Actions: ${tempAgent.actionCount} (full toolkit)`);
   console.log(`\n${"─".repeat(W)}`);
 
-  // ── Check for custom goal via CLI arg ──
-  const customGoal = process.argv[2];
-
-  if (customGoal) {
-    // Single custom goal — run with all plugins
-    const result = await runScenario(
-      { name: "Custom Goal", goal: customGoal, allPlugins: true },
-      1,
-      1,
-      wallet,
-    );
-
-    console.log(`\n  ┌${"─".repeat(W - 4)}┐`);
-    console.log(boxLine(`${result.success ? "✅" : "⚠️"}  ${result.name}: ${result.steps} steps`));
-    console.log(`  └${"─".repeat(W - 4)}┘\n`);
-    return;
-  }
-
   // ── Run all scenarios ──
   console.log(`\n  📋 Running ${SCENARIOS.length} scenarios in sequence...\n`);
 
@@ -342,6 +324,27 @@ async function main() {
   console.log(boxLine(`Total:      ${totalSteps} autonomous actions executed`));
   console.log(boxLine(`Scenarios:  ${results.filter(r => r.success).length}/${results.length} successful`));
   console.log(`  └${"─".repeat(W - 4)}┘\n`);
+
+  return results;
 }
 
-main().catch(console.error);
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  try {
+    const results = await main();
+    const passedCount = results.filter((r) => r.success).length;
+    const failedCount = results.filter((r) => !r.success).length;
+    const errorMessages = results.filter((r) => !r.success).map((r) => `Scenario "${r.name}" failed`);
+    return { passed: passedCount, failed: failedCount, errors: errorMessages, duration: Date.now() - start };
+  } catch (err: any) {
+    return { passed: 0, failed: 1, errors: [`FATAL: ${err.message}`], duration: Date.now() - start };
+  }
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

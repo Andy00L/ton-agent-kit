@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Address, internal, toNano } from "@ton/core";
 import { defineAction, sendTransaction } from "@ton-agent-kit/core";
-import { loadReputationConfig } from "../reputation-config";
+import { resolveContractAddress } from "../reputation-config";
 import { buildWithdrawBody } from "../reputation-helpers";
 
 export function createWithdrawReputationFeesAction(contractAddress?: string) {
@@ -13,7 +13,7 @@ export function createWithdrawReputationFeesAction(contractAddress?: string) {
       confirm: z.boolean().optional().describe("Set to true to confirm the withdrawal. Defaults to true."),
     }),
     handler: async (agent, _params) => {
-      const addr = contractAddress || loadReputationConfig()?.contractAddress;
+      const addr = contractAddress || resolveContractAddress(undefined, agent.network);
       if (!addr) {
         return {
           withdrawn: false,

@@ -26,8 +26,14 @@ Create a `.env` file:
 
 ```env
 TON_RECIPIENT=0:your-raw-address-here
+TON_MNEMONIC=word1 word2 ... word24
 TON_NETWORK=testnet
 PORT=3402
+
+# Dynamic endpoints (optional)
+# PUBLIC_URL=https://agent.myserver.com    # Override auto-detected public IP
+# LOCAL_MODE=true                          # Force localhost URLs (for local testing)
+# X402_PORT=3402                           # Defaults to PORT
 ```
 
 ## Run
@@ -42,12 +48,28 @@ npm run build && npm start
 
 ## Endpoints
 
+### Static (hardcoded, always available)
+
 | Endpoint | Cost | Description |
 |----------|------|-------------|
 | `GET /` | Free | Server info and endpoint listing |
 | `GET /api/price` | 0.001 TON | Real-time price data |
 | `GET /api/analytics` | 0.01 TON | Wallet analytics |
 | `GET /api/premium` | 0.05 TON | Premium research report |
+
+### Dynamic (LLM-controlled via EndpointPlugin)
+
+The server also supports dynamic endpoints that can be opened/closed at runtime. These are managed by the `EndpointPlugin` with 3 actions:
+
+| Action | Description |
+|--------|-------------|
+| `open_x402_endpoint` | Creates a paid endpoint. Returns the public URL. |
+| `close_x402_endpoint` | Removes an endpoint. |
+| `list_x402_endpoints` | Lists active endpoints with prices and serve counts. |
+
+Dynamic endpoints are protected by `tonPaywall()` and call real SDK actions for live blockchain data. Buyer query params override default `dataParams`.
+
+**Public URL auto-detection:** At startup, the server calls `https://api.ipify.org` to get its public IP. Endpoints return routable URLs like `http://143.198.45.67:3402/api/price` instead of `localhost`. Override with `PUBLIC_URL` env var or set `LOCAL_MODE=true` for local testing.
 
 ## Security Features
 

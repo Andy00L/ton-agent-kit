@@ -13,4 +13,7 @@ coverage/
 .agent-registry.json
 .claude/
 .claude/
+.reputation-contract.json
 bun.lock
+setup.py
+.claude

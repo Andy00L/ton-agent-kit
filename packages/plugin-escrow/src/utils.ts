@@ -148,6 +148,20 @@ export async function sellerStakeOnContract(agent: AgentContext, contractAddress
   await sendTransaction(agent, [internal({ to: contractAddress, value: toNano(stakeAmount), bounce: true, body })]);
 }
 
+// FIX 2: Register escrow address in the reputation contract's whitelist
+const OP_REGISTER_ESCROW = 237020056; // Tact-generated opcode for RegisterEscrow
+export async function registerEscrowOnReputation(agent: AgentContext, reputationContract: Address, escrowAddress: Address): Promise<void> {
+  const body = beginCell()
+    .storeUint(OP_REGISTER_ESCROW, 32)
+    .storeAddress(escrowAddress)
+    .endCell();
+  try {
+    await sendTransaction(agent, [internal({ to: reputationContract, value: toNano("0.12"), bounce: true, body })]);
+  } catch {
+    // Non-fatal: reputation contract may not accept (not owner). Cross-contract notifications will fail but escrow itself works.
+  }
+}
+
 export async function getContractState(agent: AgentContext, contractAddress: Address) {
   const client = new TonClient4({ endpoint: agent.rpcUrl });
   const contract = client.open(Escrow.fromAddress(contractAddress));

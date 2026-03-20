@@ -1,20 +1,17 @@
+// tests/28-demo-commerce.ts — Wrapped from demo-agent-commerce.ts
 /**
- * TON Agent Kit — Multi-Agent Commerce Protocol Demo
- *
- * Two AI agents with SEPARATE wallets execute REAL on-chain commerce:
- * Identity → Discovery → Escrow (deploy) → Deposit → Service → Release → Reputation → Verify
- *
- * Every transaction is verifiable on tonviewer.com
+ * Multi-Agent Commerce Protocol Demo (no counters)
+ * Two AI agents with SEPARATE wallets execute REAL on-chain commerce.
  */
 
 import { TonClient4 } from "@ton/ton";
 import "dotenv/config";
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import DefiPlugin from "./packages/plugin-defi/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import DefiPlugin from "../packages/plugin-defi/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
 
 const MNEMONIC_A = process.env.TON_MNEMONIC;
 const MNEMONIC_B = process.env.TON_MNEMONIC_AGENT_B;
@@ -29,15 +26,19 @@ function header(step: number, title: string) {
   console.log(`${"═".repeat(60)}\n`);
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 async function main() {
   if (!MNEMONIC_A) {
-    console.error("❌ Set TON_MNEMONIC in .env (Agent A — market data provider)");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC in .env (Agent A — market data provider)");
   }
   if (!MNEMONIC_B) {
-    console.error("❌ Set TON_MNEMONIC_AGENT_B in .env (Agent B — trading bot)");
-    console.error("   Generate a testnet wallet and add its 24-word mnemonic.");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC_AGENT_B in .env (Agent B — trading bot)");
   }
 
   console.log("\n🤖 TON Agent Kit — Multi-Agent Commerce Demo\n");
@@ -83,9 +84,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 1 — IDENTITY: Register from different addresses
-  // ════════════════════════════════════════════════════════════
+  // STEP 1 — IDENTITY
   header(1, "IDENTITY — Register AI Agents (separate wallets)");
 
   const providerReg = await agentA.runAction("register_agent", {
@@ -118,9 +117,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 2 — DISCOVERY: Agent B finds Agent A
-  // ════════════════════════════════════════════════════════════
+  // STEP 2 — DISCOVERY
   header(2, "DISCOVERY — Agent B Finds a Price Feed Provider");
 
   const discovery = await agentB.runAction("discover_agent", {
@@ -135,9 +132,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 3 — ESCROW: Agent B deploys contract to pay Agent A
-  // ════════════════════════════════════════════════════════════
+  // STEP 3 — ESCROW
   header(3, "ESCROW — Agent B Deploys Payment Contract");
 
   console.log("  💰 Agent B deploys escrow contract to pay Agent A...\n");
@@ -158,12 +153,9 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 4 — DEPOSIT: Agent B funds the escrow
-  // ════════════════════════════════════════════════════════════
+  // STEP 4 — DEPOSIT
   header(4, "DEPOSIT — Agent B Funds the Escrow");
 
-  // Snapshot Agent A's balance before
   const balanceBefore = await agentA.runAction("get_balance", {}) as any;
   console.log(`  📊 Agent A balance BEFORE: ${balanceBefore.balance} TON`);
 
@@ -197,9 +189,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 5 — SERVICE: Agent A delivers market data
-  // ════════════════════════════════════════════════════════════
+  // STEP 5 — SERVICE
   header(5, "SERVICE — Agent A Delivers Market Data");
 
   console.log("  📊 Agent A (market-data-provider) fulfills the request...\n");
@@ -221,9 +211,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 6 — RELEASE: Agent B releases payment to Agent A
-  // ════════════════════════════════════════════════════════════
+  // STEP 6 — RELEASE
   header(6, "RELEASE — Agent B Releases Payment to Agent A");
 
   console.log("  🔓 Service confirmed — Agent B releasing escrow to Agent A...\n");
@@ -254,9 +242,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 7 — REPUTATION: Both agents rate each other
-  // ════════════════════════════════════════════════════════════
+  // STEP 7 — REPUTATION
   header(7, "REPUTATION — Both Agents Rate Each Other");
 
   const providerRep = await agentA.runAction("get_agent_reputation", {
@@ -281,9 +267,7 @@ async function main() {
 
   await sleep(2000);
 
-  // ════════════════════════════════════════════════════════════
-  // STEP 8 — VERIFY: Agent A received payment
-  // ════════════════════════════════════════════════════════════
+  // STEP 8 — VERIFY
   header(8, "VERIFY — Agent A Received Payment");
 
   await sleep(3000);
@@ -298,9 +282,7 @@ async function main() {
     console.log(`\n  ✅ Agent A received payment from Agent B via escrow!`);
   }
 
-  // ════════════════════════════════════════════════════════════
   // FINAL SUMMARY
-  // ════════════════════════════════════════════════════════════
   console.log(`\n${"═".repeat(60)}`);
   console.log("  ✅ MULTI-AGENT COMMERCE PROTOCOL — COMPLETE");
   console.log(`${"═".repeat(60)}\n`);
@@ -337,4 +319,20 @@ async function main() {
   console.log("  — all on TON blockchain.\n");
 }
 
-main().catch(console.error);
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  try {
+    await main();
+    return { passed: 1, failed: 0, errors: [], duration: Date.now() - start };
+  } catch (err: any) {
+    return { passed: 0, failed: 1, errors: [err.message], duration: Date.now() - start };
+  }
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

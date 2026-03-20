@@ -4,6 +4,22 @@ import { defineAction } from "@ton-agent-kit/core";
 import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
 import { callContractGetter } from "../../../plugin-identity/src/reputation-helpers";
 
+function parseString(item: any): string {
+  if (!item) return "";
+  if (item.type === "cell" && item.cell) {
+    try {
+      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
+      return cell.beginParse().loadStringTail();
+    } catch {
+      try {
+        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
+        return cell.beginParse().loadStringTail();
+      } catch {}
+    }
+  }
+  return "";
+}
+
 const parseNum = (item: any): number =>
   item?.type === "num"
     ? Number(BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num))
@@ -104,14 +120,15 @@ export const getOffersAction = defineAction({
             items = items[0].tuple;
           }
 
-          if (items.length < 5) continue;
+          if (items.length < 6) continue;
 
-          // Fields: seller address, intentIndex num, price num, deliveryTime num, status num
+          // Fields: seller address, intentIndex num, price num, deliveryTime num, status num, endpoint string
           const seller = parseAddress(items[0]);
           const offerIntentIndex = parseNum(items[1]);
           const price = parseBigNum(items[2]);
           const deliveryTime = parseNum(items[3]);
           const status = parseNum(items[4]);
+          const endpoint = parseString(items[5]);
 
           // Filter by intentIndex
           if (offerIntentIndex !== params.intentIndex) continue;
@@ -125,6 +142,7 @@ export const getOffersAction = defineAction({
             intentIndex: offerIntentIndex,
             price: price.toString(),
             deliveryTime,
+            endpoint,
             status: "pending",
           });
         } catch {

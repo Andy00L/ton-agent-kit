@@ -1,26 +1,7 @@
+// tests/21-commerce-e2e.ts — Wrapped from test-commerce.ts
 /**
- * ╔══════════════════════════════════════════════════════════════╗
- * ║     TON Agent Kit — Agent Commerce E2E Test Suite           ║
- * ║     5 wallets · 2 servers · full commerce flow              ║
- * ╚══════════════════════════════════════════════════════════════╝
- *
- * Tests the complete agent-to-agent commerce protocol:
- *   • Agent registration + discovery
- *   • x402 paywall + delivery proof
- *   • Escrow lifecycle with delivery confirmation
- *   • Auto-release after deadline
- *   • Bidirectional ratings
- *   • Arbiter dispute resolution
- *   • Edge cases and security
- *
- * Run: bun run test-commerce.ts
- *
- * Requires .env with:
- *   TON_MNEMONIC         (Agent A - seller / data provider)
- *   TON_MNEMONIC_AGENT_B (Agent B - buyer / consumer)
- *   TON_MNEMONIC_ARBITER1
- *   TON_MNEMONIC_ARBITER2
- *   TON_MNEMONIC_ARBITER3
+ * Agent Commerce E2E Test Suite
+ * 5 wallets, 2 servers, full commerce flow
  */
 
 import { readFileSync } from "fs";
@@ -32,15 +13,15 @@ const getEnv = (key: string) =>
 
 process.env.TON_MNEMONIC = getEnv("TON_MNEMONIC");
 
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
-import PaymentsPlugin from "./packages/plugin-payments/src/index";
-import { createMemoryPlugin, InMemoryStore } from "./packages/plugin-memory/src/index";
-import { tonPaywall } from "./packages/x402-middleware/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
+import AnalyticsPlugin from "../packages/plugin-analytics/src/index";
+import PaymentsPlugin from "../packages/plugin-payments/src/index";
+import { createMemoryPlugin, InMemoryStore } from "../packages/plugin-memory/src/index";
+import { tonPaywall } from "../packages/x402-middleware/src/index";
 
 // ══════════════════════════════════════════════════════════════
 //  Test Framework
@@ -112,6 +93,13 @@ function skip(name: string, reason: string) {
   skipped++;
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 // ══════════════════════════════════════════════════════════════
 //  Main
 // ══════════════════════════════════════════════════════════════
@@ -124,8 +112,7 @@ async function main() {
   const mnemonicArb3 = getEnv("TON_MNEMONIC_ARBITER3");
 
   if (!mnemonicA || !mnemonicB) {
-    console.error("❌ Set TON_MNEMONIC and TON_MNEMONIC_AGENT_B in .env");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC and TON_MNEMONIC_AGENT_B in .env");
   }
 
   const startTime = Date.now();
@@ -220,9 +207,7 @@ ${"─".repeat(W)}`);
 ${"─".repeat(W)}`);
 
   try {
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 1: Agent Registration & Discovery
-    // ══════════════════════════════════════════════════════════
+    // SECTION 1: Registration & Discovery
     header("🪪", 1, "Registration & Discovery", "Both agents register, then find each other");
 
     await test("Agent A registers as data-provider", async () => {
@@ -266,9 +251,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Registration & Discovery");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 2: Direct x402 Payment (no escrow)
-    // ══════════════════════════════════════════════════════════
+    // SECTION 2: Direct x402 Payment
     header("💳", 2, "Direct x402 Payment", "Agent B pays Agent A for price feed (no escrow)");
 
     const balBefore = await test("Agent B balance before payment", async () => {
@@ -315,8 +298,6 @@ ${"─".repeat(W)}`);
       });
 
       await test("Delivery proof in return value", async () => {
-        // The delivery proof is in pay_for_resource's return value
-        // (memory save is best-effort — AgentContext doesn't expose runAction)
         const proof = x402Result.deliveryProof;
         if (!proof) throw new Error("No deliveryProof in return value");
         if (!proof.txHash) throw new Error("Missing txHash in proof");
@@ -327,9 +308,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Direct x402 Payment");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 3: Escrow + x402 (Happy Path)
-    // ══════════════════════════════════════════════════════════
+    // SECTION 3: Escrow + x402 (Happy Path)
     header("🔒", 3, "Escrow + x402 Happy Path", "Create → Deposit → Pay → Confirm → Release");
 
     const escrow1 = await test("Agent B creates escrow for Agent A", async () => {
@@ -402,9 +381,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Escrow + x402 Happy Path");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 4: Auto-Release (buyer does nothing after confirm)
-    // ══════════════════════════════════════════════════════════
+    // SECTION 4: Auto-Release
     header("⏰", 4, "Auto-Release", "Buyer receives service but doesn't release — seller still paid");
 
     const escrow2 = await test("Agent B creates escrow (1 min deadline)", async () => {
@@ -452,9 +429,7 @@ ${"─".repeat(W)}`);
     console.log(`\n  ⏳ 20s cooldown before next escrow...\n`);
     await delay(20000);
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 5: No Delivery — Buyer Protected
-    // ══════════════════════════════════════════════════════════
+    // SECTION 5: No Delivery — Buyer Protected
     header("🛡️", 5, "No Delivery (Buyer Protected)", "Seller doesn't deliver → buyer gets refund");
 
     const escrow3 = await test("Agent B creates escrow (1 min deadline)", async () => {
@@ -478,14 +453,10 @@ ${"─".repeat(W)}`);
 
       await delay(12000);
 
-      // Seller does NOT deliver — no x402 call, no DeliveryConfirmed
       console.log(`\n  ⏳ Waiting for deadline (~50s — seller never delivers)...\n`);
       await delay(50000);
 
       await test("No-delivery: auto-release then refund (contract-version adaptive)", async () => {
-        // Try auto-release first — behavior depends on contract version:
-        // - New contract (with deliveryConfirmed check): auto-release FAILS → refund succeeds
-        // - Old contract (no deliveryConfirmed check): auto-release succeeds → escrow settled
         let autoReleased = false;
         try {
           const ar = await agentB.runAction("auto_release_escrow", { escrowId: escrow3.escrowId });
@@ -495,11 +466,9 @@ ${"─".repeat(W)}`);
         }
 
         if (autoReleased) {
-          // Old contract: auto-released without delivery check
           console.log(`     Old contract: auto-released without delivery check`);
           console.log(`     (New contract will block this — recompile to enable deliveryConfirmed)`);
         } else {
-          // New contract: auto-release correctly blocked
           console.log(`     Auto-release blocked (no delivery confirmation) — refunding...`);
           const r = await agentB.runAction("refund_escrow", { escrowId: escrow3.escrowId });
           console.log(`     Refund: ${r.status}`);
@@ -512,15 +481,12 @@ ${"─".repeat(W)}`);
     console.log(`\n  ⏳ 20s cooldown before next escrow...\n`);
     await delay(20000);
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 6: Arbiter Dispute Resolution
-    //  Self-selecting arbiters: join with stake, majority votes
-    // ══════════════════════════════════════════════════════════
+    // SECTION 6: Arbiter Dispute Resolution
     header("⚖️", 6, "Arbiter Dispute Resolution", "Self-selecting arbiters: join with stake, majority votes");
 
     if (arbiter1Agent && arbiter1Addr && arbiter2Agent && arbiter2Addr && arbiter3Agent && arbiter3Addr) {
 
-      // ── 6a: Happy path — no dispute, depositor releases ──
+      // 6a: Happy path
       console.log(`\n  ── 6a: Happy path (no dispute, depositor releases) ──`);
 
       const escrow6a = await test("Agent B creates escrow (no arbiters needed)", async () => {
@@ -563,7 +529,7 @@ ${"─".repeat(W)}`);
       console.log(`\n  ⏳ 20s cooldown...\n`);
       await delay(20000);
 
-      // ── 6b: 3 arbiters self-join, 2 vote release (seller wins) ──
+      // 6b: 3 arbiters, 2 vote release
       console.log(`\n  ── 6b: 3 arbiters self-join, 2/3 vote release → seller wins ──`);
 
       const balABefore6b = await test("Agent A balance before", async () => {
@@ -671,7 +637,7 @@ ${"─".repeat(W)}`);
       console.log(`\n  ⏳ 20s cooldown...\n`);
       await delay(20000);
 
-      // ── 6c: 3 arbiters self-join, 2 vote refund (buyer wins) ──
+      // 6c: 3 arbiters, 2 vote refund
       console.log(`\n  ── 6c: 3 arbiters self-join, 2/3 vote refund → buyer wins ──`);
 
       const balBBefore6c = await test("Agent B balance before", async () => {
@@ -762,7 +728,7 @@ ${"─".repeat(W)}`);
       console.log(`\n  ⏳ 20s cooldown...\n`);
       await delay(20000);
 
-      // ── 6d-6h: Rejection + edge case tests ──
+      // 6d-6h: Rejection + edge case tests
       console.log(`\n  ── 6d-6h: Rejection + edge case tests ──`);
 
       const escrow6d = await test("Agent B creates escrow for rejection tests", async () => {
@@ -794,7 +760,6 @@ ${"─".repeat(W)}`);
 
         await delay(12000);
 
-        // 6d: Depositor cannot join as arbiter
         await test("Agent B (depositor) tries join_dispute → rejected", async () => {
           try {
             await agentB.runAction("join_dispute", { escrowId: escrow6d.escrowId, stake: "0.15" });
@@ -805,7 +770,6 @@ ${"─".repeat(W)}`);
           console.log(`     arbiterCount: ${r.onChain?.arbiterCount} (correctly 0)`);
         });
 
-        // 6e: Beneficiary cannot join as arbiter
         await test("Agent A (beneficiary) tries join_dispute → rejected", async () => {
           try {
             await agentA.runAction("join_dispute", { escrowId: escrow6d.escrowId, stake: "0.15" });
@@ -816,7 +780,6 @@ ${"─".repeat(W)}`);
           console.log(`     arbiterCount: ${r.onChain?.arbiterCount} (correctly 0)`);
         });
 
-        // Now let real arbiters join for remaining tests
         await test("Arbiter1 + Arbiter2 join", async () => {
           await arbiter1Agent!.runAction("join_dispute", { escrowId: escrow6d.escrowId, stake: "0.15" });
           await delay(10000);
@@ -826,7 +789,6 @@ ${"─".repeat(W)}`);
           console.log(`     arbiterCount: ${r.onChain?.arbiterCount}`);
         });
 
-        // 6f: Non-arbiter cannot vote
         await test("Agent A (not arbiter) tries vote_release → rejected", async () => {
           try {
             await agentA.runAction("vote_release", { escrowId: escrow6d.escrowId });
@@ -837,7 +799,6 @@ ${"─".repeat(W)}`);
           if (r.onChain?.votesRelease > 0) throw new Error("Non-arbiter vote counted");
         });
 
-        // 6g: Double vote rejected
         await test("Arbiter1 votes release (first)", async () => {
           await arbiter1Agent!.runAction("vote_release", { escrowId: escrow6d.escrowId });
           await delay(10000);
@@ -855,7 +816,6 @@ ${"─".repeat(W)}`);
           if (r.onChain?.votesRelease > 1) throw new Error("Double vote counted");
         });
 
-        // Clean up: Arbiter2 votes → majority → settled
         await test("Arbiter2 votes release → majority → settled", async () => {
           await arbiter2Agent!.runAction("vote_release", { escrowId: escrow6d.escrowId });
         });
@@ -867,9 +827,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Arbiter Dispute");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 7: Double-Settle Prevention
-    // ══════════════════════════════════════════════════════════
+    // SECTION 7: Double-Settle Prevention
     header("🔐", 7, "Double-Settle Prevention", "Cannot release/refund/confirm after settlement");
 
     if (escrow1) {
@@ -903,9 +861,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Double-Settle Prevention");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 8: Reputation After Commerce
-    // ══════════════════════════════════════════════════════════
+    // SECTION 8: Reputation After Commerce
     header("⭐", 8, "Reputation After Commerce", "Check reputation scores reflect deals");
 
     await test("Agent A reputation after deals", async () => {
@@ -930,9 +886,7 @@ ${"─".repeat(W)}`);
 
     sectionEnd("Reputation After Commerce");
 
-    // ══════════════════════════════════════════════════════════
-    //  SECTION 9: Balance Reconciliation
-    // ══════════════════════════════════════════════════════════
+    // SECTION 9: Balance Reconciliation
     header("💰", 9, "Balance Reconciliation", "Final wallet balances");
 
     await test("Final balances", async () => {
@@ -947,19 +901,16 @@ ${"─".repeat(W)}`);
     sectionEnd("Balance Reconciliation");
 
   } finally {
-    // Always close servers
     srvA.close();
     srvB.close();
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  SUMMARY
-  // ══════════════════════════════════════════════════════════
-
+  // SUMMARY
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const total = passed + failed + skipped;
 
   console.log(`
+
 
 ╔${"═".repeat(W - 2)}╗
 ║${" ".repeat(Math.floor((W - 36) / 2))}🏪 Commerce E2E Test Results${" ".repeat(Math.ceil((W - 36) / 2))}║
@@ -1002,12 +953,30 @@ ${"─".repeat(W)}`);
   } else {
     console.log(`\n  ⚠️  ${failed} test(s) need attention.\n`);
   }
-
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal:", err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  passed = 0;
+  failed = 0;
+  skipped = 0;
+  errors.length = 0;
+  sectionResults.length = 0;
+  sectionPassed = 0;
+  sectionFailed = 0;
+  try {
+    await main();
+  } catch (err: any) {
+    failed++;
+    errors.push(`FATAL: ${err.message}`);
+  }
+  return { passed, failed, errors: [...errors], duration: Date.now() - start };
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

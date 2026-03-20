@@ -1,16 +1,12 @@
+// tests/26-autonomous-5agents.ts — Wrapped from test-autonomous.ts
 /**
- * TON Agent Kit — 5-Agent Autonomous Simulation
- *
+ * 5-Agent Autonomous Simulation
  * 4 scripted agents + 1 fully LLM-driven agent run concurrently on testnet.
- * Agent D has 20% delivery failure → triggers natural disputes.
- * Agent E uses runLoop() with ALL 68 tools — the LLM decides everything.
- *
- * Run:   bun run test-autonomous.ts
- * Quick: DURATION_MINUTES=2 bun run test-autonomous.ts
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
-import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import express from "express";
+import { tonPaywall, MemoryReplayStore } from "../packages/x402-middleware/src/index";
 
 const envContent = readFileSync(".env", "utf-8");
 const getEnv = (key: string) =>
@@ -20,15 +16,15 @@ process.env.OPENAI_API_KEY = getEnv("OPENAI_API_KEY");
 process.env.OPENAI_BASE_URL = getEnv("OPENAI_BASE_URL");
 process.env.AI_MODEL = getEnv("AI_MODEL");
 
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import DefiPlugin from "./packages/plugin-defi/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
-import PaymentsPlugin from "./packages/plugin-payments/src/index";
-import AgentCommPlugin from "./packages/plugin-agent-comm/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import DefiPlugin from "../packages/plugin-defi/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
+import AnalyticsPlugin from "../packages/plugin-analytics/src/index";
+import PaymentsPlugin from "../packages/plugin-payments/src/index";
+import AgentCommPlugin from "../packages/plugin-agent-comm/src/index";
 
 // ══════════════════════════════════════════════════════════════
 //  Globals
@@ -103,30 +99,6 @@ async function act(agent: TonAgentKit, logger: AgentLogger, action: string, para
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  x402 Servers
-// ══════════════════════════════════════════════════════════════
-
-function makeServer(port: number, name: string, handler: (url: URL, paymentHash?: string) => any): ReturnType<typeof createServer> {
-  const srv = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "", `http://localhost:${port}`);
-    res.setHeader("Content-Type", "application/json");
-    if (url.pathname === "/health") { res.writeHead(200); res.end(JSON.stringify({ status: "ok", agent: name })); return; }
-    try {
-      const ph = req.headers["x-payment-hash"] as string | undefined;
-      const result = handler(url, ph);
-      if (result === null) { res.writeHead(404); res.end("{}"); return; }
-      if (result.requirePayment && !ph) {
-        res.writeHead(402);
-        res.end(JSON.stringify({ payment: { amount: result.amount, recipient: result.recipient, protocol: "ton-x402-v1" } }));
-        return;
-      }
-      res.writeHead(200); res.end(JSON.stringify(result.data || result));
-    } catch { res.writeHead(500); res.end("{}"); }
-  });
-  srv.listen(port);
-  return srv;
-}
 
 // ══════════════════════════════════════════════════════════════
 //  Agent A — price-oracle (every 5 min)
@@ -142,7 +114,6 @@ async function runAgentA(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
     const bal = await act(agent, logger, "get_balance", {}, cycle, "monitoring");
     if (bal) console.log(`  [${formatElapsed()}] price-oracle  | balance=${bal.balance} TON`);
 
-    // Discover price_feed intents, send offers
     const intents = await act(agent, logger, "discover_intents", { service: "price_feed" }, cycle, "discovery");
     if (intents?.intents?.length > 0) {
       for (const intent of intents.intents.slice(0, 3)) {
@@ -153,7 +124,6 @@ async function runAgentA(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Also check market_data intents
     const intents2 = await act(agent, logger, "discover_intents", { service: "market_data" }, cycle, "discovery");
     if (intents2?.intents?.length > 0) {
       for (const intent of intents2.intents.slice(0, 2)) {
@@ -164,7 +134,6 @@ async function runAgentA(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Join disputes as arbiter
     const disputes = await act(agent, logger, "get_open_disputes", { limit: 5 }, cycle, "dispute");
     if (disputes?.disputes?.length > 0) {
       for (const d of disputes.disputes.slice(0, 2)) {
@@ -201,7 +170,6 @@ async function runAgentB(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Join disputes
     const disputes = await act(agent, logger, "get_open_disputes", { limit: 5 }, cycle, "dispute");
     if (disputes?.disputes?.length > 0) {
       for (const d of disputes.disputes.slice(0, 2)) {
@@ -210,7 +178,6 @@ async function runAgentB(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Every 3rd cycle: monitor all agents
     if (cycle % 3 === 0) {
       await act(agent, logger, "discover_agent", {}, cycle, "monitoring");
       if (allWalletAddresses.length > 0) {
@@ -236,14 +203,11 @@ async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 
     await act(agent, logger, "get_balance", {}, cycle, "monitoring");
 
-    // Broadcast intents for services
     const intentP = await act(agent, logger, "broadcast_intent", { service: "price_feed", budget: "0.01", deadlineMinutes: 8, requirements: "Real-time TON/USDT" }, cycle, "discovery");
     const intentA = await act(agent, logger, "broadcast_intent", { service: "analytics", budget: "0.02", deadlineMinutes: 8, requirements: "Wallet analysis" }, cycle, "discovery");
 
-    // Wait 1 min for offers
     await delay(Math.min(60000, Math.max(0, endTime - Date.now())));
 
-    // Check offers on price_feed intent
     if (intentP?.intentIndex >= 0) {
       const offers = await act(agent, logger, "get_offers", { intentIndex: intentP.intentIndex }, cycle, "offer");
       if (offers?.offers?.length > 0) {
@@ -256,7 +220,6 @@ async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Check offers on analytics intent
     if (intentA?.intentIndex >= 0) {
       const offers = await act(agent, logger, "get_offers", { intentIndex: intentA.intentIndex }, cycle, "offer");
       if (offers?.offers?.length > 0) {
@@ -265,7 +228,6 @@ async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Join disputes on other deals
     const disputes = await act(agent, logger, "get_open_disputes", { limit: 5 }, cycle, "dispute");
     if (disputes?.disputes?.length > 0) {
       for (const d of disputes.disputes.slice(0, 2)) {
@@ -274,7 +236,6 @@ async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Bulk query every 3rd cycle
     if (cycle % 3 === 0 && allWalletAddresses.length > 0) {
       await act(agent, logger, "get_accounts_bulk", { addresses: allWalletAddresses }, cycle, "monitoring");
     }
@@ -297,7 +258,6 @@ async function runAgentD(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 
     await act(agent, logger, "get_balance", {}, cycle, "monitoring");
 
-    // Browse ALL open intents, offer on everything
     const allIntents = await act(agent, logger, "discover_intents", {}, cycle, "discovery");
     if (allIntents?.intents?.length > 0) {
       for (const intent of allIntents.intents.slice(0, 5)) {
@@ -308,13 +268,11 @@ async function runAgentD(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
       }
     }
 
-    // Join EVERY open dispute (main revenue source)
     const disputes = await act(agent, logger, "get_open_disputes", { limit: 10 }, cycle, "dispute");
     if (disputes?.disputes?.length > 0) {
       for (const d of disputes.disputes) {
         await act(agent, logger, "join_dispute", { escrowId: d.escrowAddress, stake: "0.01" }, cycle, "dispute");
         await delay(3000);
-        // Always vote release (biased toward sellers)
         await act(agent, logger, "vote_release", { escrowId: d.escrowAddress }, cycle, "dispute");
         await delay(3000);
       }
@@ -433,6 +391,15 @@ function generateReport(loggers: AgentLogger[]) {
     for (const d of report.autonomousDecisions) console.log(`    Cycle ${d.cycle}: ${d.steps || 0} actions | ${(d.summary || "").slice(0, 80)}`);
   }
   console.log(`\n  Logs: logs/*.json\n`);
+
+  return report;
+}
+
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -454,7 +421,7 @@ async function main() {
   const mnD = getEnv("TON_MNEMONIC_ARBITER2");
   const mnE = getEnv("TON_MNEMONIC_ARBITER3");
 
-  if (!mnA || !mnB || !mnC || !mnD || !mnE) { console.error("Need all 5 wallet mnemonics in .env"); process.exit(1); }
+  if (!mnA || !mnB || !mnC || !mnD || !mnE) { throw new Error("Need all 5 wallet mnemonics in .env"); }
 
   const wA = await KeypairWallet.fromMnemonic(mnA.split(" "), { version: "V5R1", network: "testnet" });
   const wB = await KeypairWallet.fromMnemonic(mnB.split(" "), { version: "V5R1", network: "testnet" });
@@ -489,48 +456,113 @@ async function main() {
 
   // Start x402 servers
   const addrA = allWalletAddresses[0];
-  const srvA = makeServer(3001, "price-oracle", (url, ph) => {
-    if (url.pathname === "/api/price") {
-      if (!ph) return { requirePayment: true, amount: "0.005", recipient: addrA };
-      return { data: { token: "TON", price: 3.85, timestamp: Date.now(), source: "price-oracle" } };
-    }
-    if (url.pathname === "/api/prices") {
-      if (!ph) return { requirePayment: true, amount: "0.01", recipient: addrA };
-      return { data: { TON: 3.85, BTC: 67000, ETH: 3500, timestamp: Date.now() } };
-    }
-    return null;
-  });
 
-  const srvB = makeServer(3002, "analytics", (url, ph) => {
-    if (url.pathname === "/api/analytics") {
-      if (!ph) return { requirePayment: true, amount: "0.01", recipient: allWalletAddresses[1] };
-      return { data: { analysis: "active trader", riskScore: 0.3, txCount: 42 } };
-    }
-    return null;
-  });
+  const appA = express();
+  appA.get("/health", (_req, res) => res.json({ status: "ok", agent: "price-oracle" }));
+  appA.get("/api/price",
+    tonPaywall({ amount: "0.005", recipient: addrA, network: "testnet", description: "Real-time TON price", replayStore: new MemoryReplayStore() }),
+    async (_req: express.Request, res: express.Response) => {
+      try {
+        const priceData = await agentA.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" });
+        res.json({ source: "price-oracle", fetchedAt: new Date().toISOString(), ...(priceData as any) });
+      } catch (err: any) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+  appA.get("/api/prices",
+    tonPaywall({ amount: "0.01", recipient: addrA, network: "testnet", description: "Multi-token prices", replayStore: new MemoryReplayStore() }),
+    async (_req: express.Request, res: express.Response) => {
+      try {
+        const [usdt, not, balance] = await Promise.all([
+          agentA.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
+          agentA.runAction("get_price", { tokenAddress: "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT" }),
+          agentA.runAction("get_balance", {}),
+        ]);
+        res.json({ source: "price-oracle", fetchedAt: new Date().toISOString(), oracleBalance: balance, prices: [{ token: "USDT", ...(usdt as any) }, { token: "NOT", ...(not as any) }] });
+      } catch (err: any) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+  const srvA = appA.listen(3001);
 
-  const srvC = makeServer(3003, "trader-bot", (url, ph) => {
-    if (url.pathname === "/api/signals") {
-      if (!ph) return { requirePayment: true, amount: "0.02", recipient: allWalletAddresses[2] };
-      return { data: { signal: "buy", confidence: 0.7, token: "TON" } };
-    }
-    return null;
-  });
+  const appB = express();
+  appB.get("/health", (_req, res) => res.json({ status: "ok", agent: "analytics" }));
+  appB.get("/api/analytics",
+    tonPaywall({ amount: "0.01", recipient: allWalletAddresses[1], network: "testnet", description: "Wallet analytics", replayStore: new MemoryReplayStore() }),
+    async (req: express.Request, res: express.Response) => {
+      try {
+        const addr = (req.query.address as string) || agentB.wallet.address.toRawString();
+        const [walletInfo, txHistory, balance] = await Promise.all([
+          agentB.runAction("get_wallet_info", { address: addr }),
+          agentB.runAction("get_transaction_history", { address: addr, limit: 5 }),
+          agentB.runAction("get_balance", { address: addr }),
+        ]);
+        res.json({ source: "analytics-provider", fetchedAt: new Date().toISOString(), balance, walletInfo, recentTransactions: txHistory });
+      } catch (err: any) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+  const srvB = appB.listen(3002);
 
-  // Agent D: 20% failure rate
-  const srvD = makeServer(3004, "deal-maker", (url, ph) => {
-    if (url.pathname === "/api/deals") {
-      if (!ph) return { requirePayment: true, amount: "0.005", recipient: allWalletAddresses[3] };
-      if (Math.random() < 0.2) return { data: { error: "Service temporarily unavailable" } }; // 20% fail
-      return { data: { deals: [], count: 0, timestamp: Date.now() } };
-    }
-    return null;
-  });
+  const appC = express();
+  appC.get("/health", (_req, res) => res.json({ status: "ok", agent: "trader-bot" }));
+  appC.get("/api/signals",
+    tonPaywall({ amount: "0.02", recipient: allWalletAddresses[2], network: "testnet", description: "Trading signals", replayStore: new MemoryReplayStore() }),
+    async (_req: express.Request, res: express.Response) => {
+      try {
+        const [priceData, balance] = await Promise.all([
+          agentC.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
+          agentC.runAction("get_balance", {}),
+        ]);
+        const price = (priceData as any)?.price ?? (priceData as any)?.usd ?? 0;
+        const signal = price < 1.0 ? "buy" : "hold";
+        const reasoning = price < 1.0
+          ? `USDT at $${price} is below peg — buy opportunity`
+          : `USDT at $${price} is at/above peg — hold`;
+        res.json({ source: "trader-bot", fetchedAt: new Date().toISOString(), signal, price: priceData, balance, reasoning });
+      } catch (err: any) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+  const srvC = appC.listen(3003);
 
-  const srvE = makeServer(3005, "autonomous", (url) => {
-    if (url.pathname === "/api/health") return { data: { status: "ok", agent: "autonomous" } };
-    return null;
+  const appD = express();
+  appD.get("/health", (_req, res) => res.json({ status: "ok", agent: "deal-maker" }));
+  appD.get("/api/deals",
+    tonPaywall({ amount: "0.005", recipient: allWalletAddresses[3], network: "testnet", description: "Open deals", replayStore: new MemoryReplayStore() }),
+    async (_req: express.Request, res: express.Response) => {
+      try {
+        if (Math.random() < 0.2) {
+          res.status(503).json({ source: "deal-maker", fetchedAt: new Date().toISOString(), error: "Service temporarily unavailable" });
+          return;
+        }
+        const [intents, balance] = await Promise.all([
+          agentD.runAction("discover_intents", {}),
+          agentD.runAction("get_balance", {}),
+        ]);
+        res.json({ source: "deal-maker", fetchedAt: new Date().toISOString(), openIntents: intents, agentBalance: balance });
+      } catch (err: any) {
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+  const srvD = appD.listen(3004);
+
+  const appE = express();
+  appE.get("/health", (_req, res) => res.json({ status: "ok", agent: "autonomous" }));
+  appE.get("/api/health", async (_req: express.Request, res: express.Response) => {
+    try {
+      const balance = await agentE.runAction("get_balance", {});
+      res.json({ source: "autonomous", fetchedAt: new Date().toISOString(), status: "ok", balance });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
+  const srvE = appE.listen(3005);
 
   // Register agents A-D on-chain
   console.log(`\n  Registering agents A-D on-chain...\n`);
@@ -569,8 +601,33 @@ async function main() {
   srvA.close(); srvB.close(); srvC.close(); srvD.close(); srvE.close();
 
   // Report
-  generateReport([logA, logB, logC, logD, logE]);
-  process.exit(0);
+  const report = generateReport([logA, logB, logC, logD, logE]);
+
+  // Return stats for the wrapper
+  return report;
 }
 
-main().catch((e) => { console.error("Fatal:", e); process.exit(1); });
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  try {
+    const report = await main();
+    const totalSuccess = report.totals.success;
+    const totalErrors = report.totals.errors;
+    return {
+      passed: totalSuccess,
+      failed: totalErrors,
+      errors: totalErrors > 0 ? [`${totalErrors} agent interaction(s) failed`] : [],
+      duration: Date.now() - start,
+    };
+  } catch (err: any) {
+    return { passed: 0, failed: 1, errors: [`FATAL: ${err.message}`], duration: Date.now() - start };
+  }
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

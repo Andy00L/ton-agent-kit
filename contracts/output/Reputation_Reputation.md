@@ -1,9 +1,9 @@
 # Tact compilation report
 Contract: Reputation
-BoC Size: 14528 bytes
+BoC Size: 19459 bytes
 
 ## Structures (Structs and Messages)
-Total structures: 33
+Total structures: 34
 
 ### DataSize
 TL-B: `_ cells:int257 bits:int257 refs:int257 = DataSize`
@@ -62,8 +62,8 @@ TL-B: `register#38a0a307 name:^string capabilities:^string available:bool = Regi
 Signature: `Register{name:^string,capabilities:^string,available:bool}`
 
 ### Rate
-TL-B: `rate#a7262e8e agentName:^string success:bool = Rate`
-Signature: `Rate{agentName:^string,success:bool}`
+TL-B: `rate#4f98bfc8 agentName:^string success:bool dealIndex:uint32 = Rate`
+Signature: `Rate{agentName:^string,success:bool,dealIndex:uint32}`
 
 ### UpdateAvailability
 TL-B: `update_availability#54e26a4b name:^string available:bool = UpdateAvailability`
@@ -81,6 +81,10 @@ Signature: `IndexCapability{agentIndex:uint32,capabilityHash:uint256}`
 TL-B: `trigger_cleanup#8711bf6f maxClean:uint8 = TriggerCleanup`
 Signature: `TriggerCleanup{maxClean:uint8}`
 
+### RegisterEscrow
+TL-B: `register_escrow#0e20a398 escrowAddress:address = RegisterEscrow`
+Signature: `RegisterEscrow{escrowAddress:address}`
+
 ### NotifyDisputeOpened
 TL-B: `notify_dispute_opened#2f7e5059 escrowAddress:address depositor:address beneficiary:address amount:coins votingDeadline:uint32 = NotifyDisputeOpened`
 Signature: `NotifyDisputeOpened{escrowAddress:address,depositor:address,beneficiary:address,amount:coins,votingDeadline:uint32}`
@@ -90,12 +94,12 @@ TL-B: `notify_dispute_settled#bfa05986 escrowAddress:address released:bool refun
 Signature: `NotifyDisputeSettled{escrowAddress:address,released:bool,refunded:bool}`
 
 ### BroadcastIntent
-TL-B: `broadcast_intent#966dc6ed serviceHash:uint256 budget:coins deadline:uint32 = BroadcastIntent`
-Signature: `BroadcastIntent{serviceHash:uint256,budget:coins,deadline:uint32}`
+TL-B: `broadcast_intent#69570e20 serviceHash:uint256 serviceName:^string budget:coins deadline:uint32 description:^string = BroadcastIntent`
+Signature: `BroadcastIntent{serviceHash:uint256,serviceName:^string,budget:coins,deadline:uint32,description:^string}`
 
 ### SendOffer
-TL-B: `send_offer#6d5af6a7 intentIndex:uint32 price:coins deliveryTime:uint32 = SendOffer`
-Signature: `SendOffer{intentIndex:uint32,price:coins,deliveryTime:uint32}`
+TL-B: `send_offer#95730743 intentIndex:uint32 price:coins deliveryTime:uint32 endpoint:^string = SendOffer`
+Signature: `SendOffer{intentIndex:uint32,price:coins,deliveryTime:uint32,endpoint:^string}`
 
 ### AcceptOffer
 TL-B: `accept_offer#3785158d offerIndex:uint32 = AcceptOffer`
@@ -122,23 +126,23 @@ TL-B: `_ index:uint32 exists:bool score:uint16 totalRatings:uint32 registeredAt:
 Signature: `AgentCleanupInfo{index:uint32,exists:bool,score:uint16,totalRatings:uint32,registeredAt:uint32,lastActive:uint32,daysSinceActive:uint32,daysSinceRegistered:uint32,eligibleForCleanup:bool,cleanupReason:uint8}`
 
 ### IntentData
-TL-B: `_ buyer:address serviceHash:uint256 budget:coins deadline:uint32 status:uint8 acceptedOffer:uint32 isExpired:bool = IntentData`
-Signature: `IntentData{buyer:address,serviceHash:uint256,budget:coins,deadline:uint32,status:uint8,acceptedOffer:uint32,isExpired:bool}`
+TL-B: `_ buyer:address serviceHash:uint256 serviceName:^string budget:coins deadline:uint32 status:uint8 acceptedOffer:uint32 isExpired:bool description:^string = IntentData`
+Signature: `IntentData{buyer:address,serviceHash:uint256,serviceName:^string,budget:coins,deadline:uint32,status:uint8,acceptedOffer:uint32,isExpired:bool,description:^string}`
 
 ### OfferData
-TL-B: `_ seller:address intentIndex:uint32 price:coins deliveryTime:uint32 status:uint8 = OfferData`
-Signature: `OfferData{seller:address,intentIndex:uint32,price:coins,deliveryTime:uint32,status:uint8}`
+TL-B: `_ seller:address intentIndex:uint32 price:coins deliveryTime:uint32 status:uint8 endpoint:^string = OfferData`
+Signature: `OfferData{seller:address,intentIndex:uint32,price:coins,deliveryTime:uint32,status:uint8,endpoint:^string}`
 
 ### StorageInfo
 TL-B: `_ storageFund:coins totalCells:uint32 annualCost:coins yearsCovered:uint32 = StorageInfo`
 Signature: `StorageInfo{storageFund:coins,totalCells:uint32,annualCost:coins,yearsCovered:uint32}`
 
 ### Reputation$Data
-TL-B: `_ owner:address fee:coins agentCount:uint32 agentOwners:dict<uint32, address> agentAvailable:dict<uint32, bool> agentTotalTasks:dict<uint32, uint32> agentSuccesses:dict<uint32, uint32> agentRegisteredAt:dict<uint32, uint32> agentLastActive:dict<uint32, uint32> nameToIndex:dict<uint256, uint32> capabilityIndex:dict<uint256, ^cell> openDisputes:dict<uint32, address> disputeDepositors:dict<uint32, address> disputeBeneficiaries:dict<uint32, address> disputeAmounts:dict<uint32, int> disputeDeadlines:dict<uint32, uint32> disputeSettled:dict<uint32, bool> disputeCount:uint32 cleanupCursor:uint32 intents:dict<uint32, address> intentServiceHashes:dict<uint32, uint256> intentBudgets:dict<uint32, int> intentDeadlines:dict<uint32, uint32> intentStatuses:dict<uint32, uint8> intentAcceptedOffer:dict<uint32, uint32> intentCount:uint32 intentsByService:dict<uint256, ^cell> offers:dict<uint32, address> offerIntents:dict<uint32, uint32> offerPrices:dict<uint32, int> offerDeliveryTimes:dict<uint32, uint32> offerStatuses:dict<uint32, uint8> offerCount:uint32 intentCleanupCursor:uint32 agentActiveIntents:dict<address, int> maxIntentsPerAgent:uint8 storageFund:coins accumulatedFees:coins = Reputation`
-Signature: `Reputation{owner:address,fee:coins,agentCount:uint32,agentOwners:dict<uint32, address>,agentAvailable:dict<uint32, bool>,agentTotalTasks:dict<uint32, uint32>,agentSuccesses:dict<uint32, uint32>,agentRegisteredAt:dict<uint32, uint32>,agentLastActive:dict<uint32, uint32>,nameToIndex:dict<uint256, uint32>,capabilityIndex:dict<uint256, ^cell>,openDisputes:dict<uint32, address>,disputeDepositors:dict<uint32, address>,disputeBeneficiaries:dict<uint32, address>,disputeAmounts:dict<uint32, int>,disputeDeadlines:dict<uint32, uint32>,disputeSettled:dict<uint32, bool>,disputeCount:uint32,cleanupCursor:uint32,intents:dict<uint32, address>,intentServiceHashes:dict<uint32, uint256>,intentBudgets:dict<uint32, int>,intentDeadlines:dict<uint32, uint32>,intentStatuses:dict<uint32, uint8>,intentAcceptedOffer:dict<uint32, uint32>,intentCount:uint32,intentsByService:dict<uint256, ^cell>,offers:dict<uint32, address>,offerIntents:dict<uint32, uint32>,offerPrices:dict<uint32, int>,offerDeliveryTimes:dict<uint32, uint32>,offerStatuses:dict<uint32, uint8>,offerCount:uint32,intentCleanupCursor:uint32,agentActiveIntents:dict<address, int>,maxIntentsPerAgent:uint8,storageFund:coins,accumulatedFees:coins}`
+TL-B: `_ owner:address fee:coins agentCount:uint32 agentOwners:dict<uint32, address> agentAvailable:dict<uint32, bool> agentTotalTasks:dict<uint32, uint32> agentSuccesses:dict<uint32, uint32> agentRegisteredAt:dict<uint32, uint32> agentLastActive:dict<uint32, uint32> nameToIndex:dict<uint256, uint32> capabilityIndex:dict<uint256, ^cell> openDisputes:dict<uint32, address> disputeDepositors:dict<uint32, address> disputeBeneficiaries:dict<uint32, address> disputeAmounts:dict<uint32, int> disputeDeadlines:dict<uint32, uint32> disputeSettled:dict<uint32, bool> disputeCount:uint32 cleanupCursor:uint32 intents:dict<uint32, address> intentServiceHashes:dict<uint32, uint256> intentServiceNames:dict<uint32, ^cell> intentBudgets:dict<uint32, int> intentDeadlines:dict<uint32, uint32> intentStatuses:dict<uint32, uint8> intentAcceptedOffer:dict<uint32, uint32> intentCount:uint32 intentsByService:dict<uint256, ^cell> intentDescriptions:dict<uint32, ^cell> offers:dict<uint32, address> offerIntents:dict<uint32, uint32> offerPrices:dict<uint32, int> offerDeliveryTimes:dict<uint32, uint32> offerStatuses:dict<uint32, uint8> offerEndpoints:dict<uint32, ^cell> offerCount:uint32 intentCleanupCursor:uint32 agentActiveIntents:dict<address, int> maxIntentsPerAgent:uint8 agentNameHashes:dict<uint32, uint256> knownEscrows:dict<address, bool> dealBuyers:dict<uint32, address> dealSellers:dict<uint32, address> dealBuyerRated:dict<uint32, bool> dealSellerRated:dict<uint32, bool> dealCount:uint32 intentOffers:dict<uint32, ^cell> agentCapIndexed:dict<uint256, bool> agentIndexedCaps:dict<uint32, ^cell> storageFund:coins accumulatedFees:coins = Reputation`
+Signature: `Reputation{owner:address,fee:coins,agentCount:uint32,agentOwners:dict<uint32, address>,agentAvailable:dict<uint32, bool>,agentTotalTasks:dict<uint32, uint32>,agentSuccesses:dict<uint32, uint32>,agentRegisteredAt:dict<uint32, uint32>,agentLastActive:dict<uint32, uint32>,nameToIndex:dict<uint256, uint32>,capabilityIndex:dict<uint256, ^cell>,openDisputes:dict<uint32, address>,disputeDepositors:dict<uint32, address>,disputeBeneficiaries:dict<uint32, address>,disputeAmounts:dict<uint32, int>,disputeDeadlines:dict<uint32, uint32>,disputeSettled:dict<uint32, bool>,disputeCount:uint32,cleanupCursor:uint32,intents:dict<uint32, address>,intentServiceHashes:dict<uint32, uint256>,intentServiceNames:dict<uint32, ^cell>,intentBudgets:dict<uint32, int>,intentDeadlines:dict<uint32, uint32>,intentStatuses:dict<uint32, uint8>,intentAcceptedOffer:dict<uint32, uint32>,intentCount:uint32,intentsByService:dict<uint256, ^cell>,intentDescriptions:dict<uint32, ^cell>,offers:dict<uint32, address>,offerIntents:dict<uint32, uint32>,offerPrices:dict<uint32, int>,offerDeliveryTimes:dict<uint32, uint32>,offerStatuses:dict<uint32, uint8>,offerEndpoints:dict<uint32, ^cell>,offerCount:uint32,intentCleanupCursor:uint32,agentActiveIntents:dict<address, int>,maxIntentsPerAgent:uint8,agentNameHashes:dict<uint32, uint256>,knownEscrows:dict<address, bool>,dealBuyers:dict<uint32, address>,dealSellers:dict<uint32, address>,dealBuyerRated:dict<uint32, bool>,dealSellerRated:dict<uint32, bool>,dealCount:uint32,intentOffers:dict<uint32, ^cell>,agentCapIndexed:dict<uint256, bool>,agentIndexedCaps:dict<uint32, ^cell>,storageFund:coins,accumulatedFees:coins}`
 
 ## Get methods
-Total get methods: 18
+Total get methods: 19
 
 ## agentData
 Argument: index
@@ -188,6 +192,9 @@ Argument: index
 ## storageInfo
 No arguments
 
+## dealCount
+No arguments
+
 ## storageFundBalance
 No arguments
 
@@ -232,9 +239,12 @@ No arguments
 * 136: Invalid standard address
 * 138: Not a basechain address
 * 4391: Deadline must be in the future
+* 6483: Unknown escrow contract
 * 7126: Not the agent owner
 * 7480: Max intents reached. Cancel or wait for expiration.
+* 7992: Deal not found
 * 13316: Intent not found
+* 19484: Not authorized to rate from this deal
 * 22320: Not the intent owner
 * 22978: Budget must be positive
 * 24749: Insufficient fee. Send at least 0.01 TON.
@@ -242,13 +252,16 @@ No arguments
 * 26825: Only owner can withdraw
 * 27854: Agent not found
 * 31510: Only the agent owner can update
+* 33966: Already rated in this deal
 * 34810: Cannot offer on own intent
 * 35699: Price exceeds budget
 * 38820: Only the agent owner can update availability
 * 39791: Intent not in accepted state
 * 40254: Offer has no intent
 * 40636: Nothing to withdraw
+* 43414: Already indexed
 * 45503: Offer not pending
+* 45692: Only owner can register escrows
 * 48272: Intent expired
 * 50979: Offer not found
 * 52517: Can only cancel open intents

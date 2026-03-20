@@ -2,7 +2,6 @@ import { z } from "zod";
 import { Address, internal, toNano, beginCell } from "@ton/core";
 
 import { defineAction, toFriendlyAddress, sendTransaction } from "@ton-agent-kit/core";
-import { saveReputationConfig } from "../reputation-config";
 
 export const deployReputationContractAction = defineAction({
   name: "deploy_reputation_contract",
@@ -51,12 +50,8 @@ export const deployReputationContractAction = defineAction({
 
       const contractAddr = reputation.address.toRawString();
 
-      // Save config so other actions auto-detect the contract
-      saveReputationConfig({
-        contractAddress: contractAddr,
-        network: agent.network,
-        deployedAt: new Date().toISOString(),
-      });
+      // FIX 14: no longer saving to .reputation-contract.json
+      // Use the returned contractAddress with createIdentityPlugin({ contractAddress }) or update DEFAULT_REPUTATION_CONTRACTS
 
       return {
         deployed: true,

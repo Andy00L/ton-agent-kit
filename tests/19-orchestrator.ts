@@ -1,36 +1,20 @@
+// tests/19-orchestrator.ts — Wrapped from test-orchestrator.ts
 /**
- * ╔══════════════════════════════════════════════════════════════╗
- * ║   TON Agent Kit — Orchestrator Comprehensive Test Suite     ║
- * ║   Multi-agent · Parallel · Dependencies · Edge cases        ║
- * ╚══════════════════════════════════════════════════════════════╝
- *
- * Tests:
- *   1. Agent Registration — chainable, getAgents, removeAgent, duplicates
- *   2. Basic Swarm — parallel execution, all tasks complete
- *   3. Complex Swarm — multi-step with dependencies
- *   4. Single Agent Swarm — orchestrator with 1 agent only
- *   5. Many Agents Swarm — 4 specialized agents
- *   6. Event Callbacks — onPlanReady, onTaskStart, onTaskComplete, onTaskError
- *   7. SwarmResult Structure — verify all fields populated correctly
- *   8. Parallel Verification — confirm tasks run concurrently
- *   9. Dependency Chain — sequential tasks with dependsOn
- *  10. Error Recovery — tasks that fail + retry
- *  11. Edge Cases — empty goal, huge goal, special characters
- *
- * Run: bun run test-orchestrator.ts
+ * Orchestrator Comprehensive Test Suite
+ * Multi-agent, Parallel, Dependencies, Edge cases
  */
 
 import { readFileSync } from "fs";
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import DefiPlugin from "./packages/plugin-defi/src/index";
-import DnsPlugin from "./packages/plugin-dns/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
-import StakingPlugin from "./packages/plugin-staking/src/index";
-import { Orchestrator } from "./packages/orchestrator/src";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import DefiPlugin from "../packages/plugin-defi/src/index";
+import DnsPlugin from "../packages/plugin-dns/src/index";
+import AnalyticsPlugin from "../packages/plugin-analytics/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
+import StakingPlugin from "../packages/plugin-staking/src/index";
+import { Orchestrator } from "../packages/orchestrator/src";
 
 const envContent = readFileSync(".env", "utf-8");
 const getEnv = (key: string) =>
@@ -118,6 +102,13 @@ function skip(name: string, reason: string) {
   skipped++;
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 // ══════════════════════════════════════════════════════════════
 //  Main
 // ══════════════════════════════════════════════════════════════
@@ -125,8 +116,7 @@ function skip(name: string, reason: string) {
 async function main() {
   const mnemonic = process.env.TON_MNEMONIC;
   if (!mnemonic) {
-    console.error("❌ Set TON_MNEMONIC in .env");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC in .env");
   }
 
   const startTime = Date.now();
@@ -150,23 +140,19 @@ ${"─".repeat(W)}`);
 
   const rpcUrl = "https://testnet-v4.tonhubapi.com";
 
-  // Agent A: Token + DeFi (trader)
   const traderAgent = new TonAgentKit(wallet, rpcUrl, {}, "testnet")
     .use(TokenPlugin)
     .use(DefiPlugin);
 
-  // Agent B: Token + DNS (resolver)
   const resolverAgent = new TonAgentKit(wallet, rpcUrl, {}, "testnet")
     .use(TokenPlugin)
     .use(DnsPlugin);
 
-  // Agent C: Analytics + Staking (analyst)
   const analystAgent = new TonAgentKit(wallet, rpcUrl, {}, "testnet")
     .use(TokenPlugin)
     .use(AnalyticsPlugin)
     .use(StakingPlugin);
 
-  // Agent D: Escrow + Identity (manager)
   const managerAgent = new TonAgentKit(wallet, rpcUrl, {}, "testnet")
     .use(EscrowPlugin)
     .use(IdentityPlugin);
@@ -178,9 +164,7 @@ ${"─".repeat(W)}`);
   🔧 Agents:  4 prepared (trader, resolver, analyst, manager)
 `);
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 1: Agent Registration
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 1: Agent Registration
   header("📝", 1, "Agent Registration", "Chainable API, getAgents, removeAgent");
 
   await test("Orchestrator constructor", async () => {
@@ -249,9 +233,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Agent Registration");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 2: Basic Swarm — Parallel Execution
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 2: Basic Swarm
   header("⚡", 2, "Basic Swarm", "2 agents, 4 parallel tasks, 0 dependencies");
 
   await delay(RATE_MS);
@@ -302,9 +284,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Basic Swarm");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 3: Complex Swarm — Dependencies
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 3: Complex Swarm
   header("🔗", 3, "Complex Swarm", "Tasks with dependencies — sequential + parallel mix");
 
   await delay(RATE_MS);
@@ -337,9 +317,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Complex Swarm");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 4: Single Agent Swarm
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 4: Single Agent Swarm
   header("1️⃣", 4, "Single Agent Swarm", "Orchestrator works with just 1 agent");
 
   await delay(RATE_MS);
@@ -364,9 +342,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Single Agent Swarm");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 5: Many Agents Swarm (4 agents)
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 5: Many Agents Swarm
   header("👥", 5, "Many Agents Swarm", "4 specialized agents collaborate");
 
   await delay(RATE_MS);
@@ -400,9 +376,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Many Agents Swarm");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 6: Event Callbacks
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 6: Event Callbacks
   header("📡", 6, "Event Callbacks", "Verify all hooks fire correctly");
 
   await delay(RATE_MS);
@@ -471,9 +445,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Event Callbacks");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 7: SwarmResult Structure
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 7: SwarmResult Structure
   header("📋", 7, "SwarmResult Structure", "Verify all fields are populated");
 
   await delay(RATE_MS);
@@ -539,9 +511,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("SwarmResult Structure");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 8: Parallel Verification
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 8: Parallel Verification
   header("🔀", 8, "Parallel Verification", "Confirm concurrent execution");
 
   await delay(RATE_MS);
@@ -557,14 +527,12 @@ ${"─".repeat(W)}`);
 
     if (result.results.length < 2) throw new Error("Need 2+ results for parallel check");
 
-    // Check that tasks started around the same time (within 500ms of each other)
     const timestamps = result.results.map(r => r.timestamp);
     const minTs = Math.min(...timestamps);
     const maxTs = Math.max(...timestamps);
     const spread = maxTs - minTs;
     console.log(`     Timestamp spread: ${spread}ms (< 2000ms = parallel)`);
 
-    // Parallel tasks should have overlapping execution
     if (result.totalDuration < 30000) {
       console.log(`     Total: ${result.totalDuration}ms (parallel, not sequential)`);
     }
@@ -572,9 +540,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Parallel Verification");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 9: Dependency Chain
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 9: Dependency Chain
   header("⛓️", 9, "Dependency Chain", "Sequential tasks with dependsOn");
 
   await delay(RATE_MS);
@@ -601,9 +567,7 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Dependency Chain");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 10: Error Recovery
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 10: Error Recovery
   header("🛡️", 10, "Error Recovery", "Tasks that fail + retry behavior");
 
   await delay(RATE_MS);
@@ -613,7 +577,6 @@ ${"─".repeat(W)}`);
       .agent("trader", "DeFi prices", traderAgent)
       .agent("resolver", "DNS", resolverAgent);
 
-    // This goal asks for something that will likely partially fail
     const result = await o.swarm(
       "Get the price of USDT. Also get the price of a nonexistent token called FAKECOIN_XYZ_999. Resolve foundation.ton.",
       {
@@ -626,7 +589,6 @@ ${"─".repeat(W)}`);
       },
     );
 
-    // At least resolve_domain and get_price(USDT) should pass
     if (result.tasksCompleted < 2) throw new Error(`Expected 2+ completed, got ${result.tasksCompleted}`);
     console.log(`     ${result.tasksCompleted} ok, ${result.tasksFailed} failed — swarm survived`);
   });
@@ -641,16 +603,13 @@ ${"─".repeat(W)}`);
       "Resolve the domain thisdoesnotexist99999999.ton",
     );
 
-    // The action might succeed (returns resolved: false) or fail — either way swarm completes
     console.log(`     Completed: ${result.tasksCompleted}, Failed: ${result.tasksFailed}`);
     console.log(`     Summary: ${result.summary.slice(0, 100)}...`);
   });
 
   sectionEnd("Error Recovery");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SECTION 11: Edge Cases
-  // ══════════════════════════════════════════════════════════════
+  // SECTION 11: Edge Cases
   header("⚡", 11, "Edge Cases", "Unusual inputs and boundary conditions");
 
   await delay(RATE_MS);
@@ -694,7 +653,6 @@ ${"─".repeat(W)}`);
 
     const result = await o.swarm("Resolve foundation.ton");
 
-    // Summary should reference the domain or address
     const lower = result.summary.toLowerCase();
     if (!lower.includes("foundation") && !lower.includes("resolv") && !lower.includes("address")) {
       throw new Error(`Summary doesn't reference task: ${result.summary.slice(0, 100)}`);
@@ -710,14 +668,12 @@ ${"─".repeat(W)}`);
 
   sectionEnd("Edge Cases");
 
-  // ══════════════════════════════════════════════════════════════
-  //  SUMMARY
-  // ══════════════════════════════════════════════════════════════
-
+  // SUMMARY
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const total = passed + failed + skipped;
 
   console.log(`
+
 
 ╔${"═".repeat(W - 2)}╗
 ║${" ".repeat(Math.floor((W - 40) / 2))}🤖 Orchestrator Test Results${" ".repeat(Math.ceil((W - 40) / 2))}║
@@ -740,22 +696,6 @@ ${"─".repeat(W)}`);
 
   console.log(`  └${"─".repeat(W - 4)}┘`);
 
-  console.log(`
-  ── Capabilities Tested ──
-  ┌${"─".repeat(W - 4)}┐
-  │  Agent Registration   ✅ chain, get, remove, capabilities  │
-  │  Basic Swarm          ✅ parallel execution, all pass       │
-  │  Complex Swarm        ✅ dependencies + parallel mix        │
-  │  Single Agent         ✅ works with 1 agent                 │
-  │  Many Agents          ✅ 4 agents collaborate               │
-  │  Event Callbacks      ✅ plan, start, complete, error       │
-  │  SwarmResult          ✅ all fields populated               │
-  │  Parallel Verify      ✅ concurrent timestamps              │
-  │  Dependency Chain     ✅ sequential ordering                │
-  │  Error Recovery       ✅ survives partial failures          │
-  │  Edge Cases           ✅ minimal, long, empty goals         │
-  └${"─".repeat(W - 4)}┘`);
-
   if (errors.length > 0) {
     console.log(`\n  ── Error Details ──`);
     for (const e of errors) {
@@ -777,12 +717,30 @@ ${"─".repeat(W)}`);
   } else {
     console.log(`\n  ⚠️  ${failed} test(s) need attention.\n`);
   }
-
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal:", err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  passed = 0;
+  failed = 0;
+  skipped = 0;
+  errors.length = 0;
+  sectionResults.length = 0;
+  sectionPassed = 0;
+  sectionFailed = 0;
+  try {
+    await main();
+  } catch (err: any) {
+    failed++;
+    errors.push(`FATAL: ${err.message}`);
+  }
+  return { passed, failed, errors: [...errors], duration: Date.now() - start };
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

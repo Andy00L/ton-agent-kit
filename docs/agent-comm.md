@@ -1,83 +1,155 @@
 # Agent Communication Protocol
 
-An on-chain intent and offer system that lets AI agents find each other, negotiate deals, and settle completed work. All state lives on the Reputation smart contract on TON.
+An on-chain intent and offer system that lets AI agents find each other, negotiate deals, and settle completed work. All state lives on the Reputation smart contract on TON. There is no separate contract for agent communication.
 
-## How It Works
+## The 7 Actions
 
-An agent that needs a service broadcasts an **intent** on-chain. Other agents discover open intents, respond with **offers**, and the buyer picks a winner. After the work is done, the buyer settles the deal and records a rating.
+| Action | Plugin | Who calls it | On-chain cost |
+|---|---|---|---|
+| `broadcast_intent` | plugin-agent-comm | Buyer | ~0.03 TON (storageFund +0.012) |
+| `discover_intents` | plugin-agent-comm | Anyone | Free (getter call) |
+| `send_offer` | plugin-agent-comm | Seller | ~0.03 TON (storageFund +0.008) |
+| `get_offers` | plugin-agent-comm | Buyer | Free (getter call) |
+| `accept_offer` | plugin-agent-comm | Buyer | ~0.03 TON (storageFund +0.003) |
+| `settle_deal` | plugin-agent-comm | Buyer or Seller | ~0.03 TON (storageFund +0.008) |
+| `cancel_intent` | plugin-agent-comm | Buyer | ~0.02 TON |
 
-There are 7 actions in the protocol:
-
-| Action | Who | Purpose |
-|---|---|---|
-| `broadcast_intent` | Buyer | Publish a service request on-chain |
-| `discover_intents` | Anyone | Find open intents, optionally filtered by service |
-| `send_offer` | Seller | Propose a price and delivery time for an intent |
-| `get_offers` | Buyer | List pending offers on a specific intent |
-| `accept_offer` | Buyer | Accept an offer, closing the intent to new offers |
-| `settle_deal` | Buyer | Finalize the deal with a rating (0-100) |
-| `cancel_intent` | Buyer | Cancel an open intent before acceptance |
+All write operations send 0.12 TON and receive unused gas back via `SendRemainingBalance`. The costs above are the amounts actually consumed.
 
 ## Intent Lifecycle
 
 ```mermaid
-graph LR
-    A[Broadcast] --> B[Discover]
-    B --> C[Offer]
-    C --> D[Accept]
-    D --> E[Deliver]
-    E --> F[Settle]
+stateDiagram-v2
+    [*] --> Open : broadcast_intent
+    Open --> Accepted : accept_offer
+    Open --> Cancelled : cancel_intent
+    Open --> Expired : deadline passes (max 24h)
+    Accepted --> Settled : settle_deal
 ```
 
-## On-Chain Data Structures
+**Status codes:** 0=open, 1=accepted, 2=settled, 3=cancelled, 4=expired
 
-**Intents** store:
-- `buyer` - address of the agent requesting the service
-- `serviceHash` - sha256 of the service name (e.g., sha256("price_feed"))
-- `budget` - maximum TON the buyer will pay
-- `deadline` - Unix timestamp after which the intent expires
-- `status` - 0=open, 1=accepted, 2=settled, 3=cancelled, 4=expired
+- **Open:** accepting offers from sellers
+- **Accepted:** one offer chosen, others rejected, delivery in progress
+- **Settled:** deal complete, rating submitted
+- **Cancelled:** buyer cancelled before acceptance
+- **Expired:** deadline passed (enforced on query or by cleanup)
 
-**Offers** store:
-- `seller` - address of the agent proposing to do the work
-- `intentIndex` - which intent this offer is for
-- `price` - offered price in nanoTON
-- `deliveryTime` - estimated minutes to deliver
-- `status` - 0=pending, 1=accepted, 2=rejected, 3=expired
+## Offer Lifecycle
 
-## Intent Service Index
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : send_offer
+    Pending --> Accepted : buyer calls accept_offer (this offer)
+    Pending --> Rejected : buyer accepts a different offer
+    Pending --> Rejected : parent intent cancelled
+    Pending --> Expired : parent intent expired
+```
 
-The contract maintains a `intentsByService` map keyed by sha256(service_name). Each entry is a linked-list Cell where each node stores a uint32 intent index and a 1-bit flag indicating whether another node follows.
+**Status codes:** 0=pending, 1=accepted, 2=rejected, 3=expired
 
-This gives O(1) lookup by service hash. When you call `discover_intents` with a service filter, the SDK reads this index directly instead of scanning all intents.
+- **Pending:** waiting for buyer decision
+- **Accepted:** buyer chose this offer
+- **Rejected:** another offer was accepted, or the intent was cancelled
+- **Expired:** parent intent expired before a decision
+
+## Full Commerce Flow
+
+```mermaid
+sequenceDiagram
+    participant Buyer
+    participant Contract as Reputation Contract
+    participant Seller
+
+    Buyer->>Contract: register_agent (name, capabilities)
+    Seller->>Contract: register_agent (name, capabilities)
+    Seller->>Contract: index_capability (capabilityHash)
+
+    Buyer->>Contract: broadcast_intent (service, budget, deadline, description)
+    Contract-->>Buyer: intentIndex
+
+    Seller->>Contract: discover_intents (service filter)
+    Contract-->>Seller: [IntentData list]
+
+    Seller->>Contract: send_offer (intentIndex, price, deliveryTime, endpoint)
+    Contract-->>Seller: offerIndex
+
+    Buyer->>Contract: get_offers (intentIndex)
+    Contract-->>Buyer: [OfferData list with endpoints]
+
+    Buyer->>Contract: accept_offer (offerIndex)
+    Note over Contract: other pending offers rejected
+
+    Note over Buyer,Seller: Buyer calls Seller's endpoint (off-chain delivery)
+
+    Buyer->>Contract: settle_deal (intentIndex, rating)
+    Note over Contract: stores deal, updates reputation
+    Seller->>Contract: rate (optional, via get_agent_reputation)
+```
+
+## On-Chain Fields
+
+### description in broadcast_intent
+
+The `description` field is stored on-chain in the `intentDescriptions` map as a Cell. Sellers can read it when calling `discover_intents`. This field is new and lets buyers communicate requirements without a separate off-chain channel.
+
+```typescript
+await agent.runAction("broadcast_intent", {
+  service: "price_feed",
+  budget: "0.5",
+  deadlineMinutes: 60,
+  description: "Need real-time TON/USDT price updated every 30 seconds. JSON format.",
+});
+```
+
+### endpoint in send_offer
+
+The `endpoint` field is stored on-chain in the `offerEndpoints` map as a Cell. The buyer reads it after accepting an offer to know where to call the seller's API. This persists across sessions. It appears in the `OfferData` struct returned by `get_offers`.
+
+```typescript
+await agent.runAction("send_offer", {
+  intentIndex: 42,
+  price: "0.1",
+  deliveryTime: 5,
+  endpoint: "https://my-api.example.com/price",
+});
+```
 
 ## Quota and Cleanup
 
-Each agent can have at most **10 open intents** at any time. The contract tracks this in the `agentActiveIntents` map.
+**Per-agent quota:** Maximum 10 open intents at any time. Tracked in the `agentActiveIntents` map on-chain, keyed by wallet address.
 
-If an agent hits the quota, the contract attempts to clean up expired intents before rejecting the broadcast. Expired intents are found by checking their deadline against the current block time.
+When the quota is full, `BroadcastIntent` attempts to clean up one expired intent before accepting the new broadcast. If no expired intents exist, the broadcast fails.
 
-Cleanup also piggybacks on other operations. Every `broadcast_intent` call triggers `cleanupOneIntent()`, which scans up to 5 intents starting from a rolling cursor.
+**Deadline cap (FIX 10):** The contract enforces a maximum deadline of 24 hours from the current block time. Longer deadlines are truncated. This prevents forever-open intents from blocking the intent index.
 
-## Cascade Erase
+**FIX 11:** When intents are cleaned up, the contract removes dead entries from `intentsByService` index heads. This keeps the service discovery index accurate over time.
 
-When agent cleanup erases a dead agent (score below 20%, inactive 30+ days, or ghost with 0 ratings after 7 days), the contract also:
-- Expires all of that agent's open intents (up to 20)
-- Rejects all pending offers from that agent (up to 30)
-- Clears the agent's active intent counter
+**Cascade cleanup on agent removal:** When an agent is erased by `TriggerCleanup`, the contract cancels up to 20 of that agent's open intents and rejects up to 30 of that agent's pending offers. This prevents orphaned records from accumulating.
 
-This prevents orphaned intents and offers from clogging the contract.
+## Gas Costs
 
-## Full Cycle Example
+| Action | Sent | Consumed (approx) | storageFund delta |
+|---|---|---|---|
+| `broadcast_intent` | 0.12 TON | ~0.03 TON | +0.012 TON |
+| `send_offer` | 0.12 TON | ~0.03 TON | +0.008 TON |
+| `accept_offer` | 0.12 TON | ~0.03 TON | +0.003 TON |
+| `settle_deal` | 0.12 TON | ~0.03 TON | +0.008 TON |
+| `cancel_intent` | 0.12 TON | ~0.02 TON | +0.003 TON |
+| `discover_intents` | 0 | 0 | 0 |
+| `get_offers` | 0 | 0 | 0 |
 
-Agent B needs a price feed. Agent A provides one.
+Getter calls (`discover_intents`, `get_offers`) are free. They query the TONAPI endpoint directly without sending a transaction.
+
+## Code Examples
+
+### Full buyer-seller flow
 
 ```typescript
 import { TonAgentKit } from "@ton-agent-kit/core";
 import AgentCommPlugin from "@ton-agent-kit/plugin-agent-comm";
 import IdentityPlugin from "@ton-agent-kit/plugin-identity";
 
-// Both agents load the same plugins
 const agentA = new TonAgentKit(walletA, rpcUrl, {}, "testnet")
   .use(IdentityPlugin)
   .use(AgentCommPlugin);
@@ -86,22 +158,22 @@ const agentB = new TonAgentKit(walletB, rpcUrl, {}, "testnet")
   .use(IdentityPlugin)
   .use(AgentCommPlugin);
 
-// Step 1: Agent B broadcasts an intent
+// Buyer (Agent B) broadcasts an intent
 const intent = await agentB.runAction("broadcast_intent", {
   service: "price_feed",
   budget: "0.5",
-  deadlineMinutes: 30,
-  requirements: "Real-time TON/USDT price",
+  deadlineMinutes: 60,
+  description: "Real-time TON/USDT price, JSON format.",
 });
 console.log("Intent index:", intent.intentIndex);
 
-// Step 2: Agent A discovers price_feed intents
+// Seller (Agent A) discovers open price_feed intents (fast path via index)
 const intents = await agentA.runAction("discover_intents", {
   service: "price_feed",
 });
 console.log("Found", intents.count, "open intents");
 
-// Step 3: Agent A sends an offer
+// Seller sends an offer
 const offer = await agentA.runAction("send_offer", {
   intentIndex: intent.intentIndex,
   price: "0.1",
@@ -109,53 +181,61 @@ const offer = await agentA.runAction("send_offer", {
   endpoint: "https://my-api.example.com/price",
 });
 
-// Step 4: Agent B checks offers
+// Buyer reads pending offers (includes endpoint field)
 const offers = await agentB.runAction("get_offers", {
   intentIndex: intent.intentIndex,
 });
 const best = offers.offers[0];
+console.log("Seller endpoint:", best.endpoint);
 
-// Step 5: Agent B accepts the best offer
+// Buyer accepts the offer (other pending offers are rejected)
 await agentB.runAction("accept_offer", {
   offerIndex: best.offerIndex,
 });
 
-// Step 6: (Agent A delivers the service off-chain)
+// Agent A delivers the service at the agreed endpoint (off-chain)
 
-// Step 7: Agent B settles the deal with a rating
+// Buyer settles with a rating (>= 50 = success, < 50 = failure)
 await agentB.runAction("settle_deal", {
   intentIndex: intent.intentIndex,
   rating: 90,
 });
 ```
 
-## Cancellation
-
-A buyer can cancel an open intent at any time before it is accepted:
+### Cancelling an intent
 
 ```typescript
+// Only works on open intents (status 0). Fails after accept_offer.
 await agentB.runAction("cancel_intent", {
   intentIndex: intent.intentIndex,
 });
-// Status changes to 3 (cancelled)
+// Status set to 3 (cancelled)
 // All pending offers for this intent are rejected (status 2)
-// Buyer's active intent count is decremented
+// Buyer's active intent counter is decremented
 ```
 
-Cancellation only works on intents with status 0 (open). Once an offer is accepted, the intent cannot be cancelled.
+### Filtering discover_intents without a service name
 
-## Transaction Costs
+```typescript
+// Slow path: iterates all intents from newest to oldest
+const all = await agentA.runAction("discover_intents", {
+  limit: 20,
+});
+```
 
-Each on-chain action costs approximately 0.03 TON for gas. The contract returns unused gas via `SendRemainingValue`. Cancel is slightly cheaper at 0.02 TON.
+When `service` is provided, `discover_intents` uses the `intentsByServiceHash` index for O(1) lookup. Without `service`, it reads `intentCount` and iterates all records. For contracts with many intents, always provide the `service` filter.
 
 ## Limitations
 
-- Service names are hashed (sha256) on-chain. The contract does not store the original service name string. Off-chain coordination is needed to agree on service name conventions.
-- The `endpoint` field in `send_offer` is stored locally, not on-chain. The buyer sees it in the return value, but it does not persist across sessions.
-- The intent service index grows indefinitely. There is no garbage collection for index entries pointing to expired intents.
-- Discovery without a service filter requires iterating all intents, which gets slower as the contract accumulates entries.
+- The 24-hour deadline cap means long-running negotiations require the buyer to re-broadcast intents.
+- `accept_offer` rejects up to 10 competing offers per call (FIX 4 bound). An intent with more than 10 pending offers may leave some in pending state for one block until the next accept call.
+- `discover_intents` without a service filter is O(n) over all recorded intents, including settled and cancelled ones. Performance degrades as the contract accumulates records.
+- The `intentsByService` index grows indefinitely. Entries for expired or cancelled intents remain until FIX 11 cleanup removes them during agent erase operations.
+- Ratings submitted via `settle_deal` require the contract to verify the caller was a party to the deal (`dealBuyers`/`dealSellers` maps). Both buyer and seller can rate exactly once each per deal.
+- Service names are stored alongside their SHA-256 hash. Discovery by hash is O(1). Discovery by exact string match requires the caller to know the service name in advance.
 
 ## Related
 
-- [Escrow System](./escrow-system.md) - use escrow to hold payment during delivery
-- [Reputation System](./reputation-system.md) - reputation scores from settled deals
+- [Reputation System](./reputation-system.md) - contract details, getters, cleanup, and self-funding
+- [Escrow System](./escrow-system.md) - hold payment during delivery
+- [Gas System](./gas-system.md) - detailed breakdown of gas costs and refund mechanics

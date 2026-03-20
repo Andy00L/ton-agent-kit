@@ -65,6 +65,7 @@ struct EscrowData {
     minRepScore: Int as uint8;
     autoReleaseAvailable: Bool;
     refundAvailable: Bool;
+    x402ProofHash: String;
 }
 
 contract Escrow with Deployable {
@@ -104,6 +105,13 @@ contract Escrow with Deployable {
     totalArbiterStakes: Int as coins;
     storageFund: Int as coins;
 
+    // FIX 8: Snapshot at settlement for equal bonus distribution
+    settlementWinnerCount: Int as uint16;
+    settlementLoserTotal: Int as coins;
+
+    // FIX 9: Store x402 payment proof hash on-chain
+    x402ProofHash: String;
+
     init(
         depositor: Address,
         beneficiary: Address,
@@ -138,6 +146,9 @@ contract Escrow with Deployable {
         self.minRepScore = minRepScore;
         self.totalArbiterStakes = 0;
         self.storageFund = 0;
+        self.settlementWinnerCount = 0;
+        self.settlementLoserTotal = 0;
+        self.x402ProofHash = "";
     }
 
     // Seller deposits their stake (skin in the game)
@@ -162,6 +173,8 @@ contract Escrow with Deployable {
 
     // Buyer deposits — gated by seller stake if required
     receive(msg: Deposit) {
+        require(sender() == self.depositor, "Only depositor can deposit");
+        require(!self.released && !self.refunded, "Already settled");
         if (self.requireSellerStake) {
             require(self.sellerStaked, "Seller must stake first");
         }
@@ -173,6 +186,8 @@ contract Escrow with Deployable {
         require(sender() == self.depositor, "Only depositor can confirm delivery");
         require(!self.released && !self.refunded, "Already settled");
         self.deliveryConfirmed = true;
+        // FIX 9: store payment proof hash on-chain
+        self.x402ProofHash = msg.x402TxHash;
         self.storageFund = self.storageFund + ton("0.003");
         nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
         send(SendParameters{
@@ -293,6 +308,8 @@ contract Escrow with Deployable {
         require(self.arbiterCount >= self.minArbiters, "Not enough arbiters yet");
         let idx: Int? = self.arbiterIndex.get(sender());
         require(idx != null, "Not an arbiter");
+        // FIX 13: block votes after voting period ends
+        require(now() < self.votingDeadline, "Voting period ended");
         let idxVal: Int = idx!!;
         let hasVoted: Bool? = self.voted.get(idxVal);
         require(hasVoted != null, "Not registered");
@@ -303,7 +320,12 @@ contract Escrow with Deployable {
         let majority: Int = (self.arbiterCount / 2) + 1;
         if (self.votesRelease >= majority) {
             self.released = true;
+            // FIX 8: snapshot bonus distribution at settlement time
+            self.settlementWinnerCount = self.getWinnerCount();
+            self.settlementLoserTotal = self.getTotalLoserStakes();
             self.notifySettlement();
+            // FIX 1: reserve arbiter stakes so ClaimReward works
+            nativeReserve(self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
             send(SendParameters{
                 to: self.beneficiary, value: 0,
                 mode: SendRemainingBalance | SendIgnoreErrors, bounce: false,
@@ -328,6 +350,8 @@ contract Escrow with Deployable {
         require(self.arbiterCount >= self.minArbiters, "Not enough arbiters yet");
         let idx: Int? = self.arbiterIndex.get(sender());
         require(idx != null, "Not an arbiter");
+        // FIX 13: block votes after voting period ends
+        require(now() < self.votingDeadline, "Voting period ended");
         let idxVal: Int = idx!!;
         let hasVoted: Bool? = self.voted.get(idxVal);
         require(hasVoted != null, "Not registered");
@@ -338,7 +362,12 @@ contract Escrow with Deployable {
         let majority: Int = (self.arbiterCount / 2) + 1;
         if (self.votesRefund >= majority) {
             self.refunded = true;
+            // FIX 8: snapshot bonus distribution at settlement time
+            self.settlementWinnerCount = self.getWinnerCount();
+            self.settlementLoserTotal = self.getTotalLoserStakes();
             self.notifySettlement();
+            // FIX 1: reserve arbiter stakes so ClaimReward works
+            nativeReserve(self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
             send(SendParameters{
                 to: self.depositor, value: 0,
                 mode: SendRemainingBalance | SendIgnoreErrors, bounce: false,
@@ -372,10 +401,9 @@ contract Escrow with Deployable {
         self.totalArbiterStakes = self.totalArbiterStakes - myStake!!;
         self.stakes.set(idxVal, 0);
         if (wonVote) {
-            let loserTotal: Int = self.getTotalLoserStakes();
-            let winnerCount: Int = self.getWinnerCount();
+            // FIX 8: use snapshot values for equal distribution
             let bonus: Int = 0;
-            if (winnerCount > 0) { bonus = loserTotal / winnerCount; }
+            if (self.settlementWinnerCount > 0) { bonus = self.settlementLoserTotal / self.settlementWinnerCount; }
             let payout: Int = myStake!! + bonus;
             send(SendParameters{
                 to: sender(), value: payout,
@@ -383,7 +411,8 @@ contract Escrow with Deployable {
                 body: "Arbiter reward (winner)".asComment()
             });
         }
-        nativeReserve(self.amount + self.sellerStake + self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        // FIX 1: nativeReserve only needs to protect remaining arbiter stakes
+        nativeReserve(self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
         send(SendParameters{
             to: sender(),
             value: 0,
@@ -405,7 +434,14 @@ contract Escrow with Deployable {
         } else {
             self.refunded = true;
         }
+        // FIX 8: snapshot bonus distribution
+        self.settlementWinnerCount = self.getWinnerCount();
+        self.settlementLoserTotal = self.getTotalLoserStakes();
         self.notifySettlement();
+        // FIX 1: reserve arbiter stakes so ClaimReward works
+        if (self.totalArbiterStakes > 0) {
+            nativeReserve(self.totalArbiterStakes + self.storageFund + ton("0.01"), 0);
+        }
         if (self.released) {
             send(SendParameters{
                 to: self.beneficiary, value: 0,
@@ -477,7 +513,8 @@ contract Escrow with Deployable {
             requireRepCollateral: self.requireRepCollateral,
             minRepScore: self.minRepScore,
             autoReleaseAvailable: now() >= self.deadline && self.deliveryConfirmed && !self.released && !self.refunded && !self.disputed,
-            refundAvailable: now() >= self.deadline && !self.deliveryConfirmed && !self.released && !self.refunded && !self.disputed
+            refundAvailable: now() >= self.deadline && !self.deliveryConfirmed && !self.released && !self.refunded && !self.disputed,
+            x402ProofHash: self.x402ProofHash
         };
     }
 
