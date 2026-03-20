@@ -1,6 +1,6 @@
 # Tact compilation report
 Contract: Escrow
-BoC Size: 6012 bytes
+BoC Size: 6487 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 31
@@ -122,12 +122,12 @@ TL-B: `notify_dispute_settled#bfa05986 escrowAddress:address released:bool refun
 Signature: `NotifyDisputeSettled{escrowAddress:address,released:bool,refunded:bool}`
 
 ### EscrowData
-TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 minArbiters:uint8 minStake:coins sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 autoReleaseAvailable:bool refundAvailable:bool = EscrowData`
-Signature: `EscrowData{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,minArbiters:uint8,minStake:coins,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,autoReleaseAvailable:bool,refundAvailable:bool}`
+TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 minArbiters:uint8 minStake:coins sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 autoReleaseAvailable:bool refundAvailable:bool x402ProofHash:^string = EscrowData`
+Signature: `EscrowData{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,minArbiters:uint8,minStake:coins,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,autoReleaseAvailable:bool,refundAvailable:bool,x402ProofHash:^string}`
 
 ### Escrow$Data
-TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 totalArbiterStakes:coins storageFund:coins = Escrow`
-Signature: `Escrow{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,minArbiters:uint8,minStake:coins,arbiters:dict<int, address>,arbiterIndex:dict<address, int>,stakes:dict<int, int>,voted:dict<int, bool>,votes:dict<int, bool>,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,totalArbiterStakes:coins,storageFund:coins}`
+TL-B: `_ depositor:address beneficiary:address reputationContract:address amount:coins deadline:uint32 released:bool refunded:bool deliveryConfirmed:bool disputed:bool votingDeadline:uint32 minArbiters:uint8 minStake:coins arbiters:dict<int, address> arbiterIndex:dict<address, int> stakes:dict<int, int> voted:dict<int, bool> votes:dict<int, bool> arbiterCount:uint16 votesRelease:uint16 votesRefund:uint16 sellerStake:coins sellerStaked:bool requireSellerStake:bool baseSellerStake:coins requireRepCollateral:bool minRepScore:uint8 totalArbiterStakes:coins storageFund:coins settlementWinnerCount:uint16 settlementLoserTotal:coins x402ProofHash:^string = Escrow`
+Signature: `Escrow{depositor:address,beneficiary:address,reputationContract:address,amount:coins,deadline:uint32,released:bool,refunded:bool,deliveryConfirmed:bool,disputed:bool,votingDeadline:uint32,minArbiters:uint8,minStake:coins,arbiters:dict<int, address>,arbiterIndex:dict<address, int>,stakes:dict<int, int>,voted:dict<int, bool>,votes:dict<int, bool>,arbiterCount:uint16,votesRelease:uint16,votesRefund:uint16,sellerStake:coins,sellerStaked:bool,requireSellerStake:bool,baseSellerStake:coins,requireRepCollateral:bool,minRepScore:uint8,totalArbiterStakes:coins,storageFund:coins,settlementWinnerCount:uint16,settlementLoserTotal:coins,x402ProofHash:^string}`
 
 ## Get methods
 Total get methods: 2
@@ -191,6 +191,7 @@ No arguments
 * 25639: Disputed — use voting
 * 25931: Already joined
 * 26711: Not settled yet
+* 29680: Only depositor can deposit
 * 29889: Did not vote
 * 37120: Beneficiary cannot be arbiter
 * 38875: Only depositor can confirm delivery

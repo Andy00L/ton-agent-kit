@@ -8,7 +8,7 @@ import { storeSendOffer } from "../../../plugin-identity/src/contracts/Reputatio
 export const sendOfferAction = defineAction({
   name: "send_offer",
   description:
-    "Send an offer to fulfill an open intent. The price and delivery time are stored on-chain. The endpoint (where the service is available) is stored locally in the return value — the contract does not store endpoints.",
+    "Send an offer to fulfill an open intent. The price, delivery time, and endpoint URL are all stored on-chain so the buyer can discover how to reach the seller's service.",
   schema: z.object({
     intentIndex: z.number().describe("Index of the intent to make an offer for"),
     price: z.string().describe("Offered price in TON (e.g., '0.5')"),
@@ -36,6 +36,7 @@ export const sendOfferAction = defineAction({
             intentIndex: BigInt(params.intentIndex),
             price: toNano(params.price),
             deliveryTime: BigInt(deliveryTime),
+            endpoint: params.endpoint,
           })
         )
         .endCell();

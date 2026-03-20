@@ -1,61 +1,21 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import { resolve } from "path";
-
-const CONFIG_FILE = resolve(".reputation-contract.json");
-
-/**
- * Configuration for a locally deployed reputation contract.
- * Stored in `.reputation-contract.json` for persistence across sessions.
- * @since 1.0.0
- */
-export interface ReputationConfig {
-  contractAddress: string;
-  network: string;
-  deployedAt: string;
-}
-
 /**
  * Default deployed reputation contracts (hardcoded in SDK).
- * These are used when no factory parameter or local config is found.
+ * These are used when no factory parameter is found.
  */
 export const DEFAULT_REPUTATION_CONTRACTS: Record<string, string> = {
-  testnet: "0:a53a0305a5c7c945d9fda358375c8c53e3760cebcc65fae744367827a30355a0",
+  testnet: "0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9",
 };
-
-/**
- * Load the reputation contract configuration from `.reputation-contract.json`.
- * @returns The config object, or null if the file doesn't exist.
- * @since 1.0.0
- */
-export function loadReputationConfig(): ReputationConfig | null {
-  try {
-    if (existsSync(CONFIG_FILE)) {
-      return JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
-    }
-  } catch {}
-  return null;
-}
-
-/**
- * Save the reputation contract configuration to `.reputation-contract.json`.
- * @param config - The configuration to persist.
- * @since 1.0.0
- */
-export function saveReputationConfig(config: ReputationConfig): void {
-  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
-}
 
 /**
  * Resolve the reputation contract address with fallback chain:
  * 1. Factory parameter (createIdentityPlugin({ contractAddress: "..." }))
- * 2. Local config file (.reputation-contract.json)
- * 3. Default deployed contract (hardcoded in SDK)
- * 4. null — JSON fallback mode (no contract)
+ * 2. Default deployed contract (hardcoded in SDK)
+ * 3. null — JSON fallback mode (no contract)
+ *
+ * FIX 14: Removed .reputation-contract.json file dependency.
  */
 export function resolveContractAddress(factoryAddr: string | undefined, network: string): string | null {
   if (factoryAddr) return factoryAddr;
-  const config = loadReputationConfig();
-  if (config?.contractAddress) return config.contractAddress;
   if (DEFAULT_REPUTATION_CONTRACTS[network]) return DEFAULT_REPUTATION_CONTRACTS[network];
   return null;
 }

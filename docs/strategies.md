@@ -2,9 +2,11 @@
 
 Strategies are deterministic, multi-step workflows that run on a schedule. They are not LLM-driven. Each step calls a specific agent action with predefined or context-derived parameters.
 
+Package: `@ton-agent-kit/strategies` v1.0.1
+
 ## Core Concepts
 
-A strategy is a named list of steps, an optional schedule, and optional lifecycle hooks. The `StrategyRunner` executes steps sequentially, passes results through a shared context, and respects conditions, retries, and transforms.
+A strategy is a named list of steps, an optional schedule, and optional lifecycle hooks. The `StrategyScheduler` executes steps sequentially, passes results through a shared context, and respects conditions and transforms.
 
 ```mermaid
 graph LR
@@ -23,32 +25,26 @@ import { defineStrategy } from "@ton-agent-kit/strategies";
 
 const myStrategy = defineStrategy({
   name: "my-strategy",
-  description: "Fetch price and check balance",
-  schedule: "every 5m",   // or "once", "every 1h", "every 1d"
+  schedule: "every 5m",    // or "once", "every 1h", "every 1d"
   maxRuns: 100,            // auto-stop after 100 executions
+  context: { threshold: 5.0 },
   steps: [
     {
-      id: "get_price",
       action: "get_token_price",
       params: { token: "TON" },
     },
     {
-      id: "check_balance",
       action: "get_balance",
       params: {},
-      condition: (ctx) => {
-        const price = ctx.getResult("get_price");
-        return price?.price < 5.0;
-      },
-      transform: (result, ctx) => {
-        return { ...result, priceAtCheck: ctx.getResult("get_price")?.price };
-      },
+      condition: (ctx) => ctx.results[0]?.price < 5.0,
+      transform: (result) => ({ ...result, checked: true }),
+      onError: "continue",  // or "stop" (default: stop)
     },
   ],
-  onError: (error, step) => "continue",  // or "stop" or "retry"
-  onComplete: (result) => {
-    console.log(`Ran in ${result.totalDuration}ms`);
-  },
+  onResult: (stepResult) => console.log(stepResult),
+  onComplete: () => console.log("Run finished"),
+  onStepSkipped: (step) => console.log(`Skipped: ${step.action}`),
+  onStepError: (error, step) => console.error(`Error in ${step.action}`, error),
 });
 ```
 
@@ -58,14 +54,11 @@ Each step supports:
 
 | Field | Type | Purpose |
 |---|---|---|
-| `id` | string | Unique step identifier. Auto-generated as `step_N` if omitted. |
-| `action` | string | Agent action name, or `"wait"` for a timed pause. |
+| `action` | string | Agent action name to call. |
 | `params` | object or function | Static params, or `(ctx) => params` for dynamic resolution. |
-| `condition` | function | `(ctx) => boolean`. If false, the step is skipped. |
-| `retries` | number | Retry count on failure. Default 0. |
-| `delay` | number | Milliseconds to wait before executing. |
-| `transform` | function | `(result, ctx) => newResult`. Post-processes the action result. |
-| `onResult` | function | Callback after successful execution. |
+| `condition` | function | `(ctx) => boolean`. Step is skipped when this returns false. |
+| `transform` | function | `(result) => any`. Post-processes the action result before storing it in context. |
+| `onError` | `"stop"` or `"continue"` | Behavior when the action throws. Defaults to `"stop"`. |
 
 ## Scheduling
 
@@ -74,74 +67,49 @@ The `parseSchedule` function converts human-readable strings to millisecond inte
 ```typescript
 import { parseSchedule } from "@ton-agent-kit/strategies";
 
-parseSchedule("once");       // null (run once)
+parseSchedule("once");       // null (run once, no repeat)
 parseSchedule("every 30s");  // 30000
 parseSchedule("every 5m");   // 300000
 parseSchedule("every 1h");   // 3600000
 parseSchedule("every 1d");   // 86400000
 ```
 
-Supported units: `ms`, `s`, `m`, `h`, `d`. The pattern must match `every <number><unit>`.
+Supported units: `ms`, `s`, `m`, `h`, `d`. The scheduler uses `setInterval` internally.
 
 ## StrategyContext
 
-Each strategy gets its own `StrategyContext` instance. The context persists across runs, meaning variables survive between scheduled executions. Results are reset at the start of each run.
+Each strategy gets its own context instance. Context persists across runs: variables survive between scheduled executions. Results are reset at the start of each run.
 
-```typescript
-// Inside a step's params function or condition:
-ctx.getResult("get_price");         // result from a previous step (current run only)
-ctx.getVariable("priceHistory");    // variable that persists across runs
-ctx.setVariable("lastPrice", 3.85); // store a value for future runs
-ctx.runCount;                       // how many times this strategy has executed
-ctx.lastRunAt;                      // Date of the last execution
-```
+| Property | Type | Lifetime |
+|---|---|---|
+| `results` | array | Reset per run. Contains the output of each step in order. |
+| `runCount` | number | Incremented after each run. Persists across runs. |
+| `variables` | object | User-defined. Persists across runs. |
 
-The context also resolves `{{mustache}}` templates in string params:
+String params support Mustache templates:
 
 - `{{timestamp}}` - current ISO timestamp
 - `{{runCount}}` - execution count
 - `{{strategyName}}` - strategy name
 
-## StrategyRunner
+## StrategyScheduler
 
-The runner registers strategies, executes them, and manages scheduling.
+The `StrategyScheduler` manages execution of strategies.
 
 ```typescript
-import { StrategyRunner } from "@ton-agent-kit/strategies";
-
-const runner = new StrategyRunner(agent, {
-  onStepStart: (step, ctx) => console.log(`Starting ${step.id}`),
-  onStepComplete: (result, ctx) => console.log(`Done: ${result.stepId}`),
-  onRunComplete: (result) => console.log(`Run #${result.runCount} finished`),
-});
-
-// Register
-runner.use(myStrategy);
-
-// Run once manually
-const result = await runner.run("my-strategy", { threshold: 5.0 });
-console.log(result.completedSteps, "of", result.steps.length, "steps ran");
-
-// Start on schedule
-runner.start("my-strategy");
-
-// Later: stop
-runner.stop("my-strategy");
-runner.stopAll();
-
-// Inspect
-runner.getActive();      // ["my-strategy"]
-runner.getStrategies();  // ["my-strategy"]
-runner.getContext("my-strategy");  // StrategyContext instance
+// Agent integration (recommended)
+agent.useStrategy(myStrategy);   // register strategy
+agent.runStrategy("my-strategy"); // run once manually
+agent.stopAllStrategies();        // stop all scheduled strategies
 ```
 
 ## Built-in Templates
 
-Four pre-built strategy templates cover common use cases:
+Four pre-built strategy templates cover common use cases. They are convenience wrappers around `defineStrategy`. For anything beyond their parameters, use `defineStrategy` directly.
 
 ### DCA Buy
 
-Periodically buys a token at the best available price. Skips if price exceeds a cap or balance is too low.
+Periodically marks a token purchase intent. Skips if price exceeds a cap or balance is too low. Note: this template does not execute a swap automatically. It is illustrative of the DCA pattern.
 
 ```typescript
 import { createDcaStrategy } from "@ton-agent-kit/strategies";
@@ -149,16 +117,16 @@ import { createDcaStrategy } from "@ton-agent-kit/strategies";
 const dca = createDcaStrategy({
   token: "TON",
   amount: 10,          // spend 10 TON per buy
-  maxPrice: 5.0,       // skip if price > $5
+  maxPrice: 5.0,       // skip if price > $5.00
   schedule: "every 1h",
   dex: "dedust",
 });
-runner.use(dca).start(dca.name);
+agent.useStrategy(dca);
 ```
 
 ### Price Monitor
 
-Watches a token price and fires a callback when thresholds are crossed. Maintains a price history array in context.
+Watches a token price and fires a callback when thresholds are crossed. Maintains a price history array in context variables across runs.
 
 ```typescript
 import { createPriceMonitorStrategy } from "@ton-agent-kit/strategies";
@@ -172,18 +140,18 @@ const monitor = createPriceMonitorStrategy({
     console.log(`TON price ${direction} threshold: $${price}`);
   },
 });
-runner.use(monitor).start(monitor.name);
+agent.useStrategy(monitor);
 ```
 
 ### Portfolio Rebalance
 
-Fetches portfolio metrics and wallet balance on a daily schedule. Does not execute trades automatically, but provides the data needed to make rebalancing decisions.
+Fetches portfolio metrics and wallet balance on a schedule. Does not execute trades automatically. Provides the data needed to make rebalancing decisions.
 
 ```typescript
 import { createRebalanceStrategy } from "@ton-agent-kit/strategies";
 
 const rebalance = createRebalanceStrategy({ schedule: "every 1d" });
-runner.use(rebalance).start(rebalance.name);
+agent.useStrategy(rebalance);
 ```
 
 ### Reputation Guard
@@ -201,15 +169,15 @@ const guard = createReputationGuardStrategy({
     console.log(`Warning: ${agentId} reputation dropped to ${score}`);
   },
 });
-runner.use(guard).start(guard.name);
+agent.useStrategy(guard);
 ```
 
-## Price Monitor: Full Working Example
+## Full Example
 
 ```typescript
 import { TonAgentKit } from "@ton-agent-kit/core";
 import TokenPlugin from "@ton-agent-kit/plugin-token";
-import { StrategyRunner, createPriceMonitorStrategy } from "@ton-agent-kit/strategies";
+import { createPriceMonitorStrategy } from "@ton-agent-kit/strategies";
 
 const agent = new TonAgentKit(wallet, rpcUrl, {}, "testnet")
   .use(TokenPlugin);
@@ -228,21 +196,15 @@ const monitor = createPriceMonitorStrategy({
   },
 });
 
-const runner = new StrategyRunner(agent);
-runner.use(monitor);
-runner.start(monitor.name);
-
-// After some time, check collected data:
-// const ctx = runner.getContext(monitor.name);
-// console.log(ctx.variables.priceHistory);
+agent.useStrategy(monitor);
 ```
 
 ## Limitations
 
-- Strategies do not persist across process restarts. If the Node.js process dies, all scheduled strategies stop. You need external process management (e.g., pm2, systemd) for long-running strategies.
+- Strategies do not persist across process restarts. When the process exits, all scheduled strategies stop. Use a process manager (pm2, systemd) for long-running strategies.
 - The scheduler uses `setInterval`, which is subject to event loop delays under heavy load.
-- The `maxRuns` limit checks after each run, not before. A strategy with `maxRuns: 1` will run once and then stop on the next scheduled tick.
-- Templates are convenience wrappers. For anything beyond their parameters, define a custom strategy with `defineStrategy`.
+- `maxRuns` is checked after each run, not before. A strategy with `maxRuns: 1` runs once and stops on the next scheduled tick.
+- The DCA template does not execute actual swaps. It is a structural template showing the pattern.
 
 ## Related
 

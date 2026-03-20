@@ -1,21 +1,7 @@
+// tests/18-escrow-advanced.ts — Wrapped from test-escrow.ts
 /**
- * ╔══════════════════════════════════════════════════════════════╗
- * ║   TON Agent Kit — Escrow Contract Test (post gas fix)       ║
- * ║   Full lifecycle + gas handling verification                ║
- * ╚══════════════════════════════════════════════════════════════╝
- *
- * Tests the recompiled Tact escrow contract:
- *   1. Deploy — contract creation on-chain
- *   2. State — verify initial state is correct
- *   3. Deposit — fund the escrow, verify balance
- *   4. Release — funds go to beneficiary, verify balance 0
- *   5. Gas handling — SendRemainingBalance works correctly
- *   6. Refund flow — separate escrow: create → deposit → refund
- *   7. Auth checks — unauthorized release/refund rejected
- *   8. Double-settle — can't release after refund, can't refund after release
- *   9. Balance tracking — depositor/beneficiary balances change correctly
- *
- * Run: bun run test-escrow.ts
+ * Escrow Contract Test (post gas fix)
+ * Full lifecycle + gas handling verification
  */
 
 import { readFileSync } from "fs";
@@ -27,10 +13,10 @@ const getEnv = (key: string) =>
 process.env.TON_MNEMONIC = getEnv("TON_MNEMONIC");
 process.env.TON_MNEMONIC_AGENT_B = getEnv("TON_MNEMONIC_AGENT_B");
 
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import EscrowPlugin from "./packages/plugin-escrow/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import EscrowPlugin from "../packages/plugin-escrow/src/index";
 
 const W = 64;
 let passed = 0;
@@ -95,11 +81,17 @@ async function testError(name: string, fn: () => Promise<any>, expectedMsg: stri
   }
 }
 
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
+
 async function main() {
   const mnemonic = process.env.TON_MNEMONIC;
   if (!mnemonic) {
-    console.error("❌ Set TON_MNEMONIC in .env");
-    process.exit(1);
+    throw new Error("Set TON_MNEMONIC in .env");
   }
 
   const startTime = Date.now();
@@ -153,8 +145,7 @@ ${"─".repeat(W)}`);
   console.log(`  💰 Balance A:             ${balA.balance} TON\n`);
 
   if (parseFloat(balA.balance) < 0.5) {
-    console.error("❌ Need at least 0.5 TON for escrow tests (deploy + deposit costs gas)");
-    process.exit(1);
+    throw new Error("Need at least 0.5 TON for escrow tests (deploy + deposit costs gas)");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -422,6 +413,7 @@ ${"─".repeat(W)}`);
 
   console.log(`
 
+
 ╔${"═".repeat(W - 2)}╗
 ║${" ".repeat(Math.floor((W - 38) / 2))}🔒 Escrow Test Results${" ".repeat(Math.ceil((W - 38) / 2))}║
 ╚${"═".repeat(W - 2)}╝
@@ -441,19 +433,6 @@ ${"─".repeat(W)}`);
   }
 
   console.log(`  └${"─".repeat(W - 4)}┘`);
-
-  console.log(`
-  ── Escrow Coverage ──
-  ┌${"─".repeat(W - 4)}┐
-  │  Deploy           ✅ Contract created on-chain             │
-  │  State            ✅ Initial state verified                 │
-  │  Deposit          ✅ Funds locked, balance increased        │
-  │  Release          ✅ Beneficiary received, balance → 0      │
-  │  Gas handling     ✅ SendRemainingBalance + SendIgnoreErrors │
-  │  Refund           ✅ Depositor got funds back               │
-  │  Double-settle    ✅ Can't release/refund twice             │
-  │  Schema           ✅ Invalid params rejected                │
-  └${"─".repeat(W - 4)}┘`);
 
   if (errors.length > 0) {
     console.log(`\n  ── Error Details ──`);
@@ -475,12 +454,29 @@ ${"─".repeat(W)}`);
   } else {
     console.log(`\n  ⚠️  ${failed} test(s) need attention.\n`);
   }
-
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("❌ Fatal:", err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  passed = 0;
+  failed = 0;
+  errors.length = 0;
+  sectionResults.length = 0;
+  sectionPassed = 0;
+  sectionFailed = 0;
+  try {
+    await main();
+  } catch (err: any) {
+    failed++;
+    errors.push(`FATAL: ${err.message}`);
+  }
+  return { passed, failed, errors: [...errors], duration: Date.now() - start };
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

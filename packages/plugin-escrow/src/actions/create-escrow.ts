@@ -5,6 +5,7 @@ import {
   loadEscrows,
   saveEscrows,
   deployEscrowContract,
+  registerEscrowOnReputation,
   type EscrowRecord,
 } from "../utils";
 import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
@@ -87,6 +88,11 @@ export const createEscrowAction = defineAction<
       BigInt(minRepScore),
       baseSellerStakeNano,
     );
+
+    // FIX 2: register escrow in reputation whitelist so dispute notifications are accepted
+    if (repAddr) {
+      await registerEscrowOnReputation(agent, reputationContract, contractAddress);
+    }
 
     const escrow: EscrowRecord = {
       id: escrowId,

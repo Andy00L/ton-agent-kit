@@ -24,6 +24,22 @@ const parseBool = (item: any): boolean =>
     ? BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num) !== 0n
     : false;
 
+function parseString(item: any): string {
+  if (!item) return "";
+  if (item.type === "cell" && item.cell) {
+    try {
+      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
+      return cell.beginParse().loadStringTail();
+    } catch {
+      try {
+        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
+        return cell.beginParse().loadStringTail();
+      } catch {}
+    }
+  }
+  return "";
+}
+
 function parseAddress(item: any): string {
   if (!item) return "";
   if (item.type === "slice" && item.slice) {
@@ -92,18 +108,20 @@ export const discoverIntentsAction = defineAction({
               if (!dataRes?.stack) continue;
               let items = dataRes.stack;
               if (items[0]?.type === "tuple" && items[0].tuple) items = items[0].tuple;
-              if (items.length < 7) continue;
-              const status = parseNum(items[4]);
-              const isExpired = parseBool(items[6]);
+              if (items.length < 9) continue;
+              const status = parseNum(items[5]);
+              const isExpired = parseBool(items[7]);
               if (status !== 0 || isExpired) continue;
               intents.push({
                 intentIndex: idx,
                 buyer: parseAddress(items[0]),
                 serviceHash: "0x" + parseBigNum(items[1]).toString(16),
-                budget: parseBigNum(items[2]).toString(),
-                deadline: new Date(parseNum(items[3]) * 1000).toISOString(),
+                serviceName: parseString(items[2]),
+                budget: parseBigNum(items[3]).toString(),
+                deadline: new Date(parseNum(items[4]) * 1000).toISOString(),
                 status: "open",
-                acceptedOffer: parseNum(items[5]),
+                acceptedOffer: parseNum(items[6]),
+                description: parseString(items[8]),
               });
             } catch {}
           }
@@ -159,16 +177,18 @@ export const discoverIntentsAction = defineAction({
             items = items[0].tuple;
           }
 
-          if (items.length < 7) continue;
+          if (items.length < 9) continue;
 
-          // Fields: buyer address, serviceHash num, budget num, deadline num, status num, acceptedOffer num, isExpired bool
+          // Fields: buyer address, serviceHash num, serviceName cell, budget num, deadline num, status num, acceptedOffer num, isExpired bool, description cell
           const buyer = parseAddress(items[0]);
           const serviceHash = parseBigNum(items[1]);
-          const budget = parseBigNum(items[2]);
-          const deadline = parseNum(items[3]);
-          const status = parseNum(items[4]);
-          const acceptedOffer = parseNum(items[5]);
-          const isExpired = parseBool(items[6]);
+          const serviceName = parseString(items[2]);
+          const budget = parseBigNum(items[3]);
+          const deadline = parseNum(items[4]);
+          const status = parseNum(items[5]);
+          const acceptedOffer = parseNum(items[6]);
+          const isExpired = parseBool(items[7]);
+          const description = parseString(items[8]);
 
           // Filter: only open (status==0) and not expired
           if (status !== 0) continue;
@@ -181,10 +201,12 @@ export const discoverIntentsAction = defineAction({
             intentIndex: i,
             buyer,
             serviceHash: "0x" + serviceHash.toString(16),
+            serviceName,
             budget: budget.toString(),
             deadline: new Date(deadline * 1000).toISOString(),
             status: "open",
             acceptedOffer,
+            description,
           });
         } catch {
           // Skip intents that fail to read

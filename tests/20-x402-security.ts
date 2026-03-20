@@ -1,10 +1,22 @@
+// tests/20-x402-security.ts — Wrapped from test-x402.ts
+/**
+ * x402 Payment Middleware Test (demo-style, no counters)
+ */
+
 import { beginCell, internal, toNano } from "@ton/core";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
 import "dotenv/config";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import { createPaymentServer, tonPaywall } from "./packages/x402-middleware/src/index";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import { createPaymentServer, tonPaywall } from "../packages/x402-middleware/src/index";
 import express from "express";
+
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
+}
 
 async function main() {
   const mnemonic = process.env.TON_MNEMONIC!.split(" ");
@@ -251,10 +263,22 @@ async function main() {
   console.log(`${"═".repeat(50)}\n`);
 
   server.close();
-  process.exit(0);
 }
 
-main().catch((err) => {
-  console.error("❌ Error:", err.message);
-  process.exit(1);
-});
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  try {
+    await main();
+    return { passed: 1, failed: 0, errors: [], duration: Date.now() - start };
+  } catch (err: any) {
+    return { passed: 0, failed: 1, errors: [err.message], duration: Date.now() - start };
+  }
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

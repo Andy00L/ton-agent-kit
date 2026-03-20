@@ -1,7 +1,7 @@
+// tests/22-strategies-advanced.ts — Wrapped from test-strategies.ts
 /**
- * TON Agent Kit — Strategy Engine Test Suite
+ * Strategy Engine Test Suite
  * Deterministic workflows: conditions, schedules, steps
- * Run: bun run test-strategies.ts
  */
 import { readFileSync } from "fs";
 const envContent = readFileSync(".env", "utf-8");
@@ -9,21 +9,21 @@ const getEnv = (key: string) =>
   envContent.split("\n").find((l) => l.startsWith(key + "="))?.slice(key.length + 1).trim() || "";
 process.env.TON_MNEMONIC = getEnv("TON_MNEMONIC");
 
-import { TonAgentKit } from "./packages/core/src/agent";
-import { KeypairWallet } from "./packages/core/src/wallet";
-import TokenPlugin from "./packages/plugin-token/src/index";
-import AnalyticsPlugin from "./packages/plugin-analytics/src/index";
-import IdentityPlugin from "./packages/plugin-identity/src/index";
+import { TonAgentKit } from "../packages/core/src/agent";
+import { KeypairWallet } from "../packages/core/src/wallet";
+import TokenPlugin from "../packages/plugin-token/src/index";
+import AnalyticsPlugin from "../packages/plugin-analytics/src/index";
+import IdentityPlugin from "../packages/plugin-identity/src/index";
 import {
   defineStrategy,
   StrategyRunner,
   StrategyContext,
   parseSchedule,
-} from "./packages/strategies/src/index";
-import { createDcaStrategy } from "./packages/strategies/src/templates/dca-buy";
-import { createPriceMonitorStrategy } from "./packages/strategies/src/templates/price-monitor";
-import { createRebalanceStrategy } from "./packages/strategies/src/templates/portfolio-rebalance";
-import { createReputationGuardStrategy } from "./packages/strategies/src/templates/reputation-guard";
+} from "../packages/strategies/src/index";
+import { createDcaStrategy } from "../packages/strategies/src/templates/dca-buy";
+import { createPriceMonitorStrategy } from "../packages/strategies/src/templates/price-monitor";
+import { createRebalanceStrategy } from "../packages/strategies/src/templates/portfolio-rebalance";
+import { createReputationGuardStrategy } from "../packages/strategies/src/templates/reputation-guard";
 
 const W = 64;
 let passed = 0, failed = 0;
@@ -58,6 +58,13 @@ async function test(name: string, fn: () => Promise<any>): Promise<any> {
     errors.push(`${name}: ${e.message?.slice(0, 100)}`);
     return null;
   }
+}
+
+export interface TestResult {
+  passed: number;
+  failed: number;
+  errors: string[];
+  duration: number;
 }
 
 async function main() {
@@ -362,7 +369,29 @@ async function main() {
   }
   if (errors.length > 0) { console.log("\n  Errors:"); for (const e of errors) console.log(`  - ${e}`); }
   if (failed === 0) console.log(`\n  ALL ${total} TESTS PASSED\n`);
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((e) => { console.error("Fatal:", e); process.exit(1); });
+export async function run(): Promise<TestResult> {
+  const start = Date.now();
+  passed = 0;
+  failed = 0;
+  errors.length = 0;
+  sectionResults.length = 0;
+  sp = 0;
+  sf = 0;
+  try {
+    await main();
+  } catch (err: any) {
+    failed++;
+    errors.push(`FATAL: ${err.message}`);
+  }
+  return { passed, failed, errors: [...errors], duration: Date.now() - start };
+}
+
+if (import.meta.main) {
+  run().then((r) => {
+    console.log(`\n${r.passed} passed, ${r.failed} failed (${r.duration}ms)`);
+    if (r.errors.length) r.errors.forEach((e) => console.log(`  - ${e}`));
+    process.exit(r.failed > 0 ? 1 : 0);
+  });
+}

@@ -19,6 +19,7 @@ export const broadcastIntentAction = defineAction({
     budget: z.string().describe("Maximum budget in TON (e.g., '1.5')"),
     deadlineMinutes: z.number().optional().describe("Deadline in minutes from now"),
     deadlineHours: z.number().optional().describe("Deadline in hours from now (default: 1 hour if neither deadline is set)"),
+    description: z.string().optional().describe("Detailed description of what you need (stored on-chain, visible to sellers)"),
     requirements: z.string().optional().describe("Human-readable requirements (stored locally, not on-chain)"),
   }),
   handler: async (agent, params) => {
@@ -51,8 +52,10 @@ export const broadcastIntentAction = defineAction({
           storeBroadcastIntent({
             $$type: "BroadcastIntent",
             serviceHash: serviceHash,
+            serviceName: params.service,
             budget: toNano(params.budget),
             deadline: BigInt(deadlineUnix),
+            description: params.description || "",
           })
         )
         .endCell();
@@ -95,6 +98,7 @@ export const broadcastIntentAction = defineAction({
         serviceHash: "0x" + serviceHash.toString(16),
         budget: params.budget,
         deadline: new Date(deadlineMs).toISOString(),
+        description: params.description || "",
         requirements: params.requirements || null,
         status: intentIndex >= 0 ? "open" : "failed",
         onChain: intentIndex >= 0,

@@ -2,19 +2,20 @@ import "@stdlib/deploy";
 
 // ── Agent Messages ──
 message Register { name: String; capabilities: String; available: Bool; }
-message Rate { agentName: String; success: Bool; }
+message Rate { agentName: String; success: Bool; dealIndex: Int as uint32; }
 message UpdateAvailability { name: String; available: Bool; }
 message Withdraw {}
 message IndexCapability { agentIndex: Int as uint32; capabilityHash: Int as uint256; }
 message TriggerCleanup { maxClean: Int as uint8; }
+message RegisterEscrow { escrowAddress: Address; }
 
 // ── Cross-contract ──
 message NotifyDisputeOpened { escrowAddress: Address; depositor: Address; beneficiary: Address; amount: Int as coins; votingDeadline: Int as uint32; }
 message NotifyDisputeSettled { escrowAddress: Address; released: Bool; refunded: Bool; }
 
 // ── Intent/Offer Messages ──
-message BroadcastIntent { serviceHash: Int as uint256; budget: Int as coins; deadline: Int as uint32; }
-message SendOffer { intentIndex: Int as uint32; price: Int as coins; deliveryTime: Int as uint32; }
+message BroadcastIntent { serviceHash: Int as uint256; serviceName: String; budget: Int as coins; deadline: Int as uint32; description: String; }
+message SendOffer { intentIndex: Int as uint32; price: Int as coins; deliveryTime: Int as uint32; endpoint: String; }
 message AcceptOffer { offerIndex: Int as uint32; }
 message CancelIntent { intentIndex: Int as uint32; }
 message SettleDeal { intentIndex: Int as uint32; rating: Int as uint8; }
@@ -23,8 +24,8 @@ message SettleDeal { intentIndex: Int as uint32; rating: Int as uint8; }
 struct AgentData { owner: Address; available: Bool; totalTasks: Int as uint32; successes: Int as uint32; registeredAt: Int as uint32; }
 struct DisputeInfo { escrowAddress: Address; depositor: Address; beneficiary: Address; amount: Int as coins; votingDeadline: Int as uint32; settled: Bool; }
 struct AgentCleanupInfo { index: Int as uint32; exists: Bool; score: Int as uint16; totalRatings: Int as uint32; registeredAt: Int as uint32; lastActive: Int as uint32; daysSinceActive: Int as uint32; daysSinceRegistered: Int as uint32; eligibleForCleanup: Bool; cleanupReason: Int as uint8; }
-struct IntentData { buyer: Address; serviceHash: Int as uint256; budget: Int as coins; deadline: Int as uint32; status: Int as uint8; acceptedOffer: Int as uint32; isExpired: Bool; }
-struct OfferData { seller: Address; intentIndex: Int as uint32; price: Int as coins; deliveryTime: Int as uint32; status: Int as uint8; }
+struct IntentData { buyer: Address; serviceHash: Int as uint256; serviceName: String; budget: Int as coins; deadline: Int as uint32; status: Int as uint8; acceptedOffer: Int as uint32; isExpired: Bool; description: String; }
+struct OfferData { seller: Address; intentIndex: Int as uint32; price: Int as coins; deliveryTime: Int as uint32; status: Int as uint8; endpoint: String; }
 struct StorageInfo { storageFund: Int as coins; totalCells: Int as uint32; annualCost: Int as coins; yearsCovered: Int as uint32; }
 
 // ── Contract ──
@@ -55,18 +56,21 @@ contract Reputation with Deployable {
 
     intents: map<Int as uint32, Address>;
     intentServiceHashes: map<Int as uint32, Int as uint256>;
+    intentServiceNames: map<Int as uint32, Cell>;
     intentBudgets: map<Int as uint32, Int>;
     intentDeadlines: map<Int as uint32, Int as uint32>;
     intentStatuses: map<Int as uint32, Int as uint8>;
     intentAcceptedOffer: map<Int as uint32, Int as uint32>;
     intentCount: Int as uint32;
     intentsByService: map<Int as uint256, Cell>;
+    intentDescriptions: map<Int as uint32, Cell>;
 
     offers: map<Int as uint32, Address>;
     offerIntents: map<Int as uint32, Int as uint32>;
     offerPrices: map<Int as uint32, Int>;
     offerDeliveryTimes: map<Int as uint32, Int as uint32>;
     offerStatuses: map<Int as uint32, Int as uint8>;
+    offerEndpoints: map<Int as uint32, Cell>;
     offerCount: Int as uint32;
 
     intentCleanupCursor: Int as uint32;
@@ -74,6 +78,27 @@ contract Reputation with Deployable {
     // Per-agent intent quota
     agentActiveIntents: map<Address, Int>;
     maxIntentsPerAgent: Int as uint8;
+
+    // FIX 5: store name hashes for cleanup
+    agentNameHashes: map<Int as uint32, Int as uint256>;
+
+    // FIX 2: escrow whitelist
+    knownEscrows: map<Address, Bool>;
+
+    // FIX 3: deal-based rating permissions
+    // dealBuyers/dealSellers keyed by deal index (= intentIndex of settled deal)
+    dealBuyers: map<Int as uint32, Address>;
+    dealSellers: map<Int as uint32, Address>;
+    dealBuyerRated: map<Int as uint32, Bool>;
+    dealSellerRated: map<Int as uint32, Bool>;
+    dealCount: Int as uint32;
+
+    // FIX 4: per-intent offer index
+    intentOffers: map<Int as uint32, Cell>;
+
+    // FIX 12: dedup IndexCapability — prevent same agent+capability indexed twice
+    agentCapIndexed: map<Int as uint256, Bool>;
+    agentIndexedCaps: map<Int as uint32, Cell>;
 
     // Self-funding pools
     storageFund: Int as coins;
@@ -89,6 +114,7 @@ contract Reputation with Deployable {
         self.offerCount = 0;
         self.intentCleanupCursor = 0;
         self.maxIntentsPerAgent = 10;
+        self.dealCount = 0;
         self.storageFund = 0;
         self.accumulatedFees = 0;
     }
@@ -113,6 +139,7 @@ contract Reputation with Deployable {
             self.agentRegisteredAt.set(idx, now());
             self.agentLastActive.set(idx, now());
             self.nameToIndex.set(nameHash, idx);
+            self.agentNameHashes.set(idx, nameHash);
             self.agentCount = self.agentCount + 1;
         }
         self.cleanup(2);
@@ -136,6 +163,26 @@ contract Reputation with Deployable {
         let idx: Int = existing!!;
         let currentTasks: Int? = self.agentTotalTasks.get(idx);
         if (currentTasks == null) { require(false, "Agent not found"); }
+
+        // FIX 3: verify deal-based rating permission
+        let dealBuyer: Address? = self.dealBuyers.get(msg.dealIndex);
+        let dealSeller: Address? = self.dealSellers.get(msg.dealIndex);
+        require(dealBuyer != null && dealSeller != null, "Deal not found");
+        let agentOwner: Address? = self.agentOwners.get(idx);
+        require(agentOwner != null, "Agent not found");
+        let isBuyerRatingSeller: Bool = sender() == dealBuyer!! && agentOwner!! == dealSeller!!;
+        let isSellerRatingBuyer: Bool = sender() == dealSeller!! && agentOwner!! == dealBuyer!!;
+        require(isBuyerRatingSeller || isSellerRatingBuyer, "Not authorized to rate from this deal");
+        if (isBuyerRatingSeller) {
+            let alreadyRated: Bool? = self.dealBuyerRated.get(msg.dealIndex);
+            require(alreadyRated == null || alreadyRated!! == false, "Already rated in this deal");
+            self.dealBuyerRated.set(msg.dealIndex, true);
+        } else {
+            let alreadyRated: Bool? = self.dealSellerRated.get(msg.dealIndex);
+            require(alreadyRated == null || alreadyRated!! == false, "Already rated in this deal");
+            self.dealSellerRated.set(msg.dealIndex, true);
+        }
+
         self.agentTotalTasks.set(idx, currentTasks!! + 1);
         if (msg.success) { self.agentSuccesses.set(idx, self.agentSuccesses.get(idx)!! + 1); }
         self.agentLastActive.set(idx, now());
@@ -176,6 +223,13 @@ contract Reputation with Deployable {
         let agentOwner: Address? = self.agentOwners.get(msg.agentIndex);
         require(agentOwner != null, "Agent not found");
         require(sender() == agentOwner!!, "Not the agent owner");
+
+        // FIX 12: dedup check — prevent same agent+capability indexed twice
+        let dedupKey: Int = (msg.agentIndex * 0x10000000000000000) + (msg.capabilityHash % 0x10000000000000000);
+        let already: Bool? = self.agentCapIndexed.get(dedupKey);
+        require(already == null || already!! == false, "Already indexed");
+        self.agentCapIndexed.set(dedupKey, true);
+
         self.agentLastActive.set(msg.agentIndex, now());
         let existing: Cell? = self.capabilityIndex.get(msg.capabilityHash);
         let builder: Builder = beginCell();
@@ -183,7 +237,20 @@ contract Reputation with Deployable {
         if (existing != null) { builder = builder.storeUint(1, 1); builder = builder.storeRef(existing!!); }
         else { builder = builder.storeUint(0, 1); }
         self.capabilityIndex.set(msg.capabilityHash, builder.endCell());
-        self.storageFund = self.storageFund + ton("0.005");
+
+        // FIX 12: store reverse lookup for cleanup in eraseAgent
+        let existingCaps: Cell? = self.agentIndexedCaps.get(msg.agentIndex);
+        let capNode: Builder = beginCell();
+        capNode = capNode.storeUint(msg.capabilityHash, 256);
+        if (existingCaps != null) {
+            capNode = capNode.storeUint(1, 1);
+            capNode = capNode.storeRef(existingCaps!!);
+        } else {
+            capNode = capNode.storeUint(0, 1);
+        }
+        self.agentIndexedCaps.set(msg.agentIndex, capNode.endCell());
+
+        self.storageFund = self.storageFund + ton("0.008");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
             to: sender(),
@@ -209,7 +276,25 @@ contract Reputation with Deployable {
         });
     }
 
+    // FIX 2: escrow whitelist registration
+    receive(msg: RegisterEscrow) {
+        require(sender() == self.owner, "Only owner can register escrows");
+        self.knownEscrows.set(msg.escrowAddress, true);
+        self.storageFund = self.storageFund + ton("0.003");
+        nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
+        send(SendParameters{
+            to: sender(),
+            value: 0,
+            mode: SendRemainingBalance | SendIgnoreErrors,
+            bounce: false,
+            body: "Excess".asComment()
+        });
+    }
+
     receive(msg: NotifyDisputeOpened) {
+        // FIX 2: validate sender is a known escrow
+        let isKnown: Bool? = self.knownEscrows.get(sender());
+        require(isKnown != null && isKnown!!, "Unknown escrow contract");
         let idx: Int = self.disputeCount;
         self.openDisputes.set(idx, msg.escrowAddress);
         self.disputeDepositors.set(idx, msg.depositor);
@@ -230,6 +315,9 @@ contract Reputation with Deployable {
     }
 
     receive(msg: NotifyDisputeSettled) {
+        // FIX 2: validate sender is a known escrow
+        let isKnown: Bool? = self.knownEscrows.get(sender());
+        require(isKnown != null && isKnown!!, "Unknown escrow contract");
         let i: Int = 0;
         while (i < self.disputeCount) {
             let addr: Address? = self.openDisputes.get(i);
@@ -251,7 +339,7 @@ contract Reputation with Deployable {
         require(sender() == self.owner, "Only owner can withdraw");
 
         // 20-year rule: calculate how many years storageFund covers
-        let totalCells: Int = self.agentCount * 3 + self.intentCount * 2;
+        let totalCells: Int = self.agentCount * 3 + self.intentCount * 3;
         let annualCost: Int = totalCells * 240; // nanoTON per cell per year
 
         let withdrawableFromReserve: Int = 0;
@@ -286,6 +374,13 @@ contract Reputation with Deployable {
         require(msg.deadline > now(), "Deadline must be in the future");
         require(msg.budget > 0, "Budget must be positive");
 
+        // FIX 10: cap deadline to 24h max
+        let maxDeadline: Int = now() + 86400;
+        let cappedDeadline: Int = msg.deadline;
+        if (cappedDeadline > maxDeadline) {
+            cappedDeadline = maxDeadline;
+        }
+
         // Quota check
         let currentActive: Int = 0;
         let ca: Int? = self.agentActiveIntents.get(sender());
@@ -304,15 +399,19 @@ contract Reputation with Deployable {
         let idx: Int = self.intentCount;
         self.intents.set(idx, sender());
         self.intentServiceHashes.set(idx, msg.serviceHash);
+        self.intentServiceNames.set(idx, beginCell().storeSlice(msg.serviceName.asSlice()).endCell());
         self.intentBudgets.set(idx, msg.budget);
-        self.intentDeadlines.set(idx, msg.deadline);
+        self.intentDeadlines.set(idx, cappedDeadline);
         self.intentStatuses.set(idx, 0);
+        self.intentDescriptions.set(idx, beginCell().storeSlice(msg.description.asSlice()).endCell());
         self.intentCount = idx + 1;
         self.agentActiveIntents.set(sender(), currentActive + 1);
+        // FIX 11: purge dead entries from service index head before prepending
+        self.cleanServiceIndexHead(msg.serviceHash);
         self.addToIntentServiceIndex(msg.serviceHash, idx);
         self.cleanupOneIntent();
         self.cleanup(1);
-        self.storageFund = self.storageFund + ton("0.01");
+        self.storageFund = self.storageFund + ton("0.015");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
             to: sender(),
@@ -339,8 +438,16 @@ contract Reputation with Deployable {
         self.offerPrices.set(idx, msg.price);
         self.offerDeliveryTimes.set(idx, msg.deliveryTime);
         self.offerStatuses.set(idx, 0);
+        self.offerEndpoints.set(idx, beginCell().storeSlice(msg.endpoint.asSlice()).endCell());
         self.offerCount = idx + 1;
-        self.storageFund = self.storageFund + ton("0.005");
+        // FIX 4: add offer to per-intent index
+        let existingOffers: Cell? = self.intentOffers.get(msg.intentIndex);
+        let offerNode: Builder = beginCell();
+        offerNode = offerNode.storeUint(idx, 32);
+        if (existingOffers != null) { offerNode = offerNode.storeUint(1, 1); offerNode = offerNode.storeRef(existingOffers!!); }
+        else { offerNode = offerNode.storeUint(0, 1); }
+        self.intentOffers.set(msg.intentIndex, offerNode.endCell());
+        self.storageFund = self.storageFund + ton("0.008");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
             to: sender(),
@@ -368,16 +475,8 @@ contract Reputation with Deployable {
         self.intentAcceptedOffer.set(intentIdx!!, msg.offerIndex);
         // Decrement buyer's active count (intent no longer open)
         if (buyer != null) { self.decrementAgentIntents(buyer!!); }
-        // Reject other pending offers
-        let i: Int = 0;
-        while (i < self.offerCount) {
-            if (i != msg.offerIndex) {
-                let oIdx: Int? = self.offerIntents.get(i);
-                let oSt: Int? = self.offerStatuses.get(i);
-                if (oIdx != null && oIdx!! == intentIdx!! && oSt != null && oSt!! == 0) { self.offerStatuses.set(i, 2); }
-            }
-            i = i + 1;
-        }
+        // FIX 4: reject other offers using per-intent index (bounded)
+        self.rejectIntentOffers(intentIdx!!, msg.offerIndex);
         self.storageFund = self.storageFund + ton("0.003");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
@@ -396,7 +495,43 @@ contract Reputation with Deployable {
         let buyer: Address? = self.intents.get(msg.intentIndex);
         require(buyer != null && sender() == buyer!!, "Not the intent owner");
         self.intentStatuses.set(msg.intentIndex, 2);
-        self.storageFund = self.storageFund + ton("0.003");
+
+        // FIX 6: apply rating to seller + FIX 3: create deal record for rating permissions
+        let acceptedOfferIdx: Int? = self.intentAcceptedOffer.get(msg.intentIndex);
+        if (acceptedOfferIdx != null) {
+            let sellerAddr: Address? = self.offers.get(acceptedOfferIdx!!);
+            if (sellerAddr != null) {
+                // FIX 3: record deal parties for mutual rating
+                let dealIdx: Int = self.dealCount;
+                self.dealBuyers.set(dealIdx, buyer!!);
+                self.dealSellers.set(dealIdx, sellerAddr!!);
+                self.dealBuyerRated.set(dealIdx, false);
+                self.dealSellerRated.set(dealIdx, false);
+                self.dealCount = dealIdx + 1;
+
+                // FIX 6: apply rating to seller's reputation
+                // Find the seller's agent index by scanning agentOwners
+                let si: Int = 0;
+                while (si < self.agentCount) {
+                    let ao: Address? = self.agentOwners.get(si);
+                    if (ao != null && ao!! == sellerAddr!!) {
+                        let tt: Int? = self.agentTotalTasks.get(si);
+                        let ttv: Int = 0; if (tt != null) { ttv = tt!!; }
+                        self.agentTotalTasks.set(si, ttv + 1);
+                        if (msg.rating >= 50) {
+                            let ss: Int? = self.agentSuccesses.get(si);
+                            let ssv: Int = 0; if (ss != null) { ssv = ss!!; }
+                            self.agentSuccesses.set(si, ssv + 1);
+                        }
+                        self.agentLastActive.set(si, now());
+                        si = self.agentCount; // break
+                    }
+                    si = si + 1;
+                }
+            }
+        }
+
+        self.storageFund = self.storageFund + ton("0.008");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
             to: sender(),
@@ -415,13 +550,8 @@ contract Reputation with Deployable {
         require(buyer != null && sender() == buyer!!, "Not the intent owner");
         self.intentStatuses.set(msg.intentIndex, 3);
         self.decrementAgentIntents(sender());
-        let i: Int = 0;
-        while (i < self.offerCount) {
-            let oIdx: Int? = self.offerIntents.get(i);
-            let oSt: Int? = self.offerStatuses.get(i);
-            if (oIdx != null && oIdx!! == msg.intentIndex && oSt != null && oSt!! == 0) { self.offerStatuses.set(i, 2); }
-            i = i + 1;
-        }
+        // FIX 4: use per-intent offer index instead of full scan
+        self.rejectIntentOffers(msg.intentIndex, -1);
         self.storageFund = self.storageFund + ton("0.003");
         nativeReserve(self.storageFund + self.accumulatedFees + ton("0.01"), 0);
         send(SendParameters{
@@ -457,8 +587,42 @@ contract Reputation with Deployable {
         if (i >= self.agentCount) { self.cleanupCursor = 0; } else { self.cleanupCursor = i; }
     }
 
+    // FIX 4: bounded offer rejection using per-intent index
+    fun rejectIntentOffers(intentIndex: Int, exceptOffer: Int) {
+        let node: Cell? = self.intentOffers.get(intentIndex);
+        let iterations: Int = 0;
+        while (node != null && iterations < 50) {
+            let slice: Slice = (node!!).beginParse();
+            let offerIdx: Int = slice.loadUint(32);
+            if (offerIdx != exceptOffer) {
+                let oSt: Int? = self.offerStatuses.get(offerIdx);
+                if (oSt != null && oSt!! == 0) { self.offerStatuses.set(offerIdx, 2); }
+            }
+            if (slice.loadBit()) { node = slice.loadRef(); } else { node = null; }
+            iterations = iterations + 1;
+        }
+    }
+
     fun eraseAgent(index: Int) {
         let agentAddr: Address? = self.agentOwners.get(index);
+        // FIX 5: clean up nameToIndex so the name can be reused
+        let nameHash: Int? = self.agentNameHashes.get(index);
+        if (nameHash != null) { self.nameToIndex.set(nameHash!!, null); }
+        self.agentNameHashes.set(index, null);
+
+        // FIX 12: clean up dedup map for capabilities of the erased agent
+        let caps: Cell? = self.agentIndexedCaps.get(index);
+        let capIter: Int = 0;
+        while (caps != null && capIter < 10) {
+            let capSlice: Slice = (caps!!).beginParse();
+            let capHash: Int = capSlice.loadUint(256);
+            let dedupKey: Int = (index * 0x10000000000000000) + (capHash % 0x10000000000000000);
+            self.agentCapIndexed.set(dedupKey, null);
+            if (capSlice.loadBit()) { caps = capSlice.loadRef(); } else { caps = null; }
+            capIter = capIter + 1;
+        }
+        self.agentIndexedCaps.set(index, null);
+
         self.agentOwners.set(index, null); self.agentAvailable.set(index, null);
         self.agentTotalTasks.set(index, null); self.agentSuccesses.set(index, null);
         self.agentRegisteredAt.set(index, null); self.agentLastActive.set(index, null);
@@ -521,6 +685,30 @@ contract Reputation with Deployable {
             i = i + 1; checked = checked + 1;
         }
         return false;
+    }
+
+    // FIX 11: incremental cleanup of dead entries from intentsByService head
+    fun cleanServiceIndexHead(serviceHash: Int) {
+        let node: Cell? = self.intentsByService.get(serviceHash);
+        let iterations: Int = 0;
+        while (node != null && iterations < 3) {
+            let slice: Slice = (node!!).beginParse();
+            let intentIdx: Int = slice.loadUint(32);
+            let status: Int? = self.intentStatuses.get(intentIdx);
+            if (status != null && status!! != 0) {
+                // Status != 0 → dead (expired/cancelled/settled/accepted)
+                if (slice.loadBit()) {
+                    node = slice.loadRef();
+                    self.intentsByService.set(serviceHash, node);
+                } else {
+                    self.intentsByService.set(serviceHash, null);
+                    node = null;
+                }
+            } else {
+                node = null;  // head is open → stop
+            }
+            iterations = iterations + 1;
+        }
     }
 
     fun addToIntentServiceIndex(serviceHash: Int, intentIndex: Int) {
@@ -613,15 +801,24 @@ contract Reputation with Deployable {
         let status: Int = self.intentStatuses.get(index)!!;
         let deadline: Int = self.intentDeadlines.get(index)!!;
         let ao: Int = 0; let aov: Int? = self.intentAcceptedOffer.get(index); if (aov != null) { ao = aov!!; }
-        return IntentData{ buyer: buyer, serviceHash: self.intentServiceHashes.get(index)!!, budget: self.intentBudgets.get(index)!!, deadline: deadline, status: status, acceptedOffer: ao, isExpired: status == 0 && now() >= deadline };
+        let nameCell: Cell? = self.intentServiceNames.get(index);
+        let sn: String = "";
+        if (nameCell != null) { sn = (nameCell!!).beginParse().asString(); }
+        let descCell: Cell? = self.intentDescriptions.get(index);
+        let desc: String = "";
+        if (descCell != null) { desc = (descCell!!).beginParse().asString(); }
+        return IntentData{ buyer: buyer, serviceHash: self.intentServiceHashes.get(index)!!, serviceName: sn, budget: self.intentBudgets.get(index)!!, deadline: deadline, status: status, acceptedOffer: ao, isExpired: status == 0 && now() >= deadline, description: desc };
     }
 
     get fun offerData(index: Int): OfferData {
-        return OfferData{ seller: self.offers.get(index)!!, intentIndex: self.offerIntents.get(index)!!, price: self.offerPrices.get(index)!!, deliveryTime: self.offerDeliveryTimes.get(index)!!, status: self.offerStatuses.get(index)!! };
+        let epCell: Cell? = self.offerEndpoints.get(index);
+        let ep: String = "";
+        if (epCell != null) { ep = (epCell!!).beginParse().asString(); }
+        return OfferData{ seller: self.offers.get(index)!!, intentIndex: self.offerIntents.get(index)!!, price: self.offerPrices.get(index)!!, deliveryTime: self.offerDeliveryTimes.get(index)!!, status: self.offerStatuses.get(index)!!, endpoint: ep };
     }
 
     get fun storageInfo(): StorageInfo {
-        let totalCells: Int = self.agentCount * 3 + self.intentCount * 2;
+        let totalCells: Int = self.agentCount * 3 + self.intentCount * 3;
         let annualCost: Int = totalCells * 240;
         let yearsCovered: Int = 0;
         if (annualCost > 0) {
@@ -635,6 +832,7 @@ contract Reputation with Deployable {
         };
     }
 
+    get fun dealCount(): Int { return self.dealCount; }
     get fun storageFundBalance(): Int { return self.storageFund; }
     get fun accumulatedFeesBalance(): Int { return self.accumulatedFees; }
 }
