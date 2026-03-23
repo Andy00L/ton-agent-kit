@@ -8,22 +8,22 @@ HTTP 402 Payment Required middleware for Express. Gates API endpoints behind TON
 
 ## Payment Flow
 
-```
-Client Agent              Server                    TON Blockchain
-     |                       |                            |
-     |--- GET /api/data ----->|                            |
-     |<-- 402 + details ------|                            |
-     |   (recipient, amount,  |                            |
-     |    network)            |                            |
-     |                        |                            |
-     |--- transfer_ton ------> - - - - - - - - - - - - - >|
-     |<-- tx hash ------------|                            |
-     |                        |                            |
-     |--- GET /api/data ----->|                            |
-     |   X-Payment-Hash: tx   |                            |
-     |                        |--- verify on-chain ------->|
-     |                        |<-- confirmed --------------|
-     |<-- 200 + data ---------|                            |
+```mermaid
+sequenceDiagram
+    participant Client as Client Agent
+    participant Server as x402 Server
+    participant TON as TON Blockchain
+
+    Client->>Server: GET /api/data
+    Server-->>Client: 402 {recipient, amount, network}
+
+    Client->>TON: transfer_ton (payment)
+    TON-->>Client: tx hash
+
+    Client->>Server: GET /api/data (X-Payment-Hash: tx)
+    Server->>TON: verify on-chain
+    TON-->>Server: confirmed
+    Server-->>Client: 200 {data}
 ```
 
 ---
@@ -54,16 +54,30 @@ A convenience function `createPaymentServer(options)` creates an Express server 
 ```typescript
 const result = await agent.runAction("pay_for_resource", {
     url: "https://oracle.example.com/api/data",
-    amount: "0.001",
 });
 // result.data contains the API response
 ```
 
 `pay_for_resource` handles the full flow: initial request, TON payment, wait for confirmation, retry with `X-Payment-Hash`. It can optionally confirm escrow delivery after payment.
 
-The `get_delivery_proof` action retrieves a delivery proof by TX hash or escrow ID from the memory plugin.
+---
 
-Both actions are in the `plugin-payments` package.
+## Binary Response Handling
+
+Since v1.0.4, `pay_for_resource` detects the response `Content-Type` and handles binary data (images, audio, PDF) without calling `.json()`.
+
+```mermaid
+graph TD
+    R[Response received] --> CT{Content-Type?}
+    CT -->|image/* audio/* application/pdf application/octet-stream| BIN[Buffer.from arrayBuffer]
+    CT -->|application/json or other| JSON[.json with text fallback]
+    BIN --> D[data = contentType + Buffer]
+    JSON --> D2[data = parsed JSON or text]
+    D --> H[responseHash: SHA-256 of Buffer]
+    D2 --> H2[responseHash: SHA-256 of JSON.stringify]
+```
+
+Both the paid response and the free response (non-402) paths handle binary content types. The `responseHash` in the delivery proof hashes the raw Buffer for binary data and JSON.stringify for structured data.
 
 ---
 
@@ -85,7 +99,7 @@ The transaction must be within `maxAge` of the current time. Default: 300 second
 | Self-transfer (sender == recipient) | 5,000,000 nanoTON |
 | Cross-transfer | 500,000 nanoTON |
 
-Tolerance exists to account for fees and rounding. Payments below the required amount minus tolerance are rejected.
+Tolerance accounts for gas fees and rounding.
 
 ---
 
@@ -95,9 +109,9 @@ Each transaction hash can be used only once. Three built-in store implementation
 
 | Store | Persistence | Notes |
 |---|---|---|
-| `FileReplayStore` | JSON file on disk | Survives restarts. No dependencies. |
-| `RedisReplayStore` | Redis with TTL | Suitable for multi-instance deployments. |
-| `MemoryReplayStore` | In-memory Set | Lost on restart. Suitable for testing or short-lived processes. |
+| `FileReplayStore` | JSON file on disk | Survives restarts. No dependencies. Default. |
+| `RedisReplayStore` | Redis with TTL | For multi-instance deployments. Supports Upstash, Redis Cloud, self-hosted. |
+| `MemoryReplayStore` | In-memory Set | Lost on restart. For testing or short-lived processes. |
 
 Custom stores are supported. Implement `has(hash: string): boolean` and `add(hash: string): void`.
 
@@ -105,49 +119,56 @@ Custom stores are supported. Implement `has(hash: string): boolean` and `add(has
 
 ## Dynamic Endpoints (EndpointPlugin)
 
-EndpointPlugin lets the LLM open and close paywall endpoints at runtime. It is defined inline in `telegram-bot.ts` and `cloud-agent.ts`. It is not a separate npm package.
+**Package:** `@ton-agent-kit/plugin-endpoints` v1.0.0
+
+The `EndpointPlugin` lets agents open and close paywall endpoints at runtime. It is a separate npm package.
+
+```typescript
+import { createEndpointPlugin } from "@ton-agent-kit/plugin-endpoints";
+
+const EndpointPlugin = createEndpointPlugin({
+  port: 4000,
+  getPublicUrl: () => "https://my-agent.example.com",
+});
+
+agent.use(EndpointPlugin);
+```
 
 Dynamic endpoints use `MemoryReplayStore`. They do not survive a process restart.
 
-### Actions
+### Actions (3)
 
 | Action | Description |
 |---|---|
-| `open_x402_endpoint` | Creates a paid endpoint. Returns the public URL. |
-| `close_x402_endpoint` | Removes an endpoint. |
+| `open_x402_endpoint` | Creates a paid endpoint. Specify path, price, and a data action to call. Returns the public URL. |
+| `close_x402_endpoint` | Removes an endpoint by path. |
 | `list_x402_endpoints` | Lists all active endpoints with prices and serve counts. |
-
-### Public URL Detection
-
-At startup, the process calls `https://api.ipify.org` to get its public IP. Endpoints are advertised as `http://<public-ip>:<port>/path`. If the API call fails, the process falls back to `localhost`.
-
-Override the detected address with `PUBLIC_URL`. Set `LOCAL_MODE=true` to force localhost.
-
-### Example Flow
-
-1. Agent discovers an intent for a price feed service.
-2. Agent calls `open_x402_endpoint({ path: "/api/price", price: "0.005", dataAction: "get_price" })`.
-3. Agent calls `send_offer({ intentIndex: 3, endpoint: "http://143.198.45.67:4000/api/price" })`.
-4. Buyer calls `pay_for_resource({ url: "http://143.198.45.67:4000/api/price" })`.
-5. The Express server verifies payment on-chain via `tonPaywall`, calls `get_price` via the SDK, and returns the data.
-6. After settlement, agent calls `close_x402_endpoint({ path: "/api/price" })`.
 
 ### Architecture
 
+```mermaid
+sequenceDiagram
+    participant LLM
+    participant Express as Express Server
+    participant Buyer as Buyer Agent
+
+    LLM->>Express: open_x402_endpoint(path, price, dataAction)
+    Express-->>LLM: {url}
+
+    Buyer->>Express: GET /path
+    Express-->>Buyer: 402 Payment Required
+
+    Buyer->>Express: GET /path + X-Payment-Hash
+    Express->>Express: tonPaywall() verifies
+    Express->>Express: runAction(dataAction)
+    Express-->>Buyer: 200 {data}
+
+    LLM->>Express: close_x402_endpoint(path)
 ```
-LLM                    Express Server               Buyer Agent
- |                           |                           |
- |-- open_x402_endpoint ---->|  endpointRoutes.set(path) |
- |<-- { url } ---------------|                           |
- |                           |<-- GET /path -------------|
- |                           |--- 402 Payment Required ->|
- |                           |<-- GET /path + X-Payment -|
- |                           |   tonPaywall() verifies   |
- |                           |   runAction(dataAction)   |
- |                           |--- 200 { data } --------->|
- |                           |                           |
- |-- close_x402_endpoint --->|  endpointRoutes.delete()  |
-```
+
+### Public URL Detection
+
+At startup, the process calls `https://api.ipify.org` to get its public IP. Endpoints are advertised as `http://<public-ip>:<port>/path`. Override with `PUBLIC_URL` or set `LOCAL_MODE=true` for localhost.
 
 ---
 
@@ -162,14 +183,19 @@ LLM                    Express Server               Buyer Agent
 | `/api/premium` | 0.05 TON | FileReplayStore |
 | `/api/dynamic-price` | 0.002 TON (opened programmatically) | MemoryReplayStore |
 
-Default port for the example server: 3402.
-
 ---
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `X402_PORT` | No | `4000` | HTTP server port (bot and cloud-agent) |
+| `X402_PORT` | No | `3402` | HTTP server port (examples) |
 | `PUBLIC_URL` | No | auto-detected | Override the public URL advertised in offers |
 | `LOCAL_MODE` | No | `false` | Set to `true` to use localhost instead of public IP |
+
+---
+
+## Related
+
+- [Agent Communication](./agent-comm.md) -- offers include endpoint URLs for x402 delivery
+- [Escrow System](./escrow-system.md) -- x402 proof hash stored on-chain at delivery confirmation

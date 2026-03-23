@@ -1,69 +1,71 @@
 # ARCHITECTURE
 
-TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockchain. It provides plugins, smart contracts, an orchestrator, a strategy engine, and multiple agent runtimes.
+TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockchain. It provides plugins, smart contracts, an orchestrator, a strategy engine, and integrations with MCP, LangChain, and Vercel AI.
 
 ---
 
 ## 1. System Overview
 
+```mermaid
+graph TD
+    subgraph Runtimes
+        MCP["MCP Server<br>packages/mcp-server"]
+        BOT["Telegram Bot<br>github.com/Andy00L/ton-agent-bot"]
+        TEST["Test Runner<br>tests.ts"]
+        CUSTOM["Your App"]
+    end
+
+    subgraph Core["@ton-agent-kit/core"]
+        AK["TonAgentKit"]
+        PR["PluginRegistry"]
+        AC["ActionCache"]
+        GAS["Gas Estimation"]
+        WAL["KeypairWallet / ReadOnlyWallet"]
+    end
+
+    subgraph Plugins["12 Plugins (75 actions)"]
+        PT["Token (7)"]
+        PD["DeFi (12)"]
+        PE["Escrow (14)"]
+        PI["Identity (9)"]
+        PAC["AgentComm (7)"]
+        PA["Analytics (8)"]
+        PO["DNS (3), NFT (3), Staking (3)"]
+        PP["Payments (2), Memory (4), Endpoints (3)"]
+    end
+
+    subgraph Infrastructure
+        ORCH["Orchestrator"]
+        STRAT["Strategies"]
+        X402["x402 Middleware"]
+        LC["LangChain + AI Tools"]
+        WS["Wallet Store"]
+        NM["Network Mode"]
+    end
+
+    subgraph Blockchain["TON Blockchain"]
+        RC["Reputation Contract<br>testnet: 0:6e78...85e9"]
+        EC["Escrow Contracts<br>per-deal deployment"]
+    end
+
+    MCP --> AK
+    BOT --> AK
+    TEST --> AK
+    CUSTOM --> AK
+    AK --> PR
+    AK --> AC
+    AK --> GAS
+    AK --> WAL
+    PR --> Plugins
+    PE --> EC
+    PI --> RC
+    PAC --> RC
+    ORCH --> AK
+    STRAT --> AK
+    X402 --> Blockchain
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          AGENT RUNTIMES                                 │
-│                                                                         │
-│   telegram-bot.ts      cloud-agent.ts       mcp-server.ts              │
-│   (Telegram UI)        (Autonomous loop)    (MCP stdio)                 │
-│       │                      │                    │                     │
-└───────┼──────────────────────┼────────────────────┼─────────────────────┘
-        │                      │                    │
-        └──────────────────────┼────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   @ton-agent-kit/   │
-                    │       core          │
-                    │  TonAgentKit        │
-                    │  PluginRegistry     │
-                    │  ActionCache        │
-                    │  Gas estimation     │
-                    │  Wallet providers   │
-                    └──────────┬──────────┘
-                               │ loads plugins
-        ┌──────────────────────┼─────────────────────────┐
-        │                      │                          │
-   ┌────▼────┐  ┌──────────────▼──────────────────────┐  │
-   │plugin-  │  │  On-chain plugins                   │  │
-   │memory   │  │  token / defi / dns / nft /          │  │
-   │(local)  │  │  staking / analytics / payments      │  │
-   └─────────┘  └──────────────┬──────────────────────┘  │
-                               │                          │
-                    ┌──────────▼──────────┐         ┌─────▼──────┐
-                    │  plugin-escrow      │         │plugin-     │
-                    │  plugin-identity    │         │agent-comm  │
-                    │  (TON contracts)    │         │            │
-                    └──────────┬──────────┘         └─────┬──────┘
-                               │                          │
-                    ┌──────────▼──────────────────────────▼──────┐
-                    │              TON BLOCKCHAIN                  │
-                    │   Reputation contract (testnet)              │
-                    │   Escrow contracts (per deal)                │
-                    └──────────────────────────────────────────────┘
 
-   ┌────────────────────────────────────────┐
-   │  @ton-agent-kit/orchestrator           │
-   │  Orchestrator / Planner /              │
-   │  Dispatcher / AgentManager             │
-   └────────────────────────────────────────┘
-
-   ┌────────────────────────────────────────┐
-   │  @ton-agent-kit/strategies             │
-   │  DCA / PriceMonitor / Rebalance /      │
-   │  ReputationGuard templates             │
-   └────────────────────────────────────────┘
-
-   ┌────────────────────────────────────────┐
-   │  @ton-agent-kit/x402-middleware        │
-   │  Express middleware, x402 payments     │
-   └────────────────────────────────────────┘
-```
+Note: The Telegram bot has been moved to https://github.com/Andy00L/ton-agent-bot. It imports all 12 plugins from this SDK via npm.
 
 ---
 
@@ -75,14 +77,8 @@ TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockch
 ├── README.md
 ├── LICENSE
 ├── package.json
-├── bun.lock
 ├── .env.example
-│
-├── cloud-agent.ts          # Autonomous agent runtime (521 lines)
-├── telegram-bot.ts         # Telegram bot runtime (1308 lines)
-├── mcp-server.ts           # MCP server entry point (151 lines)
-├── tests.ts                # Interactive test runner (222 lines)
-├── generate-wallet.ts      # Wallet generation utility
+├── tests.ts                # Interactive test runner (28 suites)
 │
 ├── assets/
 │   └── hero.png
@@ -103,7 +99,7 @@ TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockch
 │   ├── mcp-server/
 │   └── x402-server/
 │
-├── packages/
+├── packages/               # 21 npm packages
 │   ├── core/
 │   ├── plugin-token/
 │   ├── plugin-defi/
@@ -116,12 +112,15 @@ TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockch
 │   ├── plugin-payments/
 │   ├── plugin-agent-comm/
 │   ├── plugin-memory/
+│   ├── plugin-endpoints/   # NEW: dynamic x402 endpoint management
 │   ├── orchestrator/
 │   ├── strategies/
 │   ├── x402-middleware/
 │   ├── mcp-server/
 │   ├── langchain/
-│   └── ai-tools/
+│   ├── ai-tools/
+│   ├── wallet-store/       # NEW: AES-256-GCM encrypted wallet/key storage
+│   └── network-mode/       # NEW: CLI network mode selector
 │
 └── tests/                  # 28 test suites + _setup.ts
 ```
@@ -130,26 +129,31 @@ TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockch
 
 ## 3. Package Distribution
 
+21 npm packages. 12 plugins with actions, 9 infrastructure modules.
+
 | Package | Version | Description |
 |---|---|---|
 | `@ton-agent-kit/core` | 1.2.2 | Base classes, wallet providers, plugin registry, cache, gas estimation |
 | `@ton-agent-kit/plugin-token` | 1.1.1 | TON and jetton balances, transfers, jetton deployment |
-| `@ton-agent-kit/plugin-defi` | 1.2.2 | DEX swaps (DeDust, STON.fi), DCA, limit orders, yield, staking pools |
+| `@ton-agent-kit/plugin-defi` | 1.2.2 | DEX swaps (DeDust, STON.fi, Omniston), DCA, limit orders, yield, staking pools |
 | `@ton-agent-kit/plugin-dns` | 1.0.3 | TON DNS resolution and lookup |
 | `@ton-agent-kit/plugin-nft` | 1.0.3 | NFT info, transfer, collection queries |
 | `@ton-agent-kit/plugin-staking` | 1.0.3 | Liquid staking info, stake, unstake |
 | `@ton-agent-kit/plugin-analytics` | 1.1.1 | Transaction history, portfolio metrics, webhooks, bulk accounts |
 | `@ton-agent-kit/plugin-escrow` | 1.5.2 | Escrow lifecycle: create, deposit, release, dispute, arbitration |
 | `@ton-agent-kit/plugin-identity` | 1.6.4 | Agent registration, reputation scoring, dispute management |
-| `@ton-agent-kit/plugin-payments` | 1.0.3 | x402 resource payments and delivery proofs |
+| `@ton-agent-kit/plugin-payments` | 1.0.4 | x402 resource payments, delivery proofs, binary response handling |
 | `@ton-agent-kit/plugin-agent-comm` | 1.3.3 | Intent broadcast, offer negotiation, deal settlement |
-| `@ton-agent-kit/plugin-memory` | 1.0.2 | Local key-value context storage |
+| `@ton-agent-kit/plugin-memory` | 1.0.2 | Local key-value context storage with TTL and namespaces |
+| `@ton-agent-kit/plugin-endpoints` | 1.0.0 | Dynamic x402 endpoint management (open, close, list) |
 | `@ton-agent-kit/orchestrator` | 1.1.1 | Multi-agent task planning, dispatch, retry |
 | `@ton-agent-kit/strategies` | 1.0.1 | Scheduled strategy templates |
 | `@ton-agent-kit/x402-middleware` | 1.1.1 | Express middleware for x402 payment gating |
-| `@ton-agent-kit/mcp-server` | 1.1.1 | MCP server exposing actions as tools |
+| `@ton-agent-kit/mcp-server` | 1.1.1 | MCP server exposing actions as tools (stdio + SSE) |
 | `@ton-agent-kit/langchain` | 1.0.2 | LangChain tool adapters |
-| `@ton-agent-kit/ai-tools` | 1.0.2 | Generic AI SDK tool adapters |
+| `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
+| `@ton-agent-kit/wallet-store` | 1.0.0 | AES-256-GCM encrypted wallet and API key storage (SQLite) |
+| `@ton-agent-kit/network-mode` | 1.0.0 | CLI utility for choosing network mode (local, public IP, tunnel) |
 
 ---
 
@@ -157,10 +161,9 @@ TON Agent Kit is a TypeScript monorepo for building AI agents on the TON blockch
 
 ### Plugin System
 
-Every plugin is defined with `definePlugin()`. It declares a list of actions. Each action is defined with `defineAction()` and provides a Zod v4 input schema, an execute function, and a description string. The core loads plugins into a `PluginRegistry`, which indexes actions by name for lookup at runtime.
+Every plugin is defined with `definePlugin()`. It declares a list of actions. Each action is defined with `defineAction()` and provides a Zod v4 input schema, a handler function, and a description string. The core loads plugins into a `PluginRegistry`, which indexes actions by name for lookup at runtime.
 
 ```typescript
-// Minimal plugin definition
 const myPlugin = definePlugin({
   name: "my-plugin",
   actions: [
@@ -168,26 +171,24 @@ const myPlugin = definePlugin({
       name: "do_thing",
       description: "Does the thing",
       schema: z.object({ amount: z.number() }),
-      execute: async (input, ctx) => { ... }
+      handler: async (agent, params) => { ... }
     })
   ]
 });
 ```
 
-`AgentContext` is passed to every action execute function. It holds the wallet provider, the TON network configuration, and a reference to the kit instance.
+The agent instance is passed as the first argument to every handler. It holds the wallet provider, the TON network configuration, and a reference to the kit instance.
 
 ### Wallet Providers
 
 Two implementations are exported from core.
 
-- `KeypairWallet`: holds a private key in memory. Signs and sends transactions. Use for agents that need to act.
+- `KeypairWallet`: holds a private key in memory. Signs and sends transactions. Supports wallet versions V3R2, V4, V5R1. Auto-detects version by checking on-chain balances with `autoDetect()`.
 - `ReadOnlyWallet`: accepts only an address. Cannot sign. Use for monitoring or read-only queries.
-
-`WalletVersion` selects the wallet contract version (V3R1, V3R2, V4R2, W5).
 
 ### ActionCache
 
-`ActionCache` is a TTL-based cache with LRU eviction at 500 entries. It is used to avoid redundant external calls during a single agent run. Cache TTLs are per-action:
+`ActionCache` is a TTL-based cache with LRU eviction at 500 entries. It avoids redundant external calls during a single agent run. Cache TTLs are per-action:
 
 | Action | TTL |
 |---|---|
@@ -217,7 +218,7 @@ Two constants are exported: `DEFAULT_GAS = "0.12"` and `CROSS_CONTRACT_GAS = "0.
 
 ---
 
-## 5. All 72 Actions
+## 5. All 75 Actions
 
 | # | Action | Plugin | Description | Type |
 |---|---|---|---|---|
@@ -230,10 +231,10 @@ Two constants are exported: `DEFAULT_GAS = "0.12"` and `CROSS_CONTRACT_GAS = "0.
 | 7 | `simulate_transaction` | token | Estimate outcome of a transaction before sending | API |
 | 8 | `swap_dedust` | defi | Execute a swap on DeDust | Live |
 | 9 | `swap_stonfi` | defi | Execute a swap on STON.fi | Live |
-| 10 | `swap_best_price` | defi | Route swap to the better price between DeDust and STON.fi | Live |
-| 11 | `get_price` | defi | Get token price from swap.coffee | API |
-| 12 | `create_dca_order` | defi | Schedule a recurring DCA buy | Live |
-| 13 | `create_limit_order` | defi | Place a limit order | Live |
+| 10 | `swap_best_price` | defi | Aggregated swap via Omniston (best across DEXes) | Live |
+| 11 | `get_price` | defi | Get token price from TONAPI | API |
+| 12 | `create_dca_order` | defi | Schedule a recurring DCA buy via swap.coffee | Live |
+| 13 | `create_limit_order` | defi | Place a limit order via swap.coffee | Live |
 | 14 | `cancel_order` | defi | Cancel an open order | Live |
 | 15 | `get_yield_pools` | defi | List available yield pools | API |
 | 16 | `yield_deposit` | defi | Deposit into a yield pool | Live |
@@ -262,43 +263,46 @@ Two constants are exported: `DEFAULT_GAS = "0.12"` and `CROSS_CONTRACT_GAS = "0.
 | 39 | `release_escrow` | escrow | Release funds to seller after delivery | Live |
 | 40 | `refund_escrow` | escrow | Refund buyer from escrow | Live |
 | 41 | `get_escrow_info` | escrow | Fetch current state of an escrow contract | Live |
-| 42 | `confirm_delivery` | escrow | Buyer confirms delivery | Live |
+| 42 | `confirm_delivery` | escrow | Buyer confirms delivery with x402 proof hash | Live |
 | 43 | `auto_release_escrow` | escrow | Trigger auto-release after timeout | Live |
 | 44 | `open_dispute` | escrow | Open a dispute on an escrow | Live |
-| 45 | `join_dispute` | escrow | Arbiter joins a dispute | Live |
+| 45 | `join_dispute` | escrow | Arbiter joins a dispute with stake | Live |
 | 46 | `vote_release` | escrow | Arbiter votes to release funds to seller | Live |
 | 47 | `vote_refund` | escrow | Arbiter votes to refund buyer | Live |
 | 48 | `claim_reward` | escrow | Arbiter claims staking reward after settlement | Live |
 | 49 | `fallback_settle` | escrow | Settle escrow after voting deadline expires | Live |
 | 50 | `seller_stake_escrow` | escrow | Seller posts reputation stake into escrow | Live |
 | 51 | `register_agent` | identity | Register an agent in the reputation contract | Live |
-| 52 | `discover_agent` | identity | Look up an agent by name or capability | Live |
-| 53 | `get_agent_reputation` | identity | Fetch reputation score and stats for an agent | Live |
+| 52 | `discover_agent` | identity | Look up agents by name, capability, or scan | Live |
+| 53 | `get_agent_reputation` | identity | Fetch reputation score and stats | Live |
 | 54 | `deploy_reputation_contract` | identity | Deploy a new reputation contract | Live |
-| 55 | `withdraw_reputation_fees` | identity | Withdraw accumulated fees from reputation contract | Live |
-| 56 | `process_pending_ratings` | identity | Process queued ratings for an agent | Live |
+| 55 | `withdraw_reputation_fees` | identity | Withdraw accumulated fees (owner only) | Live |
+| 56 | `process_pending_ratings` | identity | Process queued ratings for agents | Live |
 | 57 | `get_open_disputes` | identity | List open disputes from the reputation contract | Live |
 | 58 | `trigger_cleanup` | identity | Trigger stale agent cleanup | Live |
 | 59 | `get_agent_cleanup_info` | identity | Get cleanup eligibility info for an agent | Live |
-| 60 | `pay_for_resource` | payments | Pay for an x402-gated resource | Live |
+| 60 | `pay_for_resource` | payments | Pay for an x402-gated resource (JSON + binary) | Live |
 | 61 | `get_delivery_proof` | payments | Retrieve the delivery proof for a paid resource | Live |
-| 62 | `broadcast_intent` | agent-comm | Broadcast a service intent to the reputation contract | Live |
+| 62 | `broadcast_intent` | agent-comm | Broadcast a service intent on-chain | Live |
 | 63 | `discover_intents` | agent-comm | Query open intents by service type | Live |
 | 64 | `send_offer` | agent-comm | Send an offer in response to an intent | Live |
 | 65 | `get_offers` | agent-comm | Retrieve offers for a given intent | Live |
 | 66 | `accept_offer` | agent-comm | Accept an offer and begin a deal | Live |
-| 67 | `settle_deal` | agent-comm | Mark a deal as settled | Live |
+| 67 | `settle_deal` | agent-comm | Mark a deal as settled with rating | Live |
 | 68 | `cancel_intent` | agent-comm | Cancel a previously broadcast intent | Live |
-| 69 | `save_context` | memory | Write a key-value entry to local context storage | Primitive |
-| 70 | `get_context` | memory | Read a key-value entry from local context storage | Primitive |
-| 71 | `list_context` | memory | List all context keys | Primitive |
+| 69 | `save_context` | memory | Write a key-value entry to context storage | Primitive |
+| 70 | `get_context` | memory | Read a key-value entry from context storage | Primitive |
+| 71 | `list_context` | memory | List all context keys in a namespace | Primitive |
 | 72 | `delete_context` | memory | Delete a context entry | Primitive |
+| 73 | `open_x402_endpoint` | endpoints | Create a paid endpoint calling a data action | Live |
+| 74 | `close_x402_endpoint` | endpoints | Remove a paid endpoint by path | Live |
+| 75 | `list_x402_endpoints` | endpoints | List all active endpoints | Primitive |
 
 ---
 
 ## 6. Smart Contracts
 
-Both contracts are written in Tact. Source is in `contracts/`. Compiled output is in `contracts/output/` and copied into the relevant plugin packages.
+Both contracts are written in Tact. Source is in `contracts/`. Compiled output is in `contracts/output/`.
 
 ### 6.1 Reputation Contract
 
@@ -352,14 +356,14 @@ Deployed on testnet at `0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef96
 
 | Fix | Description |
 |---|---|
-| FIX 2 | Known escrows validation |
-| FIX 3 | Separate buyer and seller rating paths |
-| FIX 4 | Per-intent offer indexing with bounded rejection |
-| FIX 5 | Cleanup of nameToIndex entries |
-| FIX 10 | 24-hour deadline cap |
-| FIX 11 | Dead entry removal from intentsByService linked list heads |
-| FIX 12 | Deduplication of capability indexing |
-| FIX 14 | Removed `.reputation-contract.json` dependency |
+| FIX 2 | Known escrows validation via `knownEscrows` whitelist |
+| FIX 3 | Separate buyer and seller rating paths via `dealBuyerRated`/`dealSellerRated` |
+| FIX 4 | Per-intent offer indexing with bounded rejection (max 10 per call) |
+| FIX 5 | Cleanup of `nameToIndex` and `agentNameHashes` entries on agent erase |
+| FIX 10 | 24-hour deadline cap on intents |
+| FIX 11 | Dead entry removal from `intentsByService` linked list heads |
+| FIX 12 | Deduplication of capability indexing via `agentCapIndexed` map |
+| FIX 14 | Removed `.reputation-contract.json` dependency, hardcoded address in SDK |
 
 ---
 
@@ -371,7 +375,7 @@ Deployed per deal. Each `create_escrow` action deploys a fresh instance.
 
 **State.** 5 maps: `arbiters`, `arbiterIndex`, `stakes`, `voted`, `votes`.
 
-**Structs.** 1: `EscrowData`.
+**Structs.** 1: `EscrowData` (25 fields).
 
 **Messages.** 14 defined message types.
 
@@ -400,9 +404,9 @@ Deployed per deal. Each `create_escrow` action deploys a fresh instance.
 
 | Score range | Required stake |
 |---|---|
-| 90 to 100 | 50% of deal amount |
-| 60 to 89 | 100% of deal amount |
-| 30 to 59 | 150% of deal amount |
+| 90 to 100 | 50% of baseSellerStake |
+| 60 to 89 | 100% of baseSellerStake |
+| 30 to 59 | 150% of baseSellerStake |
 | Below minRepScore | Blocked from selling |
 
 **Reserve formula.** `amount + sellerStake + totalArbiterStakes + storageFund + 0.01`.
@@ -414,10 +418,10 @@ Deployed per deal. Each `create_escrow` action deploys a fresh instance.
 | Fix | Description |
 |---|---|
 | FIX 1 | nativeReserve protects only remaining arbiter stakes after settlement |
-| FIX 7 | Arbiter bonus snapshot taken at settlement time |
-| FIX 8 | Arbiter bonus distribution logic |
-| FIX 9 | x402ProofHash stored on-chain |
-| FIX 13 | Votes blocked after voting deadline |
+| FIX 7 | Arbiter bonus snapshot (`settlementWinnerCount`, `settlementLoserTotal`) taken at settlement time |
+| FIX 8 | Arbiter bonus distribution: `bonus = settlementLoserTotal / settlementWinnerCount` |
+| FIX 9 | `x402ProofHash` stored on-chain at `DeliveryConfirmed` |
+| FIX 13 | Votes blocked after `votingDeadline` via `require(now() <= self.votingDeadline)` |
 
 ---
 
@@ -427,10 +431,25 @@ Package: `@ton-agent-kit/orchestrator` v1.1.1.
 
 **Components.**
 
-- `Orchestrator`: top-level coordinator. Accepts a list of tasks and a set of agents.
-- `Planner`: breaks goals into ordered task lists.
-- `Dispatcher`: assigns tasks to available agents.
-- `AgentManager`: tracks agent lifecycle and availability.
+- `Orchestrator`: top-level coordinator. Accepts goals and a set of agents.
+- `Planner`: breaks goals into ordered task lists using an LLM.
+- `Dispatcher`: assigns tasks to available agents based on loaded plugins.
+- `AgentManager`: tracks agent lifecycle, restarts, and hooks.
+
+```mermaid
+graph LR
+    G[Goal] --> P[Planner]
+    P --> T1[Task 1]
+    P --> T2[Task 2]
+    P --> T3[Task 3]
+    T1 --> D[Dispatcher]
+    T2 --> D
+    T3 --> D
+    D -->|parallel| A1[Agent 1]
+    D -->|parallel| A2[Agent 2]
+    A1 --> R[Aggregate Results]
+    A2 --> R
+```
 
 **Defaults.**
 
@@ -451,56 +470,23 @@ Package: `@ton-agent-kit/x402-middleware` v1.1.1.
 
 Express middleware that gates HTTP endpoints behind TON payments using the x402 protocol. When a request arrives without a valid payment proof, the middleware returns an HTTP 402 response with payment instructions. The client pays, attaches the proof header, and retries. The middleware verifies the proof and forwards the request.
 
-The x402 server runs on `X402_PORT` (default 4000) in both the Telegram bot and cloud agent runtimes. Three inline actions manage it at runtime: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
+The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints` v1.0.0) lets agents open/close x402 endpoints at runtime. It provides 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
 
 ---
 
 ## 9. Telegram Bot
 
-File: `telegram-bot.ts` (1308 lines).
+The Telegram bot has been moved to a separate repository: **https://github.com/Andy00L/ton-agent-bot**
 
-**Plugins loaded (10 + inline).**
-Token, DeFi, DNS, NFT, Staking, Escrow, Identity, Analytics, Payments, AgentComm. Plus an inline `EndpointPlugin` with 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
+It is a multi-user grammY bot that imports all 12 plugins from this SDK via npm. Features: AES-256-GCM encrypted per-user wallets (`@ton-agent-kit/wallet-store`), HITL approval with inline buttons, 3 operating modes (Normal, Listen, Auto), and 5 LLM provider options.
 
-**Callback handlers.** 40 total: 9 regex-based, 31 static.
-
-**Modes.**
-- Normal: standard message handling with HITL confirmation.
-- Listen: monitors on-chain events.
-- Auto: executes actions without per-action confirmation.
-
-**HITL (human-in-the-loop).**
-- 23 actions require confirmation before execution.
-- 8 actions are in `ALWAYS_CONFIRM` and cannot be auto-approved.
-- Actions below 0.05 TON cost are auto-approved.
-
-**Chat history.** Max 40 messages kept in context.
-
-**Model.** Default `gpt-4.1-nano`.
+See [docs/telegram-bot.md](docs/telegram-bot.md) for details.
 
 ---
 
-## 10. Cloud Agent
+## 10. Agent Commerce Protocol
 
-File: `cloud-agent.ts` (521 lines).
-
-**Purpose.** Headless autonomous agent. Runs without user interaction.
-
-**Plugins loaded.** Same 10 plugins as the Telegram bot, plus the inline `EndpointPlugin`.
-
-**Run loop.** `while(true)` loop. Max 15 iterations per round. 30-second cooldown (`COOLDOWN_SECONDS`) between rounds.
-
-**Logging.** Persistent run history written to `logs/history.json`.
-
-**Model.** Default `gpt-4o`.
-
-**Limitation.** No HITL. All actions execute without confirmation. Suitable only for trusted, tested workflows.
-
----
-
-## 11. Agent Commerce Protocol
-
-The full commerce flow involves three contracts and two agents.
+The full commerce flow involves the Reputation contract, Escrow contracts, and two agents.
 
 ```mermaid
 sequenceDiagram
@@ -509,50 +495,61 @@ sequenceDiagram
     participant E as Escrow Contract
     participant B as Agent B (seller)
 
-    A->>R: BroadcastIntent(service, budget, deadline)
-    B->>R: SendOffer(intentId, price, deliveryTime)
-    A->>R: AcceptOffer(offerId)
-    A->>E: create_escrow(buyer, seller, arbiters, amount)
-    A->>E: Deposit(amount)
-    B->>E: SellerStake(stake based on reputation score)
-    B-->>A: service delivery
-    A->>E: DeliveryConfirmed
-    E->>B: release funds
-    E->>R: NotifyDisputeSettled (if dispute occurred)
-    A->>R: Rate(seller, score)
-    B->>R: Rate(buyer, score)
-    A->>R: SettleDeal(dealId)
+    A->>R: register_agent
+    B->>R: register_agent
+    A->>R: broadcast_intent(service, budget, deadline, description)
+    B->>R: discover_intents(service filter)
+    B->>R: send_offer(intentIndex, price, deliveryTime, endpoint)
+    A->>R: get_offers(intentIndex)
+    A->>R: accept_offer(offerIndex)
+    A->>E: create_escrow + deposit
+    B->>E: seller_stake_escrow (if required)
+    B-->>A: deliver service (via x402 endpoint)
+    A->>E: confirm_delivery(x402ProofHash)
+    A->>E: release_escrow
+    A->>R: settle_deal(intentIndex, rating)
 ```
 
 If delivery fails or is disputed, arbiters join the escrow and vote within 72 hours. Majority determines release or refund. After settlement, arbiters claim their staking rewards.
 
 ---
 
-## 12. Agent Communication Protocol
+## 11. Agent Communication Protocol
 
 Intent and offer lifecycle on the reputation contract:
 
 1. Agent broadcasts an intent with `BroadcastIntent`. Stored under `intentsByServiceHash`.
-2. Providers discover intents with `intentsByServiceHash` getter.
+2. Providers discover intents with `intentsByServiceHash` getter (O(1) by service).
 3. Provider sends an offer with `SendOffer`. Stored under the intent's offer index.
 4. Requester retrieves offers with `offerData` getter.
-5. Requester accepts with `AcceptOffer`. Deal record created.
-6. After delivery, both parties call `SettleDeal`.
+5. Requester accepts with `AcceptOffer`. Deal record created. Other offers rejected (max 10 per call).
+6. After delivery, both parties call `SettleDeal` with a rating.
 7. Either party can cancel with `CancelIntent` before acceptance.
 
 **Constraints.**
 - Max 10 active intents per agent.
-- Max deadline: 24 hours.
+- Max deadline: 24 hours (FIX 10).
 - Cascade erase removes expired intents and rejected offers during cleanup.
 - Linked list heads for `intentsByService` are cleaned of dead entries (FIX 11).
 
 ---
 
-## 13. Strategy Engine
+## 12. Strategy Engine
 
 Package: `@ton-agent-kit/strategies` v1.0.1.
 
-**Purpose.** Run scheduled, parameterized agent behaviors.
+**Purpose.** Run scheduled, parameterized agent behaviors without LLM involvement.
+
+```mermaid
+graph LR
+    D[defineStrategy] --> SC["Schedule<br>once / every Ns/m/h/d"]
+    SC --> R[StrategyRunner]
+    R --> S1["Step 1: condition?"]
+    S1 -->|pass| E1[Execute action]
+    S1 -->|fail| SK[Skip]
+    E1 --> T1[Transform result]
+    T1 --> S2["Step 2..."]
+```
 
 **4 built-in templates.**
 
@@ -569,24 +566,42 @@ Package: `@ton-agent-kit/strategies` v1.0.1.
 
 ---
 
-## 14. MCP Server
+## 13. MCP Server
 
-Package: `@ton-agent-kit/mcp-server` v1.1.1. Entry point: `mcp-server.ts` (151 lines).
+Package: `@ton-agent-kit/mcp-server` v1.1.1.
 
-**Transport.** Stdio only. SSE is documented but not implemented in `mcp-server.ts`.
+**Transport.** Supports both stdio and SSE. SSE mode serves `/sse` and `/messages` with Bearer token auth.
 
 **Plugins loaded (10).**
 Token, DeFi, NFT, DNS, Payments, Staking, Escrow, Identity, Analytics, Memory.
 
-AgentComm is not included in the MCP server.
+AgentComm and Endpoints are not included by default.
 
-**Meta tool.** `ton_agent_info` returns kit version, available plugins, and registered action names.
+**Meta tool.** `ton_agent_info` returns wallet address, network, available actions, and plugin count.
+
+---
+
+## 14. New Packages
+
+Three packages added since v1.1.0:
+
+### wallet-store (1.0.0)
+
+AES-256-GCM encrypted storage for wallet mnemonics and API keys. SQLite backend. Per-user key derivation using HMAC-SHA256. Used by the Telegram bot for multi-user wallet management. Also includes `FileStore` for file uploads (48h TTL, 10MB/file, 50MB/user). 5 LLM provider configs (OpenAI, OpenRouter, Groq, Together, Mistral).
+
+### plugin-endpoints (1.0.0)
+
+Dynamic x402 endpoint management. 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`. Uses `MemoryReplayStore`. Endpoints do not persist across restarts.
+
+### network-mode (1.0.0)
+
+CLI utility for choosing how the x402 server is accessed: local (localhost), public (auto-detect IP, verify port), or tunnel (ngrok/cloudflare, verify connectivity). Returns a URL string.
 
 ---
 
 ## 15. Test Suite
 
-Directory: `tests/`. Entry point: `tests.ts` (222 lines).
+Directory: `tests/`. Entry point: `tests.ts`.
 
 **28 test suites** plus `_setup.ts`.
 
@@ -596,7 +611,7 @@ Directory: `tests/`. Entry point: `tests.ts` (222 lines).
 - Single suite: pass a single number.
 - Multiple suites: pass comma-separated numbers or ranges (e.g., `1,3,5-8`).
 
-`_setup.ts` initializes the wallet, network config, and shared kit instance used by all suites.
+Results are saved to `tests/results/<timestamp>.log`.
 
 ---
 
@@ -627,15 +642,13 @@ Directory: `tests/`. Entry point: `tests.ts` (222 lines).
 | Reputation-gated escrow | Seller stake scaled by score | None |
 | Arbiter network | 3-of-N vote, 72h window, staking rewards | None |
 | x402 payment gating | Native middleware + on-chain proof | Rare |
-| HITL with auto-approve threshold | 0.05 TON threshold | Uncommon |
-| Autonomous cloud runtime | Persistent loop, 30s cooldown | Varies |
-| MCP integration | 10 plugins, stdio transport | Uncommon |
-| Monorepo with 18 packages | Separately versioned, composable | Varies |
+| Dynamic endpoints | LLM opens/closes x402 endpoints at runtime | None |
+| MCP integration | 10 plugins, stdio + SSE transport | Uncommon |
+| Monorepo with 21 packages | Separately versioned, composable | Varies |
 | Tact smart contracts | Source included, deploy scripts provided | None |
 
 **Known limitations.**
 - Reputation contract is on testnet only. Mainnet deployment requires audit.
-- MCP SSE transport is documented but not implemented.
-- Cloud agent has no HITL. Any approved workflow runs fully autonomously.
 - Gas estimates include a 0.1 TON buffer. This is refunded but requires sufficient wallet balance upfront.
 - Memory plugin uses local storage only. It does not persist across process restarts unless the storage file is retained.
+- Strategy scheduler uses `setInterval`. No persistence across restarts.
