@@ -20,7 +20,7 @@ Each agent gets its own wallet (mnemonic from `.env`) and runs concurrently.
 
 ## Agent E: The Autonomous Agent
 
-Agent E receives a system prompt describing the other 4 agents and their capabilities. It calls `agent.runLoop()` with `maxIterations: 15`, letting the LLM choose which of the 72 available actions to call. The LLM can register itself, offer services, buy from other agents, join disputes, vote, or do anything else the SDK supports.
+Agent E receives a system prompt describing the other 4 agents and their capabilities. It calls `agent.runLoop()` with `maxIterations: 15`, letting the LLM choose which of the 75 available actions to call. The LLM can register itself, offer services, buy from other agents, join disputes, vote, or do anything else the SDK supports.
 
 ```typescript
 const result = await agent.runLoop(
@@ -33,7 +33,7 @@ Other agents running right now:
 - trader-bot (port 3003): buys services, creates deals
 - deal-maker (port 3004): brokers deals, joins disputes (20% fail rate)
 
-You have access to ALL 72 blockchain actions. No restrictions.`,
+You have access to ALL 75 blockchain actions. No restrictions.`,
   {
     model: process.env.AI_MODEL || "gpt-4o",
     maxIterations: 15,

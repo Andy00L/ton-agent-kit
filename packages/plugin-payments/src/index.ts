@@ -24,7 +24,25 @@ const payForResourceAction = defineAction({
 
     // If not 402, return directly (no payment needed)
     if (initialResponse.status !== 402) {
-      const data = await initialResponse.json();
+      const ct = initialResponse.headers.get("content-type") || "application/json";
+      let data: any;
+      if (
+        ct.startsWith("image/") ||
+        ct.startsWith("audio/") ||
+        ct.startsWith("application/pdf") ||
+        ct.startsWith("application/octet-stream")
+      ) {
+        data = {
+          contentType: ct.split(";")[0].trim(),
+          data: Buffer.from(await initialResponse.arrayBuffer()),
+        };
+      } else {
+        try {
+          data = await initialResponse.json();
+        } catch {
+          data = { contentType: ct, data: await initialResponse.text() };
+        }
+      }
       return { paid: false, status: initialResponse.status, data };
     }
 
@@ -106,10 +124,28 @@ const payForResourceAction = defineAction({
       };
     }
 
-    const data = await paidResponse.json();
+    const ct = paidResponse.headers.get("content-type") || "application/json";
+    let data: any;
+    if (
+      ct.startsWith("image/") ||
+      ct.startsWith("audio/") ||
+      ct.startsWith("application/pdf") ||
+      ct.startsWith("application/octet-stream")
+    ) {
+      data = {
+        contentType: ct.split(";")[0].trim(),
+        data: Buffer.from(await paidResponse.arrayBuffer()),
+      };
+    } else {
+      try {
+        data = await paidResponse.json();
+      } catch {
+        data = { contentType: ct, data: await paidResponse.text() };
+      }
+    }
     const timestamp = Math.floor(Date.now() / 1000);
     const responseHash = createHash("sha256")
-      .update(JSON.stringify(data))
+      .update(data?.data instanceof Buffer ? data.data : JSON.stringify(data))
       .digest("hex");
 
     // Step 7: Save delivery proof to memory (non-critical)

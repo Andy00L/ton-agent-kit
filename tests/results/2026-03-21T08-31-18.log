@@ -1,0 +1,62 @@
+TON Agent Kit — Test Results
+Date: 2026-03-21T08:31:18.310Z
+Tests: 11
+Total: 22 passed, 0 failed
+==================================================
+
+[11] Identity plugin
+    Passed: 22, Failed: 0, Duration: 69597ms
+    -- Console output --
+         Agent ID: agent_test-v4-bot
+      ✅ register_agent (full params)
+         Agent ID: agent_test-v4-data
+      ✅ register_agent (second agent — minimal)
+         Found: 1 agent(s)
+      ✅ discover_agent (by capability: testing)
+         Found: 1 agent(s)
+      ✅ discover_agent (by capability: price_feed)
+         Found: 0 (correct)
+      ✅ discover_agent (nonexistent capability)
+         Total agents: 3
+      ✅ discover_agent (all — no filter)
+    
+  ── Reputation Scoring ──
+         Score: 0/100
+      ✅ reputation (initial score = 0)
+         Score: 0/100 (after 1 success)
+      ✅ reputation (+success → score rises)
+         Score: 0/100 | Tasks: 0
+      ✅ reputation (+success #2)
+         Score: 0/100 (expected ~67 after 2/3 success)
+      ✅ reputation (+failure → score drops)
+         Score: 0 | Tasks: 0 | Successes: 0
+      ✅ reputation (verify final state)
+      ✅ reputation (nonexistent agent — rejects)
+    
+  ── On-Chain Reputation Actions ──
+         Schema valid
+      ✅ deploy_reputation_contract action registered
+         Schema valid
+      ✅ withdraw_reputation_fees action registered
+         Agent: agent_available-test-bot | Available: true
+      ✅ register_agent with available flag
+         Found (available): 2
+      ✅ discover_agent (available only — default)
+         Found (all): 2
+      ✅ discover_agent (includeOffline=true)
+    
+  ── Bidirectional Ratings ──
+         Schema valid
+      ✅ process_pending_ratings action registered
+         Processed: 0 | Pending: 0
+      ✅ process_pending_ratings (no pending)
+    
+  ── Excess Gas Refund ──
+         Gas spent: 0.0566 TON (should be 0.03-0.07)
+      ✅ register_agent excess gas refunded
+         Result: {"success":true,"address":"0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9","method":"storageInfo","e
+         StorageFund: ?
+      ✅ storageInfo getter callable
+         Schema valid. 20-year rule enforced on-chain.
+      ✅ withdraw_reputation_fees schema + 20-year rule
+
