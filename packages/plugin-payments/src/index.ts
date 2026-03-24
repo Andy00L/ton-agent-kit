@@ -24,7 +24,12 @@ const payForResourceAction = defineAction({
   }),
   handler: async (agent, params) => {
     // Step 1: Request the resource
-    const initialResponse = await fetch(params.url);
+    let initialResponse: Response;
+    try {
+      initialResponse = await fetch(params.url);
+    } catch (err: any) {
+      throw new Error(`Failed to reach ${params.url}: ${err.message}`);
+    }
 
     // If not 402, return directly (no payment needed)
     if (initialResponse.status !== 402) {
@@ -154,11 +159,15 @@ const payForResourceAction = defineAction({
     let paidResponse: Response | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      paidResponse = await fetch(params.url, {
-        headers: { "X-Payment-Hash": txHash },
-      });
-
-      if (paidResponse.ok) break;
+      try {
+        paidResponse = await fetch(params.url, {
+          headers: { "X-Payment-Hash": txHash },
+        });
+        if (paidResponse.ok) break;
+      } catch {
+        // Network error after payment was sent — don't throw, preserve txHash for recovery
+        paidResponse = null;
+      }
 
       if (attempt < maxRetries) {
         // Server hasn't confirmed TX yet — wait and retry
