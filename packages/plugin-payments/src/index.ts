@@ -95,8 +95,10 @@ const payForResourceAction = defineAction({
       }),
     ]);
 
-    // Step 4: Wait for initial TX propagation (testnet blocks take 15-20s)
-    await new Promise((r) => setTimeout(r, 15000));
+    // Step 4: Wait for initial TX propagation
+    // Testnet blocks are slower (5-15s) + TONAPI indexing adds 15-30s
+    const propagationWait = agent.network === "testnet" ? 20000 : 10000;
+    await new Promise((r) => setTimeout(r, propagationWait));
 
     // Step 5: Get the tx hash from recent transactions (with retry + verification)
     const apiBase =
@@ -154,8 +156,10 @@ const payForResourceAction = defineAction({
     }
 
     // Step 6: Retry with payment proof (with retries for TX confirmation)
-    const maxRetries = 3;
-    const retryDelay = 10000;
+    // Testnet: TONAPI indexing takes 30-60s → need wider window (6×12s = 72s)
+    // Mainnet: TONAPI indexes in seconds → tight window is fine (3×8s = 24s)
+    const maxRetries = agent.network === "testnet" ? 6 : 3;
+    const retryDelay = agent.network === "testnet" ? 12000 : 8000;
     let paidResponse: Response | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
