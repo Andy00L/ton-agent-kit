@@ -70,26 +70,33 @@ export const broadcastIntentAction = defineAction({
       ]);
 
       // Wait for on-chain confirmation then read intentCount to get the index
-      await new Promise((resolve) => setTimeout(resolve, 8000));
+      // Testnet needs 15-30s for TONAPI indexing; retry with backoff
+      const initialWait = agent.network === "testnet" ? 15000 : 8000;
+      await new Promise((resolve) => setTimeout(resolve, initialWait));
 
       let intentIndex = -1;
       let onChainError: string | null = null;
-      try {
-        const countRes = await callContractGetter(
-          apiBase,
-          contractAddr,
-          "intentCount",
-          [],
-          agent.config.TONAPI_KEY
-        );
-        if (countRes?.stack?.[0]?.num) {
-          const raw = countRes.stack[0].num;
-          intentIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
-        } else {
-          onChainError = "Contract getter returned no data — contract may be frozen or nonexistent";
+      const maxRetries = agent.network === "testnet" ? 3 : 2;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 8000));
+        try {
+          const countRes = await callContractGetter(
+            apiBase,
+            contractAddr,
+            "intentCount",
+            [],
+            agent.config.TONAPI_KEY
+          );
+          if (countRes?.stack?.[0]?.num) {
+            const raw = countRes.stack[0].num;
+            intentIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
+            if (intentIndex >= 0) break; // Success
+          } else {
+            onChainError = "Contract getter returned no data — contract may be frozen or nonexistent";
+          }
+        } catch (e: any) {
+          onChainError = `Contract unreachable: ${e.message?.slice(0, 100)}`;
         }
-      } catch (e: any) {
-        onChainError = `Contract unreachable: ${e.message?.slice(0, 100)}`;
       }
 
       return {
