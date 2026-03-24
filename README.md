@@ -163,26 +163,26 @@ Full architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 | Package | Version | What it does |
 |---|---|---|
-| `@ton-agent-kit/core` | 1.2.2 | Agent, plugin system, wallet, gas estimation, cache, verify |
-| `@ton-agent-kit/plugin-token` | 1.1.1 | TON and Jetton transfers, balances, deploy, simulate |
-| `@ton-agent-kit/plugin-defi` | 1.2.2 | DeDust, STON.fi, Omniston swaps, DCA, limits, yield, staking pools, trust |
-| `@ton-agent-kit/plugin-dns` | 1.0.3 | .ton domain resolution, reverse lookup, domain info |
-| `@ton-agent-kit/plugin-nft` | 1.0.3 | NFT info, transfer, collection data |
-| `@ton-agent-kit/plugin-staking` | 1.0.3 | Stake/unstake TON in validator pools |
-| `@ton-agent-kit/plugin-analytics` | 1.1.1 | TX history, wallet info, portfolio, equity curve, webhooks, contract calls |
-| `@ton-agent-kit/plugin-escrow` | 1.5.2 | On-chain Tact escrow with dispute resolution |
-| `@ton-agent-kit/plugin-identity` | 1.6.4 | Agent registry, reputation, discovery, cleanup |
-| `@ton-agent-kit/plugin-payments` | 1.0.4 | x402 payment flow, delivery proofs, binary response handling |
-| `@ton-agent-kit/plugin-agent-comm` | 1.3.3 | Intent/offer marketplace protocol |
+| `@ton-agent-kit/core` | 1.2.4 | Agent, plugin system, wallet, gas estimation, cache, verify |
+| `@ton-agent-kit/plugin-token` | 1.1.2 | TON and Jetton transfers, balances, deploy, simulate |
+| `@ton-agent-kit/plugin-defi` | 1.2.3 | DeDust, STON.fi, Omniston swaps, DCA, limits, yield, staking pools, trust |
+| `@ton-agent-kit/plugin-dns` | 1.0.4 | .ton domain resolution, reverse lookup, domain info |
+| `@ton-agent-kit/plugin-nft` | 1.0.4 | NFT info, transfer, collection data |
+| `@ton-agent-kit/plugin-staking` | 1.0.4 | Stake/unstake TON in validator pools |
+| `@ton-agent-kit/plugin-analytics` | 1.1.2 | TX history, wallet info, portfolio, equity curve, webhooks, contract calls |
+| `@ton-agent-kit/plugin-escrow` | 1.5.3 | On-chain Tact escrow with dispute resolution |
+| `@ton-agent-kit/plugin-identity` | 1.6.8 | Agent registry, reputation, discovery, on-chain scan fallback, cleanup |
+| `@ton-agent-kit/plugin-payments` | 1.0.18 | x402 payment flow, delivery proofs, binary content detection, JSON-unwrap |
+| `@ton-agent-kit/plugin-agent-comm` | 1.3.6 | Intent/offer marketplace protocol, testnet retry for indexing delays |
 | `@ton-agent-kit/plugin-memory` | 1.0.2 | Key-value store (file, in-memory) with TTL and namespaces |
-| `@ton-agent-kit/plugin-endpoints` | 1.0.0 | Dynamic x402 endpoint management (open, close, list) |
+| `@ton-agent-kit/plugin-endpoints` | 1.0.1 | Dynamic x402 endpoint management (open, close, list) |
 | `@ton-agent-kit/orchestrator` | 1.1.1 | Multi-agent planner, dispatcher, parallel execution |
 | `@ton-agent-kit/strategies` | 1.0.1 | Deterministic workflow engine, scheduling, templates |
-| `@ton-agent-kit/x402-middleware` | 1.1.1 | Express paywall middleware, anti-replay store |
+| `@ton-agent-kit/x402-middleware` | 1.1.10 | Express paywall middleware, address normalization, forward fee tolerance, anti-replay |
 | `@ton-agent-kit/mcp-server` | 1.1.1 | Model Context Protocol server (stdio + SSE) |
 | `@ton-agent-kit/langchain` | 1.0.2 | LangChain DynamicStructuredTool adapter |
 | `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
-| `@ton-agent-kit/wallet-store` | 1.0.0 | AES-256-GCM encrypted wallet/key storage (SQLite) |
+| `@ton-agent-kit/wallet-store` | 1.0.1 | AES-256-GCM encrypted wallet/key storage, file store with 48h TTL |
 | `@ton-agent-kit/network-mode` | 1.0.0 | CLI network mode selector (local, public IP, tunnel) |
 
 All packages are `@ton-agent-kit/*` scoped on npm. Versions above are from the current `package.json` files.
