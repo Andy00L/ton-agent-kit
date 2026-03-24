@@ -124,7 +124,9 @@ const payForResourceAction = defineAction({
       };
     }
 
-    const ct = paidResponse.headers.get("content-type") || "application/json";
+    const contentBuffer = Buffer.from(await paidResponse.arrayBuffer());
+    const contentType = paidResponse.headers.get("content-type") || "";
+    const ct = contentType || "application/json";
     let data: any;
     if (
       ct.startsWith("image/") ||
@@ -134,13 +136,13 @@ const payForResourceAction = defineAction({
     ) {
       data = {
         contentType: ct.split(";")[0].trim(),
-        data: Buffer.from(await paidResponse.arrayBuffer()),
+        data: contentBuffer,
       };
     } else {
       try {
-        data = await paidResponse.json();
+        data = JSON.parse(contentBuffer.toString("utf-8"));
       } catch {
-        data = { contentType: ct, data: await paidResponse.text() };
+        data = { contentType: ct, data: contentBuffer.toString("utf-8") };
       }
     }
     const timestamp = Math.floor(Date.now() / 1000);
@@ -189,6 +191,8 @@ const payForResourceAction = defineAction({
       amount: requirement.amount + " TON",
       txHash,
       data,
+      content: contentBuffer,
+      contentType,
       deliveryProof: {
         txHash,
         responseHash,
