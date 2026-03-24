@@ -107,6 +107,9 @@ const payForResourceAction = defineAction({
       }
     }
 
+    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.arrayBuffer()) : Buffer.alloc(0);
+    const contentType = paidResponse?.headers.get("content-type") || "";
+
     if (!paidResponse || !paidResponse.ok) {
       const timestamp = Math.floor(Date.now() / 1000);
       return {
@@ -114,6 +117,8 @@ const payForResourceAction = defineAction({
         verified: false,
         amount: requirement.amount + " TON",
         txHash,
+        content: contentBuffer,
+        contentType,
         deliveryProof: {
           txHash,
           responseHash: createHash("sha256").update(txHash).digest("hex"),
@@ -123,9 +128,6 @@ const payForResourceAction = defineAction({
         message: `Payment sent (hash: ${txHash}) but server could not verify after ${maxRetries} retries. The payment is on-chain — retry later with the same hash.`,
       };
     }
-
-    const contentBuffer = Buffer.from(await paidResponse.arrayBuffer());
-    const contentType = paidResponse.headers.get("content-type") || "";
     const ct = contentType || "application/json";
     let data: any;
     if (
