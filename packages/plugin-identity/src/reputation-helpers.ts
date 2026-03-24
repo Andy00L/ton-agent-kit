@@ -110,9 +110,21 @@ export async function callContractGetter(
     url += "?" + args.map((a) => `args=${encodeURIComponent(a)}`).join("&");
   }
 
-  const res = await fetch(url, { headers });
-  if (!res.ok) return null;
-  return res.json();
+  // Retry with backoff for rate limits (429) and server errors (5xx)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, { headers });
+      if (res.ok) return res.json();
+      if (res.status === 429 || res.status >= 500) {
+        if (attempt < 2) { await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt))); continue; }
+      }
+      return null;
+    } catch {
+      if (attempt < 2) { await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt))); continue; }
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
