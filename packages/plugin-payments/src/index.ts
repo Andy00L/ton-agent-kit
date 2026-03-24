@@ -41,10 +41,11 @@ const payForResourceAction = defineAction({
           data: Buffer.from(await initialResponse.arrayBuffer()),
         };
       } else {
+        const text = await initialResponse.text();
         try {
-          data = await initialResponse.json();
+          data = JSON.parse(text);
         } catch {
-          data = { contentType: ct, data: await initialResponse.text() };
+          data = { contentType: ct, data: text };
         }
       }
       return { paid: false, status: initialResponse.status, data };
