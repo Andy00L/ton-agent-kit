@@ -175,8 +175,12 @@ const payForResourceAction = defineAction({
       }
     }
 
-    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.arrayBuffer()) : Buffer.alloc(0);
-    const contentType = paidResponse?.headers.get("content-type") || "";
+    const contentBuffer = (paidResponse && paidResponse.ok)
+      ? Buffer.from(await paidResponse.arrayBuffer())
+      : Buffer.alloc(0);
+    const contentType = (paidResponse && paidResponse.ok)
+      ? (paidResponse.headers.get("content-type") || "")
+      : "";
 
     if (!paidResponse || !paidResponse.ok) {
       const timestamp = Math.floor(Date.now() / 1000);
