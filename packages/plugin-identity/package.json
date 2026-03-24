@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/plugin-identity",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "Identity plugin for TON Agent Kit â€” agent registry, discovery, and reputation",
   "main": "src/index.ts",
   "types": "src/index.ts",

@@ -213,6 +213,55 @@ export function createDiscoverAgentAction(contractAddress?: string) {
         results = results.filter((a: any) => a.name.toLowerCase().includes(name));
       }
 
+      // ── SCAN FALLBACK: If JSON registry is empty and on-chain index failed,
+      // scan ALL on-chain agents and return them. This handles the case where
+      // the service-bot runs on a different machine (JSON not shared) and the
+      // on-chain capability index is empty. ──
+      if (results.length === 0 && addr) {
+        try {
+          const countRes = await callContractGetter(apiBase, addr, "agentCount", [], agent.config.TONAPI_KEY);
+          if (countRes?.stack?.[0]?.num) {
+            const raw = countRes.stack[0].num;
+            const agentCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
+            if (agentCount > 0 && agentCount <= SCAN_ALL_THRESHOLD) {
+              const scanned: any[] = [];
+              for (let i = agentCount - 1; i >= 0 && scanned.length < limit; i--) {
+                try {
+                  const dataRes = await callContractGetter(apiBase, addr, "agentData", [i.toString()], agent.config.TONAPI_KEY);
+                  const parsed = parseAgentDataFromStack(dataRes?.stack);
+                  if (!parsed) continue;
+                  if (!params.includeOffline && !parsed.available) continue;
+                  const rep = parsed.totalTasks > 0 ? Math.round((parsed.successes / parsed.totalTasks) * 100) : 0;
+                  scanned.push({
+                    agentIndex: i,
+                    address: parsed.owner,
+                    friendlyAddress: safeFriendly(parsed.owner, agent.network),
+                    available: parsed.available,
+                    reputation: { score: rep, totalTasks: parsed.totalTasks, successfulTasks: parsed.successes },
+                    registeredAt: parsed.registeredAt,
+                    onChain: true,
+                  });
+                } catch { continue; }
+              }
+              if (scanned.length > 0) {
+                return {
+                  query: { capability: params.capability, name: params.name, includeOffline: params.includeOffline },
+                  agents: scanned,
+                  count: scanned.length,
+                  total: agentCount,
+                  hasMore: scanned.length < agentCount,
+                  nextOffset: scanned.length,
+                  onChain: true,
+                  contractAddress: addr,
+                  message: `Capability index unavailable. Scanned ${agentCount} on-chain agent(s), found ${scanned.length} available. Use pay_for_resource with an agent's endpoint to purchase a service.`,
+                  scanFallback: true,
+                };
+              }
+            }
+          }
+        } catch {}
+      }
+
       const total = results.length;
       // Apply pagination
       results = results.slice(offset, offset + limit);
