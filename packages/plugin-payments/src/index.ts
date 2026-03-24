@@ -17,6 +17,10 @@ const payForResourceAction = defineAction({
       .string()
       .optional()
       .describe("If this payment is linked to an escrow, provide the escrow ID. The SDK will automatically confirm delivery on-chain."),
+    tonapiKey: z
+      .string()
+      .optional()
+      .describe("TONAPI key for higher rate limits (falls back to TONAPI_KEY env var)"),
   }),
   handler: async (agent, params) => {
     // Step 1: Request the resource
@@ -79,8 +83,14 @@ const payForResourceAction = defineAction({
       agent.network === "testnet"
         ? "https://testnet.tonapi.io/v2"
         : "https://tonapi.io/v2";
+    const resolvedApiKey = params.tonapiKey ?? process.env.TONAPI_KEY;
+    const tonapiHeaders: Record<string, string> = {};
+    if (resolvedApiKey) {
+      tonapiHeaders["Authorization"] = `Bearer ${resolvedApiKey}`;
+    }
     const txResponse = await fetch(
       `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
+      { headers: tonapiHeaders },
     );
     const txData = await txResponse.json();
     const txHash = txData.events?.[0]?.event_id;
