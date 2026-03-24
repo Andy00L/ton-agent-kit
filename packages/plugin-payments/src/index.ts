@@ -176,6 +176,7 @@ const payForResourceAction = defineAction({
         verified: false,
         amount: requirement.amount + " TON",
         txHash,
+        url: params.url,
         content: contentBuffer,
         contentType,
         deliveryProof: {
@@ -249,8 +250,10 @@ const payForResourceAction = defineAction({
 
     return {
       paid: true,
+      verified: true,
       amount: requirement.amount + " TON",
       txHash,
+      url: params.url,
       data,
       content: contentBuffer,
       contentType,
