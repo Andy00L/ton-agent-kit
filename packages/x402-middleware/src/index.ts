@@ -241,16 +241,8 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Anti-replay: check store FIRST (before cache)
-    if (await replayStore.has(paymentHash)) {
-      res.status(402).json({
-        error: "Payment Already Used",
-        message: "This transaction hash has already been used (anti-replay)",
-      });
-      return;
-    }
-
-    // Then check cache (avoid re-verifying on-chain for valid, unused payments)
+    // Check cache FIRST — allows retries within proofTTL window
+    // (e.g. client didn't receive response due to timeout, retries with same hash)
     if (verifiedPayments.has(paymentHash)) {
       const cached = verifiedPayments.get(paymentHash)!;
       if (Date.now() / 1000 - cached.timestamp < proofTTL) {
@@ -258,6 +250,15 @@ export function tonPaywall(config: PaywallConfig) {
         return;
       }
       verifiedPayments.delete(paymentHash);
+    }
+
+    // Anti-replay: permanent rejection after cache expires
+    if (await replayStore.has(paymentHash)) {
+      res.status(402).json({
+        error: "Payment Already Used",
+        message: "This transaction hash has already been used (anti-replay)",
+      });
+      return;
     }
 
     // Verify payment on-chain (production-hardened)
