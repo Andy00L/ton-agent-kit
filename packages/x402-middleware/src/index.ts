@@ -283,15 +283,25 @@ export function tonPaywall(config: PaywallConfig) {
     pendingVerifications.add(paymentHash);
     try {
       // Verify payment on-chain (production-hardened)
-      const verification = await verifyPayment(
-        paymentHash,
-        recipient || "",
-        amount,
-        network,
-        proofTTL,
-        replayStore,
-        resolvedApiKey,
-      );
+      // On testnet, TONAPI indexing can take 30-60s — retry "not found" internally
+      // so the caller doesn't waste 12s between external retries
+      const verifyAttempts = network === "testnet" ? 3 : 1;
+      let verification: { valid: boolean; reason?: string } = { valid: false };
+      for (let vAttempt = 0; vAttempt < verifyAttempts; vAttempt++) {
+        if (vAttempt > 0) await new Promise((r) => setTimeout(r, 5000));
+        verification = await verifyPayment(
+          paymentHash,
+          recipient || "",
+          amount,
+          network,
+          proofTTL,
+          replayStore,
+          resolvedApiKey,
+        );
+        if (verification.valid) break;
+        // Only retry on "not found" — definitive failures (wrong amount, too old, replay) stop immediately
+        if (!verification.reason?.includes("Event not found")) break;
+      }
 
       if (verification.valid) {
         verifiedPayments.set(paymentHash, {
