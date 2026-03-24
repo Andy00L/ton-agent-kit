@@ -210,6 +210,7 @@ const payForResourceAction = defineAction({
     if (
       ct.startsWith("image/") ||
       ct.startsWith("audio/") ||
+      ct.startsWith("video/") ||
       ct.startsWith("application/pdf") ||
       ct.startsWith("application/octet-stream")
     ) {
@@ -222,6 +223,28 @@ const payForResourceAction = defineAction({
         data = JSON.parse(contentBuffer.toString("utf-8"));
       } catch {
         data = { contentType: ct, data: contentBuffer.toString("utf-8") };
+      }
+      // Unwrap JSON-wrapped binary: servers using res.json() lose Content-Type.
+      // Check if the parsed JSON contains binary data (e.g., { contentType: "image/png", data: {...} })
+      // or nested under a "data" key (e.g., { service: "...", data: { contentType: "image/png", data: {...} } })
+      if (data && typeof data === "object") {
+        const candidate = (typeof data.contentType === "string" && data.data) ? data
+          : (data.data && typeof data.data === "object" && typeof data.data.contentType === "string") ? data.data
+          : null;
+        if (candidate) {
+          const innerCt = candidate.contentType.split(";")[0].trim();
+          if (/^(image|audio|video)\//i.test(innerCt) || innerCt === "application/pdf" || innerCt === "application/octet-stream") {
+            // Reconstruct the buffer from JSON-serialized Buffer ({type:"Buffer",data:[...]})
+            const innerData = candidate.data;
+            let buf: Buffer | null = null;
+            if (Buffer.isBuffer(innerData)) buf = innerData;
+            else if (innerData instanceof Uint8Array) buf = Buffer.from(innerData);
+            else if (innerData && innerData.type === "Buffer" && Array.isArray(innerData.data)) buf = Buffer.from(innerData.data);
+            if (buf && buf.length > 0) {
+              data = { contentType: innerCt, data: buf };
+            }
+          }
+        }
       }
     }
     const timestamp = Math.floor(Date.now() / 1000);

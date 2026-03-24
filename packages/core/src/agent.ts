@@ -657,11 +657,36 @@ export class TonAgentKit {
 
         steps.push({ action: actionName, params, result });
 
+        // Sanitize binary data before passing to LLM — Buffers can't be JSON-serialized meaningfully
+        let toolContent: string;
+        if (typeof result === "string") {
+          toolContent = result;
+        } else if (result && typeof result === "object") {
+          // Check if result contains binary data (from pay_for_resource, etc.)
+          const hasBinaryData = Buffer.isBuffer(result.data) || Buffer.isBuffer(result.content)
+            || (result.data && typeof result.data === "object" && Buffer.isBuffer(result.data.data));
+          if (hasBinaryData) {
+            // Strip Buffer fields, give LLM a text summary instead
+            const ct = result.data?.contentType || result.contentType || "binary";
+            const size = Buffer.isBuffer(result.data?.data) ? result.data.data.length
+              : Buffer.isBuffer(result.data) ? result.data.length
+              : Buffer.isBuffer(result.content) ? result.content.length : 0;
+            const { data: _d, content: _c, ...rest } = result;
+            toolContent = JSON.stringify({
+              ...rest,
+              binaryContent: `[${ct}, ${size} bytes — delivered to user]`,
+            });
+          } else {
+            toolContent = JSON.stringify(result);
+          }
+        } else {
+          toolContent = JSON.stringify(result);
+        }
+
         messages.push({
           role: "tool",
           tool_call_id: toolCall.id,
-          content:
-            typeof result === "string" ? result : JSON.stringify(result),
+          content: toolContent,
         });
       }
     }

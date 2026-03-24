@@ -108,6 +108,8 @@ export function createDiscoverAgentAction(contractAddress?: string) {
             const indexes = parseIndexCell(indexRes.stack[0].cell);
             const agents: any[] = [];
             let skipped = 0;
+            let offlineCount = 0;
+            let unreachableCount = 0;
             for (const idx of indexes) {
               if (agents.length >= limit) break;
               try {
@@ -115,8 +117,8 @@ export function createDiscoverAgentAction(contractAddress?: string) {
                   apiBase, addr, "agentData", [idx.toString()], agent.config.TONAPI_KEY,
                 );
                 const parsed = parseAgentDataFromStack(dataRes?.stack);
-                if (!parsed) continue;
-                if (!params.includeOffline && !parsed.available) continue;
+                if (!parsed) { unreachableCount++; continue; }
+                if (!params.includeOffline && !parsed.available) { offlineCount++; continue; }
                 if (skipped < offset) { skipped++; continue; }
                 const rep = parsed.totalTasks > 0
                   ? Math.round((parsed.successes / parsed.totalTasks) * 100)
@@ -131,7 +133,20 @@ export function createDiscoverAgentAction(contractAddress?: string) {
                   registeredAt: parsed.registeredAt,
                   onChain: true,
                 });
-              } catch { continue; }
+              } catch { unreachableCount++; continue; }
+            }
+            let message: string;
+            if (agents.length > 0) {
+              message = `Found ${agents.length} agent(s) with capability "${params.capability}".`;
+            } else {
+              const parts: string[] = [];
+              if (offlineCount > 0) parts.push(`${offlineCount} offline`);
+              if (unreachableCount > 0) parts.push(`${unreachableCount} unreachable`);
+              if (indexes.length === 0) {
+                message = `No agents registered with capability "${params.capability}". Try broader keywords (e.g., "image" instead of "image_generation") or use broadcast_intent to post a request.`;
+              } else {
+                message = `Found ${indexes.length} agent(s) with capability "${params.capability}", but none are currently available: ${parts.join(", ")}. Try with includeOffline: true, or use broadcast_intent to post a request.`;
+              }
             }
             return {
               query: { capability: params.capability, includeOffline: params.includeOffline },
@@ -143,6 +158,8 @@ export function createDiscoverAgentAction(contractAddress?: string) {
               onChain: true,
               indexed: true,
               contractAddress: addr,
+              message,
+              diagnostic: { totalIndexed: indexes.length, offlineCount, unreachableCount },
             };
           }
         } catch {
@@ -161,8 +178,10 @@ export function createDiscoverAgentAction(contractAddress?: string) {
             const agentCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
             if (agentCount > SCAN_ALL_THRESHOLD) {
               return {
-                error: "Registry too large for unfiltered scan",
-                agentCount,
+                agents: [],
+                count: 0,
+                total: agentCount,
+                message: `The registry contains ${agentCount} agents. Please narrow your search by specifying a capability (e.g., "image_generation", "price_feed") or an agent name for instant lookup.`,
                 suggestion: "Use 'capability' or 'name' filter. Example: discover_agent({ capability: 'price_feed' })",
                 availableFilters: {
                   name: "Exact name lookup — O(1), instant",
@@ -222,6 +241,17 @@ export function createDiscoverAgentAction(contractAddress?: string) {
         }
       }
 
+      let message: string;
+      if (results.length > 0) {
+        message = `Found ${results.length} agent(s)${params.capability ? ` matching "${params.capability}"` : ""}.`;
+      } else if (params.capability) {
+        message = `No agents found offering "${params.capability}". Try broader keywords (e.g., "image" instead of "image_generation") or use broadcast_intent to post a service request.`;
+      } else if (params.name) {
+        message = `No agent found with name "${params.name}". The agent may not be registered or the name may differ.`;
+      } else {
+        message = "The agent registry is empty. No agents have been registered yet.";
+      }
+
       return {
         query: { capability: params.capability, name: params.name, includeOffline: params.includeOffline },
         count: results.length,
@@ -243,6 +273,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
         })),
         onChain: !!addr,
         contractAddress: addr || undefined,
+        message,
       };
     },
   });
