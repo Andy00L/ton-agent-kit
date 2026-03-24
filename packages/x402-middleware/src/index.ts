@@ -376,7 +376,7 @@ async function verifyPayment(
       : "https://tonapi.io/v2";
 
   const normalizedExpected = expectedRecipient.toLowerCase().replace(/^0:/, "");
-  const expectedAmountNano = Math.floor(parseFloat(expectedAmount) * 1e9);
+  const expectedAmountNano = Math.round(parseFloat(expectedAmount) * 1e9);
 
   try {
     // Level 1: Blockchain endpoint (raw transaction data — most reliable)
