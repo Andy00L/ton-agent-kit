@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/x402-middleware",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "x402 payment middleware for TON â€” make any Express API payable in TON with anti-replay, on-chain verification, and pluggable storage",
   "main": "src/index.ts",
   "types": "src/index.ts",

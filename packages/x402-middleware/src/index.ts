@@ -443,12 +443,9 @@ async function verifyPayment(
         .replace(/^0:/, "");
 
       if (dest === normalizedExpected) {
-        // Determine if self-transfer or cross-transfer
-        const isSelfTransfer = source === dest;
-
-        // Self-transfer: gas deducted from value (max 0.005 TON tolerance)
-        // Cross-transfer: value is exact (only 0.0005 TON tolerance for rounding)
-        const tolerance = isSelfTransfer ? 5_000_000 : 500_000;
+        // TON deducts forward fees from message value (~0.0005-0.001 TON).
+        // Use 0.005 TON tolerance for both self and cross transfers.
+        const tolerance = 5_000_000;
 
         if (value >= expectedAmountNano - tolerance) {
           // All checks passed — mark hash as used permanently (anti-replay)
@@ -527,8 +524,9 @@ async function verifyViaEvents(
         const amount = Number(action.TonTransfer?.amount || 0);
 
         if (recipientRaw === normalizedExpected) {
-          const isSelfTransfer = senderRaw === recipientRaw;
-          const tolerance = isSelfTransfer ? 5_000_000 : 500_000;
+          // TON deducts forward fees from message value (~0.0005-0.001 TON).
+          // Use 0.005 TON tolerance for both self and cross transfers.
+          const tolerance = 5_000_000;
 
           if (amount >= expectedAmountNano - tolerance) {
             await store.add(txHash);
