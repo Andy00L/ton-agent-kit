@@ -79,7 +79,10 @@ export const discoverIntentsAction = defineAction({
   handler: async (agent, params) => {
     const contractAddr = resolveContractAddress(undefined, agent.network);
     if (!contractAddr) {
-      return { message: "No reputation contract configured" };
+      return {
+        intents: [], count: 0,
+        message: `No reputation contract configured for ${agent.network}. Intent discovery requires the on-chain reputation contract to be deployed.`,
+      };
     }
 
     const apiBase =
@@ -100,7 +103,8 @@ export const discoverIntentsAction = defineAction({
         if (indexRes?.stack?.[0]?.cell) {
           const indexes = parseIndexCell(indexRes.stack[0].cell);
           const intents: any[] = [];
-          const nowUnix = Math.floor(Date.now() / 1000);
+          let expiredCount = 0;
+          let closedCount = 0;
           for (const idx of indexes) {
             if (intents.length >= limit) break;
             try {
@@ -111,7 +115,8 @@ export const discoverIntentsAction = defineAction({
               if (items.length < 9) continue;
               const status = parseNum(items[5]);
               const isExpired = parseBool(items[7]);
-              if (status !== 0 || isExpired) continue;
+              if (isExpired) { expiredCount++; continue; }
+              if (status !== 0) { closedCount++; continue; }
               intents.push({
                 intentIndex: idx,
                 buyer: parseAddress(items[0]),
@@ -125,10 +130,18 @@ export const discoverIntentsAction = defineAction({
               });
             } catch {}
           }
+          const totalIndexed = intents.length + expiredCount + closedCount;
+          let message = `Found ${intents.length} open intent(s) for "${params.service}" (indexed)`;
+          if (intents.length === 0 && totalIndexed > 0) {
+            message = `Found ${totalIndexed} intent(s) for "${params.service}", but none are currently open: ${expiredCount} expired, ${closedCount} accepted/settled. Try broadcasting a new intent with broadcast_intent.`;
+          } else if (intents.length === 0 && totalIndexed === 0) {
+            message = `No intents found for service "${params.service}". Try broadcasting your own intent with broadcast_intent to attract offers.`;
+          }
           return {
             intents, count: intents.length, onChain: true, indexed: true,
             contractAddress: contractAddr,
-            message: `Found ${intents.length} open intent(s) for "${params.service}" (indexed)`,
+            message,
+            diagnostic: { totalIndexed, expiredCount, closedCount, openCount: intents.length },
           };
         }
       } catch {}
@@ -152,11 +165,16 @@ export const discoverIntentsAction = defineAction({
       }
 
       if (totalCount === 0) {
-        return { intents: [], count: 0, total: 0, onChain: true };
+        return {
+          intents: [], count: 0, total: 0, onChain: true,
+          message: "No intents have been broadcast yet. The marketplace is empty. Use broadcast_intent to post a service request.",
+        };
       }
 
       const intents: any[] = [];
-      const nowUnix = Math.floor(Date.now() / 1000);
+      let expiredCount = 0;
+      let closedCount = 0;
+      let serviceFilteredCount = 0;
 
       // Iterate from newest to oldest
       for (let i = totalCount - 1; i >= 0 && intents.length < limit; i--) {
@@ -191,11 +209,11 @@ export const discoverIntentsAction = defineAction({
           const description = parseString(items[8]);
 
           // Filter: only open (status==0) and not expired
-          if (status !== 0) continue;
-          if (isExpired) continue;
+          if (isExpired) { expiredCount++; continue; }
+          if (status !== 0) { closedCount++; continue; }
 
           // If service filter provided, match by hash
-          if (targetHash !== null && serviceHash !== targetHash) continue;
+          if (targetHash !== null && serviceHash !== targetHash) { serviceFilteredCount++; continue; }
 
           intents.push({
             intentIndex: i,
@@ -214,6 +232,22 @@ export const discoverIntentsAction = defineAction({
         }
       }
 
+      // Build diagnostic message
+      let message: string;
+      if (intents.length > 0) {
+        message = `Found ${intents.length} open intent(s) out of ${totalCount} total.`;
+      } else {
+        const parts: string[] = [];
+        if (expiredCount > 0) parts.push(`${expiredCount} expired`);
+        if (closedCount > 0) parts.push(`${closedCount} accepted/settled`);
+        if (serviceFilteredCount > 0) parts.push(`${serviceFilteredCount} for other services`);
+        if (parts.length > 0) {
+          message = `Found ${totalCount} intent(s), but none are currently open: ${parts.join(", ")}. Try broadcasting a new intent with broadcast_intent to attract fresh offers.`;
+        } else {
+          message = `No open intents found (${totalCount} total on-chain). Try broadcasting your own intent with broadcast_intent.`;
+        }
+      }
+
       return {
         intents,
         count: intents.length,
@@ -221,6 +255,8 @@ export const discoverIntentsAction = defineAction({
         onChain: true,
         indexed: false,
         contractAddress: contractAddr,
+        message,
+        diagnostic: { totalCount, expiredCount, closedCount, serviceFilteredCount, openCount: intents.length },
       };
     } catch (err: any) {
       return {
