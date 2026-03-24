@@ -29,6 +29,7 @@
  */
 
 import type { NextFunction, Request, Response } from "express";
+import { Address } from "@ton/core";
 
 // ============================================================
 // Types
@@ -385,7 +386,13 @@ async function verifyPayment(
       ? "https://testnet.tonapi.io/v2"
       : "https://tonapi.io/v2";
 
-  const normalizedExpected = expectedRecipient.toLowerCase().replace(/^0:/, "");
+  // Normalize address to raw format — handles both friendly ("UQB918rv...") and raw ("0:7dd7ca...")
+  let normalizedExpected: string;
+  try {
+    normalizedExpected = Address.parse(expectedRecipient).toRawString().toLowerCase().replace(/^0:/, "");
+  } catch {
+    normalizedExpected = expectedRecipient.toLowerCase().replace(/^0:/, "");
+  }
   const expectedAmountNano = Math.round(parseFloat(expectedAmount) * 1e9);
 
   try {
