@@ -133,27 +133,27 @@ Note: The Telegram bot has been moved to https://github.com/Andy00L/ton-agent-bo
 
 | Package | Version | Description |
 |---|---|---|
-| `@ton-agent-kit/core` | 1.2.2 | Base classes, wallet providers, plugin registry, cache, gas estimation |
-| `@ton-agent-kit/plugin-token` | 1.1.1 | TON and jetton balances, transfers, jetton deployment |
-| `@ton-agent-kit/plugin-defi` | 1.2.2 | DEX swaps (DeDust, STON.fi, Omniston), DCA, limit orders, yield, staking pools |
-| `@ton-agent-kit/plugin-dns` | 1.0.3 | TON DNS resolution and lookup |
-| `@ton-agent-kit/plugin-nft` | 1.0.3 | NFT info, transfer, collection queries |
-| `@ton-agent-kit/plugin-staking` | 1.0.3 | Liquid staking info, stake, unstake |
-| `@ton-agent-kit/plugin-analytics` | 1.1.1 | Transaction history, portfolio metrics, webhooks, bulk accounts |
-| `@ton-agent-kit/plugin-escrow` | 1.5.2 | Escrow lifecycle: create, deposit, release, dispute, arbitration |
-| `@ton-agent-kit/plugin-identity` | 1.6.4 | Agent registration, reputation scoring, dispute management |
-| `@ton-agent-kit/plugin-payments` | 1.0.4 | x402 resource payments, delivery proofs, binary response handling |
-| `@ton-agent-kit/plugin-agent-comm` | 1.3.3 | Intent broadcast, offer negotiation, deal settlement |
+| `@ton-agent-kit/core` | 1.2.4 | Base classes, wallet providers, plugin registry, cache, gas estimation |
+| `@ton-agent-kit/plugin-token` | 1.1.2 | TON and jetton balances, transfers, jetton deployment |
+| `@ton-agent-kit/plugin-defi` | 1.2.3 | DEX swaps (DeDust, STON.fi, Omniston), DCA, limit orders, yield, staking pools |
+| `@ton-agent-kit/plugin-dns` | 1.0.4 | TON DNS resolution and lookup |
+| `@ton-agent-kit/plugin-nft` | 1.0.4 | NFT info, transfer, collection queries |
+| `@ton-agent-kit/plugin-staking` | 1.0.4 | Liquid staking info, stake, unstake |
+| `@ton-agent-kit/plugin-analytics` | 1.1.2 | Transaction history, portfolio metrics, webhooks, bulk accounts |
+| `@ton-agent-kit/plugin-escrow` | 1.5.3 | Escrow lifecycle: create, deposit, release, dispute, arbitration |
+| `@ton-agent-kit/plugin-identity` | 1.6.8 | Agent registration, reputation scoring, discovery with scan fallback |
+| `@ton-agent-kit/plugin-payments` | 1.0.18 | x402 resource payments, delivery proofs, binary content detection, JSON-unwrap |
+| `@ton-agent-kit/plugin-agent-comm` | 1.3.6 | Intent broadcast, offer negotiation, deal settlement, testnet retry |
 | `@ton-agent-kit/plugin-memory` | 1.0.2 | Local key-value context storage with TTL and namespaces |
-| `@ton-agent-kit/plugin-endpoints` | 1.0.0 | Dynamic x402 endpoint management (open, close, list) |
+| `@ton-agent-kit/plugin-endpoints` | 1.0.1 | Dynamic x402 endpoint management (open, close, list) |
 | `@ton-agent-kit/orchestrator` | 1.1.1 | Multi-agent task planning, dispatch, retry |
 | `@ton-agent-kit/strategies` | 1.0.1 | Scheduled strategy templates |
-| `@ton-agent-kit/x402-middleware` | 1.1.1 | Express middleware for x402 payment gating |
+| `@ton-agent-kit/x402-middleware` | 1.1.10 | Express middleware for x402 payment gating, address normalization, forward fee tolerance |
 | `@ton-agent-kit/mcp-server` | 1.1.1 | MCP server exposing actions as tools (stdio + SSE) |
 | `@ton-agent-kit/langchain` | 1.0.2 | LangChain tool adapters |
 | `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
-| `@ton-agent-kit/wallet-store` | 1.0.0 | AES-256-GCM encrypted wallet and API key storage (SQLite) |
-| `@ton-agent-kit/network-mode` | 1.0.0 | CLI utility for choosing network mode (local, public IP, tunnel) |
+| `@ton-agent-kit/wallet-store` | 1.0.1 | AES-256-GCM encrypted wallet and API key storage, file store with 48h TTL |
+| `@ton-agent-kit/network-mode` | 1.0.1 | CLI utility for choosing network mode (local, public IP, tunnel) |
 
 ---
 
@@ -466,11 +466,11 @@ When `parallel` is true, independent tasks run concurrently. Tasks with declared
 
 ## 8. x402 Middleware
 
-Package: `@ton-agent-kit/x402-middleware` v1.1.1.
+Package: `@ton-agent-kit/x402-middleware` v1.1.10.
 
 Express middleware that gates HTTP endpoints behind TON payments using the x402 protocol. When a request arrives without a valid payment proof, the middleware returns an HTTP 402 response with payment instructions. The client pays, attaches the proof header, and retries. The middleware verifies the proof and forwards the request.
 
-The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints` v1.0.0) lets agents open/close x402 endpoints at runtime. It provides 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
+The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints` v1.0.1) lets agents open/close x402 endpoints at runtime. It provides 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
 
 ---
 
@@ -585,15 +585,15 @@ AgentComm and Endpoints are not included by default.
 
 Three packages added since v1.1.0:
 
-### wallet-store (1.0.0)
+### wallet-store (1.0.1)
 
 AES-256-GCM encrypted storage for wallet mnemonics and API keys. SQLite backend. Per-user key derivation using HMAC-SHA256. Used by the Telegram bot for multi-user wallet management. Also includes `FileStore` for file uploads (48h TTL, 10MB/file, 50MB/user). 5 LLM provider configs (OpenAI, OpenRouter, Groq, Together, Mistral).
 
-### plugin-endpoints (1.0.0)
+### plugin-endpoints (1.0.1)
 
 Dynamic x402 endpoint management. 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`. Uses `MemoryReplayStore`. Endpoints do not persist across restarts.
 
-### network-mode (1.0.0)
+### network-mode (1.0.1)
 
 CLI utility for choosing how the x402 server is accessed: local (localhost), public (auto-detect IP, verify port), or tunnel (ngrok/cloudflare, verify connectivity). Returns a URL string.
 

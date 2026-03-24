@@ -183,7 +183,7 @@ Full architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 | `@ton-agent-kit/langchain` | 1.0.2 | LangChain DynamicStructuredTool adapter |
 | `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
 | `@ton-agent-kit/wallet-store` | 1.0.1 | AES-256-GCM encrypted wallet/key storage, file store with 48h TTL |
-| `@ton-agent-kit/network-mode` | 1.0.0 | CLI network mode selector (local, public IP, tunnel) |
+| `@ton-agent-kit/network-mode` | 1.0.1 | CLI network mode selector (local, public IP, tunnel) |
 
 All packages are `@ton-agent-kit/*` scoped on npm. Versions above are from the current `package.json` files.
 
