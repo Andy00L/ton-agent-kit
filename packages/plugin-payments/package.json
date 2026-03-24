@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/plugin-payments",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Payments plugin for TON Agent Kit â€” invoice creation and payment processing",
   "main": "src/index.ts",
   "types": "src/index.ts",
