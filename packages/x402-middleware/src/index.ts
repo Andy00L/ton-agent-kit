@@ -110,8 +110,8 @@ export class FileReplayStore implements ReplayStore {
   async add(hash: string): Promise<void> {
     this.hashes.add(hash);
     try {
-      const { writeFileSync } = require("fs");
-      writeFileSync(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
+      const { writeFile } = require("fs/promises");
+      await writeFile(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
     } catch (err: any) {
       console.error(`Failed to persist replay store: ${err.message}`);
     }
@@ -201,6 +201,8 @@ export class MemoryReplayStore implements ReplayStore {
 export function tonPaywall(config: PaywallConfig) {
   // Per-instance cache — each middleware instance has its own isolated cache
   const verifiedPayments = new Map<string, { timestamp: number; amount: string }>();
+  // Prevents TOCTOU race: tracks hashes currently being verified
+  const pendingVerifications = new Set<string>();
 
   const {
     amount,
@@ -252,6 +254,14 @@ export function tonPaywall(config: PaywallConfig) {
       verifiedPayments.delete(paymentHash);
     }
 
+    // Lazy cleanup of expired cache entries to prevent memory leak
+    if (verifiedPayments.size > 100) {
+      const now = Date.now() / 1000;
+      for (const [hash, entry] of verifiedPayments) {
+        if (now - entry.timestamp > proofTTL) verifiedPayments.delete(hash);
+      }
+    }
+
     // Anti-replay: permanent rejection after cache expires
     if (await replayStore.has(paymentHash)) {
       res.status(402).json({
@@ -261,31 +271,45 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Verify payment on-chain (production-hardened)
-    const verification = await verifyPayment(
-      paymentHash,
-      recipient || "",
-      amount,
-      network,
-      proofTTL,
-      replayStore,
-      resolvedApiKey,
-    );
-
-    if (verification.valid) {
-      verifiedPayments.set(paymentHash, {
-        timestamp: Math.floor(Date.now() / 1000),
-        amount,
+    // TOCTOU guard: reject if another request is already verifying this hash
+    if (pendingVerifications.has(paymentHash)) {
+      res.status(402).json({
+        error: "Verification In Progress",
+        message: "This hash is already being verified by another request. Retry in a few seconds.",
       });
-      next();
       return;
     }
 
-    res.status(402).json({
-      error: "Payment Not Verified",
-      message: verification.reason || "Could not verify payment",
-      providedHash: paymentHash,
-    });
+    pendingVerifications.add(paymentHash);
+    try {
+      // Verify payment on-chain (production-hardened)
+      const verification = await verifyPayment(
+        paymentHash,
+        recipient || "",
+        amount,
+        network,
+        proofTTL,
+        replayStore,
+        resolvedApiKey,
+      );
+
+      if (verification.valid) {
+        verifiedPayments.set(paymentHash, {
+          timestamp: Math.floor(Date.now() / 1000),
+          amount,
+        });
+        next();
+        return;
+      }
+
+      res.status(402).json({
+        error: "Payment Not Verified",
+        message: verification.reason || "Could not verify payment",
+        providedHash: paymentHash,
+      });
+    } finally {
+      pendingVerifications.delete(paymentHash);
+    }
   };
 }
 
@@ -308,15 +332,6 @@ async function fetchWithRateLimitRetry(url: string, apiKey?: string): Promise<Re
     lastRes = await fetch(url, { headers });
 
     const isRateLimited = lastRes.status === 429;
-
-    // Also check body for "429" on non-ok responses (proxy/CDN rate limiting)
-    if (!isRateLimited && !lastRes.ok) {
-      const body = await lastRes.clone().text().catch(() => "");
-      if (body.includes("429") && attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
-        continue;
-      }
-    }
 
     if (!isRateLimited) return lastRes;
 
