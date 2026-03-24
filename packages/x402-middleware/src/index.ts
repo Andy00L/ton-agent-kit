@@ -47,6 +47,8 @@ export interface PaywallConfig {
   description?: string;
   /** Custom replay store (default: FileReplayStore) */
   replayStore?: ReplayStore;
+  /** TONAPI key for higher rate limits (optional — falls back to TONAPI_KEY env var) */
+  tonapiKey?: string;
 }
 
 export interface PaymentRequirement {
@@ -209,6 +211,9 @@ export function tonPaywall(config: PaywallConfig) {
     replayStore = new FileReplayStore(),
   } = config;
 
+  // Resolve TONAPI key once: config option > env var > undefined
+  const resolvedApiKey = config.tonapiKey ?? process.env.TONAPI_KEY;
+
   return async (req: Request, res: Response, next: NextFunction) => {
     const paymentHash = req.headers["x-payment-hash"] as string;
 
@@ -263,6 +268,7 @@ export function tonPaywall(config: PaywallConfig) {
       network,
       proofTTL,
       replayStore,
+      resolvedApiKey,
     );
 
     if (verification.valid) {
@@ -290,11 +296,15 @@ export function tonPaywall(config: PaywallConfig) {
  * Fetch wrapper that retries on TONAPI rate limiting (HTTP 429).
  * Retries up to 3 times with exponential backoff (2s, 4s, 8s).
  */
-async function fetchWithRateLimitRetry(url: string): Promise<Response> {
+async function fetchWithRateLimitRetry(url: string, apiKey?: string): Promise<Response> {
   const maxRetries = 3;
+  const headers: Record<string, string> = {};
+  if (apiKey) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
   let lastRes!: Response;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    lastRes = await fetch(url);
+    lastRes = await fetch(url, { headers });
 
     const isRateLimited = lastRes.status === 429;
 
@@ -334,6 +344,7 @@ async function verifyPayment(
   network: string,
   maxAge: number = 300,
   store: ReplayStore,
+  apiKey?: string,
 ): Promise<{ valid: boolean; reason?: string }> {
   // Anti-replay: reject if this hash was already used
   if (await store.has(txHash)) {
@@ -355,6 +366,7 @@ async function verifyPayment(
     // Level 1: Blockchain endpoint (raw transaction data — most reliable)
     const bcRes = await fetchWithRateLimitRetry(
       `${apiBase}/blockchain/transactions/${encodeURIComponent(txHash)}`,
+      apiKey,
     );
 
     if (!bcRes.ok) {
@@ -366,6 +378,7 @@ async function verifyPayment(
         expectedAmountNano,
         maxAge,
         store,
+        apiKey,
       );
     }
 
@@ -425,6 +438,7 @@ async function verifyPayment(
       expectedAmountNano,
       maxAge,
       store,
+      apiKey,
     );
   } catch (err: any) {
     return { valid: false, reason: `Verification error: ${err.message}` };
@@ -442,10 +456,12 @@ async function verifyViaEvents(
   expectedAmountNano: number,
   maxAge: number,
   store: ReplayStore,
+  apiKey?: string,
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
     const eventRes = await fetchWithRateLimitRetry(
       `${apiBase}/events/${encodeURIComponent(txHash)}`,
+      apiKey,
     );
 
     if (!eventRes.ok) {
