@@ -117,7 +117,7 @@ const payForResourceAction = defineAction({
       }
     }
 
-    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.arrayBuffer()) : Buffer.alloc(0);
+    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.clone().arrayBuffer()) : Buffer.alloc(0);
     const contentType = paidResponse?.headers.get("content-type") || "";
 
     if (!paidResponse || !paidResponse.ok) {
