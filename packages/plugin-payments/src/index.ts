@@ -52,15 +52,29 @@ const payForResourceAction = defineAction({
     }
 
     // Step 2: Parse payment requirements
-    const paymentInfo = await initialResponse.json();
+    let paymentInfo: any;
+    const rawBody = await initialResponse.text();
+    try {
+      paymentInfo = JSON.parse(rawBody);
+    } catch {
+      throw new Error(`402 response body is not valid JSON (got ${rawBody.slice(0, 200)})`);
+    }
     const requirement = paymentInfo.payment;
 
     if (!requirement || requirement.protocol !== "ton-x402-v1") {
       throw new Error("Unsupported payment protocol");
     }
 
-    // Step 3: Send payment (with retry + seqno wait)
-    const toAddress = Address.parse(requirement.recipient);
+    // Step 3: Validate payment instructions before sending TON
+    let toAddress: Address;
+    try {
+      toAddress = Address.parse(requirement.recipient);
+    } catch {
+      throw new Error(`Invalid recipient address in payment instructions: ${requirement.recipient}`);
+    }
+    if (!requirement.amount || isNaN(parseFloat(requirement.amount)) || parseFloat(requirement.amount) <= 0) {
+      throw new Error(`Invalid payment amount in payment instructions: ${requirement.amount}`);
+    }
 
     const commentBody = beginCell()
       .storeUint(0, 32)
@@ -79,7 +93,7 @@ const payForResourceAction = defineAction({
     // Step 4: Wait for initial TX propagation (testnet blocks take 15-20s)
     await new Promise((r) => setTimeout(r, 15000));
 
-    // Step 5: Get the tx hash from recent transactions
+    // Step 5: Get the tx hash from recent transactions (with retry + verification)
     const apiBase =
       agent.network === "testnet"
         ? "https://testnet.tonapi.io/v2"
@@ -89,15 +103,49 @@ const payForResourceAction = defineAction({
     if (resolvedApiKey) {
       tonapiHeaders["Authorization"] = `Bearer ${resolvedApiKey}`;
     }
-    const txResponse = await fetch(
-      `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=1`,
-      { headers: tonapiHeaders },
-    );
-    const txData = await txResponse.json();
-    const txHash = txData.events?.[0]?.event_id;
+
+    const expectedRecipient = toAddress.toRawString().toLowerCase().replace(/^0:/, "");
+    const expectedAmountNano = Number(toNano(requirement.amount));
+
+    let txHash: string | undefined;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 5000 * Math.pow(2, attempt - 1)));
+
+      let txResponse: Response;
+      try {
+        txResponse = await fetch(
+          `${apiBase}/accounts/${encodeURIComponent(agent.wallet.address.toRawString())}/events?limit=5`,
+          { headers: tonapiHeaders },
+        );
+      } catch {
+        continue; // Network error — retry
+      }
+
+      if (txResponse.status === 429) continue; // Rate limited — retry
+      if (!txResponse.ok) continue;
+
+      const txData: any = await txResponse.json();
+
+      // Find the event matching our payment (recipient + amount)
+      for (const event of txData.events || []) {
+        for (const action of event.actions || []) {
+          if (action.type === "TonTransfer" && action.status === "ok") {
+            const dest = (action.TonTransfer?.recipient?.address || "")
+              .toLowerCase().replace(/^0:/, "");
+            const val = Number(action.TonTransfer?.amount || 0);
+            if (dest === expectedRecipient && val >= expectedAmountNano - 5_000_000) {
+              txHash = event.event_id;
+              break;
+            }
+          }
+        }
+        if (txHash) break;
+      }
+      if (txHash) break;
+    }
 
     if (!txHash) {
-      throw new Error("Payment sent but could not retrieve transaction hash");
+      throw new Error("Payment sent but could not retrieve matching transaction hash after 4 attempts. The payment is on-chain — check your wallet history.");
     }
 
     // Step 6: Retry with payment proof (with retries for TX confirmation)
@@ -110,7 +158,7 @@ const payForResourceAction = defineAction({
         headers: { "X-Payment-Hash": txHash },
       });
 
-      if (paidResponse.status === 200) break;
+      if (paidResponse.ok) break;
 
       if (attempt < maxRetries) {
         // Server hasn't confirmed TX yet — wait and retry
@@ -118,7 +166,7 @@ const payForResourceAction = defineAction({
       }
     }
 
-    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.clone().arrayBuffer()) : Buffer.alloc(0);
+    const contentBuffer = paidResponse ? Buffer.from(await paidResponse.arrayBuffer()) : Buffer.alloc(0);
     const contentType = paidResponse?.headers.get("content-type") || "";
 
     if (!paidResponse || !paidResponse.ok) {
