@@ -175,20 +175,20 @@ No arguments
 * 135: Code of a contract was not found
 * 136: Invalid standard address
 * 138: Not a basechain address
-* 1185: Disputed — waiting for arbiter vote
+* 1185: Disputed, waiting for arbiter vote
 * 1933: Seller stake not required
 * 3977: Max arbiters reached
 * 5721: Already settled
 * 9603: Not registered
 * 9959: Stake too low
-* 10757: Delivery confirmed — open a dispute to contest
+* 10757: Delivery confirmed, open a dispute to contest
 * 15501: Voting period ended
 * 15591: Depositor cannot be arbiter
 * 18953: Not an arbiter
 * 21498: Not enough arbiters yet
 * 22362: No active dispute
 * 23632: Only beneficiary (seller) can stake
-* 25639: Disputed — use voting
+* 25639: Disputed, use voting
 * 25931: Already joined
 * 26711: Not settled yet
 * 29680: Only depositor can deposit

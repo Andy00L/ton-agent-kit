@@ -1,6 +1,6 @@
-# TON Agent Kit — x402 Payment Server Example
+# TON Agent Kit. x402 Payment Server Example
 
-Make any Express API payable in TON using the HTTP 402 payment protocol. AI agents automatically detect the 402 response, pay on-chain, and retry — no manual integration needed.
+Make any Express API payable in TON using the HTTP 402 payment protocol. AI agents automatically detect the 402 response, pay on-chain, and retry. No manual integration needed.
 
 ## What is x402?
 
@@ -85,8 +85,8 @@ The anti-replay store is pluggable:
 | Store | Use Case |
 |-------|----------|
 | `FileReplayStore` (default) | Zero dependencies, JSON file on disk, survives restarts |
-| `RedisReplayStore` | Production scale — Upstash, Redis Cloud, or self-hosted |
-| `MemoryReplayStore` | Testing only — data lost on restart |
+| `RedisReplayStore` | Production scale. Upstash, Redis Cloud, or self-hosted |
+| `MemoryReplayStore` | Testing only. Data lost on restart |
 | Custom `ReplayStore` | Implement `has(hash)` and `add(hash)` for any backend |
 
 ## Standalone `tonPaywall()` Usage

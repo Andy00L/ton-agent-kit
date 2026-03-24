@@ -1,4 +1,4 @@
-# TON Agent Kit — MCP Server Example
+# TON Agent Kit. MCP Server Example
 
 An MCP (Model Context Protocol) server that exposes all TON Agent Kit actions as tools for Claude Desktop, Cursor, Windsurf, and any MCP-compatible client.
 

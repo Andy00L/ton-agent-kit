@@ -1,4 +1,4 @@
-# TON Agent Kit — Simple Agent Example
+# TON Agent Kit. Simple Agent Example
 
 Minimal example showing SDK usage in ~20 lines. Creates a wallet, loads 3 plugins, checks balance, and resolves a `.ton` domain.
 
