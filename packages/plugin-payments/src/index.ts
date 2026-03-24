@@ -71,8 +71,8 @@ const payForResourceAction = defineAction({
       }),
     ]);
 
-    // Step 4: Wait for initial TX propagation
-    await new Promise((r) => setTimeout(r, 8000));
+    // Step 4: Wait for initial TX propagation (testnet blocks take 15-20s)
+    await new Promise((r) => setTimeout(r, 15000));
 
     // Step 5: Get the tx hash from recent transactions
     const apiBase =
@@ -91,7 +91,7 @@ const payForResourceAction = defineAction({
 
     // Step 6: Retry with payment proof (with retries for TX confirmation)
     const maxRetries = 3;
-    const retryDelay = 8000;
+    const retryDelay = 10000;
     let paidResponse: Response | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
