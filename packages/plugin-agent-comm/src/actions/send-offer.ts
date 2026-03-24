@@ -51,22 +51,29 @@ export const sendOfferAction = defineAction({
       ]);
 
       // Wait for on-chain confirmation then read offerCount to get the index
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // Testnet needs longer for TONAPI indexing; retry with backoff
+      const initialWait = agent.network === "testnet" ? 15000 : 5000;
+      await new Promise((resolve) => setTimeout(resolve, initialWait));
 
       let offerIndex = -1;
-      try {
-        const countRes = await callContractGetter(
-          apiBase,
-          contractAddr,
-          "offerCount",
-          [],
-          agent.config.TONAPI_KEY
-        );
-        if (countRes?.stack?.[0]?.num) {
-          const raw = countRes.stack[0].num;
-          offerIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
-        }
-      } catch {}
+      const maxRetries = agent.network === "testnet" ? 3 : 2;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 8000));
+        try {
+          const countRes = await callContractGetter(
+            apiBase,
+            contractAddr,
+            "offerCount",
+            [],
+            agent.config.TONAPI_KEY
+          );
+          if (countRes?.stack?.[0]?.num) {
+            const raw = countRes.stack[0].num;
+            offerIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
+            if (offerIndex >= 0) break;
+          }
+        } catch {}
+      }
 
       return {
         offerIndex,
