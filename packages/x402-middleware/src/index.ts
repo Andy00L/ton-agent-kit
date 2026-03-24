@@ -283,6 +283,40 @@ export function tonPaywall(config: PaywallConfig) {
 }
 
 // ============================================================
+// TONAPI fetch with rate-limit retry
+// ============================================================
+
+/**
+ * Fetch wrapper that retries on TONAPI rate limiting (HTTP 429).
+ * Retries up to 3 times with exponential backoff (2s, 4s, 8s).
+ */
+async function fetchWithRateLimitRetry(url: string): Promise<Response> {
+  const maxRetries = 3;
+  let lastRes!: Response;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    lastRes = await fetch(url);
+
+    const isRateLimited = lastRes.status === 429;
+
+    // Also check body for "429" on non-ok responses (proxy/CDN rate limiting)
+    if (!isRateLimited && !lastRes.ok) {
+      const body = await lastRes.clone().text().catch(() => "");
+      if (body.includes("429") && attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+    }
+
+    if (!isRateLimited) return lastRes;
+
+    if (attempt < maxRetries) {
+      await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+    }
+  }
+  return lastRes;
+}
+
+// ============================================================
 // Production-hardened payment verification
 // ============================================================
 
@@ -319,7 +353,7 @@ async function verifyPayment(
 
   try {
     // Level 1: Blockchain endpoint (raw transaction data — most reliable)
-    const bcRes = await fetch(
+    const bcRes = await fetchWithRateLimitRetry(
       `${apiBase}/blockchain/transactions/${encodeURIComponent(txHash)}`,
     );
 
@@ -410,11 +444,14 @@ async function verifyViaEvents(
   store: ReplayStore,
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
-    const eventRes = await fetch(
+    const eventRes = await fetchWithRateLimitRetry(
       `${apiBase}/events/${encodeURIComponent(txHash)}`,
     );
 
     if (!eventRes.ok) {
+      if (eventRes.status === 429) {
+        return { valid: false, reason: "TONAPI rate limited (429) — retry later" };
+      }
       return { valid: false, reason: `Event not found: ${eventRes.status}` };
     }
 
