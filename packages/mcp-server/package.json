@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/mcp-server",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "MCP Server for TON Agent Kit: let Claude, GPT, and any AI interact with TON",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -12,15 +12,15 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.3.0",
-    "@ton-agent-kit/plugin-token": "^1.1.3",
-    "@ton-agent-kit/plugin-defi": "^1.2.4",
+    "@ton-agent-kit/core": "^1.4.0",
+    "@ton-agent-kit/plugin-token": "^2.0.0",
+    "@ton-agent-kit/plugin-defi": "^2.0.0",
     "@ton-agent-kit/plugin-nft": "^1.0.5",
-    "@ton-agent-kit/plugin-dns": "^1.0.5",
-    "@ton-agent-kit/plugin-payments": "^1.0.19",
+    "@ton-agent-kit/plugin-dns": "^1.1.0",
+    "@ton-agent-kit/plugin-payments": "^1.1.0",
     "@ton-agent-kit/plugin-staking": "^1.0.5",
-    "@ton-agent-kit/plugin-escrow": "^1.5.4",
-    "@ton-agent-kit/plugin-identity": "^1.7.0",
+    "@ton-agent-kit/plugin-escrow": "^1.6.0",
+    "@ton-agent-kit/plugin-identity": "^1.8.0",
     "@ton-agent-kit/plugin-analytics": "^1.1.3",
     "@ton-agent-kit/plugin-memory": "^1.0.3",
     "@modelcontextprotocol/sdk": "^1.0.0"

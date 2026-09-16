@@ -166,6 +166,78 @@ three packages had never been typechecked at all.
   and a Known limitations section.
 - 150 long dashes across the 28 test suites and the runner became commas.
 
+### Published versions
+
+Twelve packages changed. Four carry a breaking change, named below.
+
+| Package | From | To |
+|---|---|---|
+| `@ton-agent-kit/core` | 1.3.0 | 1.4.0 |
+| `@ton-agent-kit/plugin-token` | 1.1.3 | **2.0.0** |
+| `@ton-agent-kit/plugin-defi` | 1.2.4 | **2.0.0** |
+| `@ton-agent-kit/strategies` | 1.0.2 | **2.0.0** |
+| `@ton-agent-kit/x402-middleware` | 2.0.0 | **3.0.0** |
+| `@ton-agent-kit/plugin-identity` | 1.7.0 | 1.8.0 |
+| `@ton-agent-kit/plugin-escrow` | 1.5.4 | 1.6.0 |
+| `@ton-agent-kit/plugin-payments` | 1.0.19 | 1.1.0 |
+| `@ton-agent-kit/plugin-dns` | 1.0.5 | 1.1.0 |
+| `@ton-agent-kit/orchestrator` | 1.1.2 | 1.2.0 |
+| `@ton-agent-kit/mcp-server` | 1.1.2 | 1.2.0 |
+| `@ton-agent-kit/wallet-store` | 1.0.2 | 1.1.0 |
+
+Six plugins now require `@ton-agent-kit/core` 1.4.0 or later, because they call
+`toBaseUnits`, `fetchJettonMetadata`, `tonapiBase` or `AgentContext.runAction`,
+none of which exist earlier. Their ranges were widened to match; installing an
+older core alongside them brings back the exact silent failures this release
+closes.
+
+### Breaking, @ton-agent-kit/plugin-token 2.0.0
+
+- `transfer_jetton` reads the jetton master's declared decimals before building
+  the amount, so it makes one HTTP call it did not make before, and it returns
+  `{ status: "rejected", reason }` when the decimals cannot be read rather than
+  assuming nine. Amounts for any token that does not declare nine decimals
+  change: a call that moved 100,000 USDT now moves 100.
+- Its result no longer carries `txHash`, `explorerUrl` or `fee`.
+  `sendTransaction` returns nothing, so the hash was the literal string
+  "pending" and the link pointed at `/transaction/pending`. It reports
+  `symbol`, `decimals`, `baseUnits` and `attached` instead.
+
+### Breaking, @ton-agent-kit/plugin-defi 2.0.0
+
+- `swap_stonfi` requires `minReceived`, the smallest acceptable output in the
+  destination token's units, and no longer accepts `slippage`. It never quoted
+  the pool, so the slippage parameter could not be honoured and every swap went
+  out with a floor of zero.
+- `swap_best_price` resolves decimals per leg, which costs up to two HTTP calls
+  before the quote, and returns a failure when a token declares none. Reported
+  output amounts change for any token that is not nine decimals.
+- The `DOGS` symbol no longer resolves. Its entry was never a TON address.
+
+### Breaking, @ton-agent-kit/strategies 2.0.0
+
+- Every `StrategyRunner` hook is now called with the arguments it declares.
+  `onStepStart(step, context)`, `onStepComplete(stepResult, context)`,
+  `onStepSkipped(step, context)` and `onStepError(error, step, context)` all
+  used to receive the strategy name in first position.
+- `strategy.onComplete` always receives a `StrategyResult`. One path passed a
+  `StepResult[]`.
+- `StrategyContext` declares `getResult`, `getVariable` and `setVariable`, so a
+  hand-written context must supply them.
+- `parseSchedule` throws for an interval of zero and for anything longer than
+  24.8 days, which Node's timers cannot hold.
+
+### Breaking, @ton-agent-kit/x402-middleware 3.0.0
+
+- A verified payment now serves at most three responses inside `proofTTL`
+  rather than an unlimited number. A client that legitimately retries more than
+  three times with one hash receives a 402 naming the reason.
+- `createPaymentServer` imports `express` at module load instead of calling
+  `require`, so `express` must resolve when the module is imported, not when
+  the function is called. It previously threw `ReferenceError` on every call.
+- `defaultReplayStore(filePath?)` is exported, and every paywall that names no
+  store shares one instance per file path.
+
 ### Added
 
 - `packages/core/test/amounts.test.mjs`, 8 checks including the exact 1000x

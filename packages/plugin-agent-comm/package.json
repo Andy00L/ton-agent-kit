@@ -9,8 +9,8 @@
     "src"
   ],
   "dependencies": {
-    "@ton-agent-kit/core": "^1.3.0",
-    "@ton-agent-kit/plugin-identity": "^1.7.0"
+    "@ton-agent-kit/core": "^1.4.0",
+    "@ton-agent-kit/plugin-identity": "^1.8.0"
   },
   "peerDependencies": {
     "zod": ">=4.0.0",

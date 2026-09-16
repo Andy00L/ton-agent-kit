@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/strategies",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "scripts": {
     "build": "tsc",
     "test": "node --experimental-strip-types test/scheduler.test.mjs"
@@ -12,7 +12,7 @@
     "src"
   ],
   "dependencies": {
-    "@ton-agent-kit/core": "^1.0.0"
+    "@ton-agent-kit/core": "^1.4.0"
   },
   "keywords": [
     "ton",

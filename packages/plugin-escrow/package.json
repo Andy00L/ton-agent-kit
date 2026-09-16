@@ -1,6 +1,6 @@
 {
   "name": "@ton-agent-kit/plugin-escrow",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "Escrow plugin for TON Agent Kit: create, fund, release, and refund escrow deals",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -11,8 +11,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.3.0",
-    "@ton-agent-kit/plugin-identity": "^1.7.0"
+    "@ton-agent-kit/core": "^1.4.0",
+    "@ton-agent-kit/plugin-identity": "^1.8.0"
   },
   "peerDependencies": {
     "zod": ">=4.0.0",

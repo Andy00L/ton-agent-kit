@@ -11,7 +11,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.0.0"
+    "@ton-agent-kit/core": "^1.4.0"
   },
   "peerDependencies": {
     "zod": ">=4.0.0"

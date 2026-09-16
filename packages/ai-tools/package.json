@@ -10,8 +10,11 @@
   "scripts": {
     "build": "tsc"
   },
+  "peerDependencies": {
+    "zod": ">=4.0.0"
+  },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.0.0",
+    "@ton-agent-kit/core": "^1.4.0",
     "ai": "^3.4.0"
   },
   "keywords": [
