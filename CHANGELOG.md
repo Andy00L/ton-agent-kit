@@ -80,6 +80,58 @@ three packages had never been typechecked at all.
   was cacheable and `getTTL("toString")` returned a function. Every expiry
   comparison against it was NaN, which made such an entry immortal. It uses
   `Object.hasOwn` now.
+- **One task naming an agent that is not registered hung the whole swarm.**
+  `Dispatcher.executeTask` threw for a missing agent, and the parallel branch
+  turned every rejection into `taskId: "unknown"`, so `pending.delete` removed
+  nothing and the loop re-selected the same tasks forever with no await between
+  iterations. Measured at 148 seconds of CPU and 1.15 GB before it was killed
+  by hand. Every result now carries the id of the task it came from.
+- **Delivery proofs and escrow ratings called a method the context never had.**
+  Thirteen call sites across three plugins reached for
+  `(agent as any).runAction(...)`. `runAction` lives on `TonAgentKit`, not on
+  the `AgentContext` a handler receives, so every call was a TypeError inside a
+  try with an empty catch. x402 delivery proofs were never stored and
+  `get_delivery_proof` always answered `{ found: false }`; `confirm_delivery`
+  was never called, so `escrowConfirmed` was always false; escrow release,
+  refund and auto-release never queued their pending ratings. `AgentContext`
+  declares `runAction` now and the casts are gone.
+- **`swap_stonfi` accepted any output, including zero.** All three branches
+  passed `minAskAmount: toNano("0")` while the action advertised a `slippage`
+  parameter no line in the file read. It requires `minReceived` now, converted
+  in the destination token's own decimals.
+- **`await agent.methods` ended the process.** The proxy answered a function
+  for every key including `then`, which made it a thenable: awaiting it called
+  `runAction("then", resolve)`, which rejected and called neither callback, so
+  it surfaced as an unhandled rejection rather than a catchable error.
+- **A stored file whose blob was missing from disk could never be deleted.**
+  `FileStore.deleteFile` went through `getFile`, which answers null in that
+  case, so the row survived, held part of the user's 50 MB quota forever, and
+  `cleanupExpired` re-selected it on every sweep and returned 0 each time. The
+  row goes first now. `deleteAllFiles` and `cleanupExpired` were also quadratic
+  in directory entries, one full directory scan per file removed.
+- **The MCP server died when a second SSE client connected**, because one
+  Server holds one transport and nothing caught the rejection from an async
+  handler. It answers 409 now. It also printed 12 of the 64 hex characters of
+  the bearer token on every boot.
+- **`transfer_ton` rejected every wallet that is not V5R1**, including on the
+  plain send path: the simulation guard ran before the simulate flag was read,
+  so a V4 wallet failed with a simulation error and never reached
+  `sendTransaction`, which handles every version. A plain transfer also paid
+  for a client, a seqno round trip and a signature whose result nothing used.
+- **`get_domain_info` and `lookup_address` always queried mainnet** and refused
+  to run without a TONAPI key, while `resolve_domain` in the same file branches
+  on the network and works keyless.
+- `runLoop` read `choices[0].message` with no guard, so a provider answering
+  with an empty choices array threw out of the loop instead of ending it.
+- The dispatcher's retry path asserted non-null on a value that is null when
+  `maxRetries` is below zero, throwing out of the function whose job is to
+  report failures. It also attached a `_context` bag to task params that no
+  handler ever received, because `runAction` parses params through the action's
+  Zod schema and zod strips unknown keys.
+- `EventBus` used a TypeScript parameter property, which Node's type stripping
+  refuses outright. Every package here publishes its source as `main`, so a
+  consumer on `--experimental-strip-types` could not load that file at all. It
+  was the only one in the repository.
 - Third-pass fixes, previously unrecorded here: a key-loss path in
   `ensureServerSecret`, and an argument remapper in `runLoop` that could rename
   a jetton master address into the `to` field of a transfer.
@@ -128,9 +180,19 @@ three packages had never been typechecked at all.
 - Four checks in `packages/x402-middleware/test/verification.test.mjs`. One
   drives the real middleware over a stubbed transaction six times and asserts
   exactly three responses, then three 402s.
-- CI runs all of these. The Bun job installs dependencies and covers
-  `wallet-store` and `plugin-identity`; the Node 22 job covers `core`,
-  `x402-middleware` and `strategies`.
+- `packages/orchestrator/test/dispatcher.test.mjs`, 4 checks. They race
+  `dispatch` against a five second deadline, so a regression hangs the check
+  rather than the machine.
+- `packages/core/test/methods-proxy.test.mjs`, 5 checks, and
+  `packages/core/test/context-run-action.test.mjs`, 3, one of which answered
+  `{ reachable: false }` before the context carried `runAction`.
+- `packages/wallet-store/test/file-store.test.mjs`, 7 checks. The first deletes
+  a blob out from under a live row and asserts the row still goes and the quota
+  comes back to zero.
+- CI runs all of these: 68 checks across ten files. The Bun job installs
+  dependencies and covers `wallet-store`, `plugin-identity` and the two core
+  suites that need it; the Node 22 job covers `core`, `x402-middleware`,
+  `strategies` and `orchestrator`.
 
 ## [1.2.0] - 2026-09-16
 
