@@ -1,4 +1,4 @@
-// tests/20-x402-security.ts — Wrapped from test-x402.ts
+// tests/20-x402-security.ts, Wrapped from test-x402.ts
 /**
  * x402 Payment Middleware Test (demo-style, no counters)
  */
@@ -141,7 +141,7 @@ async function main() {
   const crossRes = await fetch("http://localhost:3402/api/analytics", {
     headers: { "X-Payment-Hash": txHash },
   });
-  console.log(`📋 Status: ${crossRes.status} (expected: not 200 — hash already used)`);
+  console.log(`📋 Status: ${crossRes.status} (expected: not 200, hash already used)`);
 
   // ── Step 9: Wrong wallet TX (Test 13) ──
   console.log(`\n── Step 9: Wrong wallet TX (recipient mismatch) ──`);
@@ -157,9 +157,9 @@ async function main() {
     const wrongWalletRes = await fetch("http://localhost:3402/api/price", {
       headers: { "X-Payment-Hash": otherHash },
     });
-    console.log(`📋 Status: ${wrongWalletRes.status} (expected: not 200 — recipient doesn't match)`);
+    console.log(`📋 Status: ${wrongWalletRes.status} (expected: not 200, recipient doesn't match)`);
   } else {
-    console.log(`  ⏭️  Skipped — could not fetch TX from other wallet`);
+    console.log(`  ⏭️  Skipped, could not fetch TX from other wallet`);
   }
 
   // ── Step 10: Old TX / timestamp expired (Test 14) ──
@@ -179,9 +179,9 @@ async function main() {
     const oldTxTestRes = await fetch("http://localhost:3402/api/price", {
       headers: { "X-Payment-Hash": oldHash },
     });
-    console.log(`📋 Status: ${oldTxTestRes.status} (expected: not 200 — age: ${age}s, max: 300s)`);
+    console.log(`📋 Status: ${oldTxTestRes.status} (expected: not 200, age: ${age}s, max: 300s)`);
   } else {
-    console.log(`  ⏭️  Skipped — no TX older than 5min found (wallet is new)`);
+    console.log(`  ⏭️  Skipped, no TX older than 5min found (wallet is new)`);
   }
 
   // ── Step 11: Insufficient amount (Test 15) ──
@@ -217,9 +217,9 @@ async function main() {
     const underpayRes = await fetch("http://localhost:3402/api/price", {
       headers: { "X-Payment-Hash": lowHash },
     });
-    console.log(`📋 Status: ${underpayRes.status} (expected: not 200 — paid 0.0001, needed 0.001)`);
+    console.log(`📋 Status: ${underpayRes.status} (expected: not 200, paid 0.0001, needed 0.001)`);
   } else {
-    console.log(`  ⏭️  Skipped — could not retrieve underpayment TX hash`);
+    console.log(`  ⏭️  Skipped, could not retrieve underpayment TX hash`);
   }
 
   // ── Step 12: Wrong network (Test 16) ──
@@ -241,7 +241,7 @@ async function main() {
   const wrongNetRes = await fetch("http://localhost:3404/api/data", {
     headers: { "X-Payment-Hash": txHash },
   });
-  console.log(`📋 Status: ${wrongNetRes.status} (expected: not 200 — TX not found on mainnet)`);
+  console.log(`📋 Status: ${wrongNetRes.status} (expected: not 200, TX not found on mainnet)`);
 
   server3.close();
 

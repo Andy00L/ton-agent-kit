@@ -1,4 +1,4 @@
-// tests/05-dns-plugin.ts — Section 4: DNS Plugin
+// tests/05-dns-plugin.ts, Section 4: DNS Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -25,7 +25,7 @@ export async function run(): Promise<TestResult> {
   });
 
   if (domain?.address) {
-    await test("lookup_address (reverse — foundation.ton address)", async () => {
+    await test("lookup_address (reverse, foundation.ton address)", async () => {
       const r = await agent.runAction("lookup_address", { address: domain.address });
       console.log(`     Found domain info for ${domain.address.slice(0, 20)}...`);
     });

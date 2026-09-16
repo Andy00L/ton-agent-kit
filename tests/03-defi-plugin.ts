@@ -1,4 +1,4 @@
-// tests/03-defi-plugin.ts — Section 2: DeFi Plugin
+// tests/03-defi-plugin.ts, Section 2: DeFi Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -7,7 +7,7 @@ export async function run(): Promise<TestResult> {
   const { agent: mainAgent } = await createMainnetAgent();
   const { test, testError, skip, result } = createTestContext();
 
-  await test("get_price (USDT — by address)", async () => {
+  await test("get_price (USDT, by address)", async () => {
     const r = await mainAgent.runAction("get_price", {
       token: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
     });
@@ -15,18 +15,18 @@ export async function run(): Promise<TestResult> {
     if (r.priceUSD === "unknown") throw new Error("Unknown price");
   });
 
-  await test("get_price (USDT — by symbol)", async () => {
+  await test("get_price (USDT, by symbol)", async () => {
     const r = await mainAgent.runAction("get_price", { token: "USDT" });
     console.log(`     $${r.priceUSD} USD`);
   });
 
-  await test("get_price (invalid token — returns unknown)", async () => {
+  await test("get_price (invalid token, returns unknown)", async () => {
     const r = await mainAgent.runAction("get_price", { token: "invalid-token-xyz" });
     if (r.priceUSD !== "unknown") throw new Error("Expected unknown");
     console.log(`     Price: ${r.priceUSD} (correctly unknown)`);
   });
 
-  // ── swap_best_price (schema-only — no real swap in automated tests) ──
+  // ── swap_best_price (schema-only, no real swap in automated tests) ──
   console.log(`\n  ── swap_best_price ──`);
 
   await test("swap_best_price action registered", async () => {

@@ -1,4 +1,4 @@
-// tests/06-analytics-plugin.ts — Section 5: Analytics Plugin
+// tests/06-analytics-plugin.ts, Section 5: Analytics Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -100,7 +100,7 @@ export async function run(): Promise<TestResult> {
     console.log(`     Schema valid (default + explicit params)`);
   });
 
-  await test("wait_for_transaction (1s timeout — no activity)", async () => {
+  await test("wait_for_transaction (1s timeout, no activity)", async () => {
     const r = await agent.runAction("wait_for_transaction", { timeout: 1 });
     if (r.found !== false) throw new Error("Expected no transaction in 1s");
     console.log(`     ${r.message}`);
@@ -142,7 +142,7 @@ export async function run(): Promise<TestResult> {
     console.log(`     seqno = ${r.stack[0]} (exit code: ${r.exitCode})`);
   });
 
-  await test("call_contract_method (get_jetton_data — USDT mainnet)", async () => {
+  await test("call_contract_method (get_jetton_data, USDT mainnet)", async () => {
     const r = await mainAgent.runAction("call_contract_method", {
       address: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
       method: "get_jetton_data",

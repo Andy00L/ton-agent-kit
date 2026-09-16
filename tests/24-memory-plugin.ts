@@ -1,4 +1,4 @@
-// tests/24-memory-plugin.ts — Wrapped from test-memory.ts
+// tests/24-memory-plugin.ts, Wrapped from test-memory.ts
 /**
  * Memory Plugin Test Suite
  * InMemoryStore, FileMemoryStore, Plugin integration
@@ -78,7 +78,7 @@ async function main() {
 
   console.log(`
 ╔${"═".repeat(W - 2)}╗
-║${" ".repeat(Math.floor((W - 44) / 2))}🧠 Memory Plugin — Comprehensive Test Suite${" ".repeat(Math.ceil((W - 44) / 2))}║
+║${" ".repeat(Math.floor((W - 44) / 2))}🧠 Memory Plugin, Comprehensive Test Suite${" ".repeat(Math.ceil((W - 44) / 2))}║
 ╚${"═".repeat(W - 2)}╝
 
   Timestamp: ${new Date().toISOString()}
@@ -485,7 +485,7 @@ ${"─".repeat(W)}`);
     console.log(`
   ┌${"─".repeat(W - 4)}┐
   │                                                            │
-  │     🎉  ALL ${total} TESTS PASSED — 0 FAILURES                │
+  │     🎉  ALL ${total} TESTS PASSED, 0 FAILURES                │
   │                                                            │
   │     3 stores · 4 actions · full integration verified       │
   │                                                            │

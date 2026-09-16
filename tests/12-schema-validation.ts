@@ -1,4 +1,4 @@
-// tests/12-schema-validation.ts — Section 11: Schema Validation
+// tests/12-schema-validation.ts, Section 11: Schema Validation
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {

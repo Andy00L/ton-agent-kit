@@ -1,4 +1,4 @@
-// tests/02-token-plugin.ts — Section 1: Token Plugin
+// tests/02-token-plugin.ts, Section 1: Token Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -7,19 +7,19 @@ export async function run(): Promise<TestResult> {
   const { agent: mainAgent } = await createMainnetAgent();
   const { test, testError, skip, result } = createTestContext();
 
-  const bal = await test("get_balance (own wallet — no params)", async () => {
+  const bal = await test("get_balance (own wallet, no params)", async () => {
     const r = await agent.runAction("get_balance", {});
     console.log(`     Balance: ${r.balance} TON`);
     if (parseFloat(r.balance) <= 0) throw new Error("Balance is 0");
     return r;
   });
 
-  await test("get_balance (own — explicit raw address)", async () => {
+  await test("get_balance (own, explicit raw address)", async () => {
     const r = await agent.runAction("get_balance", { address: ownAddress });
     console.log(`     Balance: ${r.balance} TON`);
   });
 
-  await test("get_balance (own — friendly address)", async () => {
+  await test("get_balance (own, friendly address)", async () => {
     const r = await agent.runAction("get_balance", { address: friendlyAddress });
     console.log(`     Balance: ${r.balance} TON`);
   });
@@ -31,19 +31,19 @@ export async function run(): Promise<TestResult> {
     console.log(`     Balance: ${r.balance} TON`);
   });
 
-  await test("get_balance (empty string — fallback to own)", async () => {
+  await test("get_balance (empty string, fallback to own)", async () => {
     const r = await agent.runAction("get_balance", { address: "" });
     console.log(`     Balance: ${r.balance} TON (own wallet fallback)`);
   });
 
   await testError(
-    "get_balance (invalid address — rejects)",
+    "get_balance (invalid address, rejects)",
     () => agent.runAction("get_balance", { address: "not-an-address" }),
     "Unknown address",
   );
 
   await testError(
-    "get_balance (random string — rejects)",
+    "get_balance (random string, rejects)",
     () => agent.runAction("get_balance", { address: "abc123xyz" }),
     "Unknown address",
   );
@@ -55,7 +55,7 @@ export async function run(): Promise<TestResult> {
     console.log(`     Balance: ${r.balance} | Symbol: ${r.symbol}`);
   });
 
-  await test("get_jetton_info (USDT — mainnet)", async () => {
+  await test("get_jetton_info (USDT, mainnet)", async () => {
     const r = await mainAgent.runAction("get_jetton_info", {
       jettonAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
     });
@@ -65,7 +65,7 @@ export async function run(): Promise<TestResult> {
   // ── Simulate Transaction ──
   console.log(`\n  ── Simulate Transaction ──`);
 
-  await test("simulate_transaction (0.01 TON — valid transfer)", async () => {
+  await test("simulate_transaction (0.01 TON, valid transfer)", async () => {
     const r = await agent.runAction("simulate_transaction", {
       to: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3",
       amount: "0.01",
@@ -78,14 +78,14 @@ export async function run(): Promise<TestResult> {
     if (r.estimatedFee === "0") throw new Error("Expected non-zero fee");
   });
 
-  await test("simulate_transaction (999999 TON — emulation does not check balance)", async () => {
+  await test("simulate_transaction (999999 TON, emulation does not check balance)", async () => {
     const r = await agent.runAction("simulate_transaction", {
       to: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3",
       amount: "999999",
     });
     // TONAPI emulation validates message structure, NOT sender balance.
     // The balance guard in transfer_ton is what catches insufficient funds.
-    // So emulation succeeds here — the message is structurally valid.
+    // So emulation succeeds here, the message is structurally valid.
     console.log(`     Success: ${r.success} | Risk: ${r.risk}`);
     console.log(`     Message: ${r.message}`);
     if (!r.success) throw new Error("Emulation should succeed (it doesn't check balance)");

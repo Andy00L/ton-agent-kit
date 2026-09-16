@@ -1,4 +1,4 @@
-// tests/14-strategy-engine.ts — Section 13: Strategy Engine
+// tests/14-strategy-engine.ts, Section 13: Strategy Engine
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {

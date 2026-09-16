@@ -1,4 +1,4 @@
-// tests/25-omniston.ts — Wrapped from test-omniston.ts
+// tests/25-omniston.ts, Wrapped from test-omniston.ts
 /**
  * Omniston SDK Demo (no counters)
  * Connects to Omniston production websocket and requests quotes.
@@ -79,7 +79,7 @@ async function main() {
       });
   });
 
-  console.log("\n⏱️ Timeout — connection closed");
+  console.log("\n⏱️ Timeout, connection closed");
 }
 
 export async function run(): Promise<TestResult> {

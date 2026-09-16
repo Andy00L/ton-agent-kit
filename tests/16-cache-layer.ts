@@ -1,4 +1,4 @@
-// tests/16-cache-layer.ts — Section 15: Cache Layer
+// tests/16-cache-layer.ts, Section 15: Cache Layer
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {

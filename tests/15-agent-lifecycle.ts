@@ -1,4 +1,4 @@
-// tests/15-agent-lifecycle.ts — Section 14: Agent Lifecycle Manager
+// tests/15-agent-lifecycle.ts, Section 14: Agent Lifecycle Manager
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {

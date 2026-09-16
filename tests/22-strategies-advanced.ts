@@ -1,4 +1,4 @@
-// tests/22-strategies-advanced.ts — Wrapped from test-strategies.ts
+// tests/22-strategies-advanced.ts, Wrapped from test-strategies.ts
 /**
  * Strategy Engine Test Suite
  * Deterministic workflows: conditions, schedules, steps

@@ -1,4 +1,4 @@
-// tests/01-plugin-system.ts — Section 0: Plugin System & toAITools()
+// tests/01-plugin-system.ts, Section 0: Plugin System & toAITools()
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -33,7 +33,7 @@ export async function run(): Promise<TestResult> {
   });
 
   if (tools) {
-    await test("toAITools() — OpenAI format", async () => {
+    await test("toAITools(), OpenAI format", async () => {
       for (const t of tools) {
         if (t.type !== "function") throw new Error(`type: ${t.type}`);
         if (!t.function?.name) throw new Error(`missing name`);
@@ -42,20 +42,20 @@ export async function run(): Promise<TestResult> {
       }
     });
 
-    await test("toAITools() — all have properties (non-empty)", async () => {
+    await test("toAITools(), all have properties (non-empty)", async () => {
       const empty = tools.filter((t: any) => Object.keys(t.function.parameters.properties || {}).length === 0);
       if (empty.length > 0) throw new Error(`Empty: ${empty.map((t: any) => t.function.name).join(", ")}`);
     });
 
-    await test("toAITools() — transfer_ton has {to, amount, comment}", async () => {
+    await test("toAITools(), transfer_ton has {to, amount, comment}", async () => {
       const tt = tools.find((t: any) => t.function.name === "transfer_ton");
       const keys = Object.keys(tt.function.parameters.properties || {});
-      if (!keys.includes("to")) throw new Error(`Missing "to" — got: ${keys}`);
-      if (!keys.includes("amount")) throw new Error(`Missing "amount" — got: ${keys}`);
+      if (!keys.includes("to")) throw new Error(`Missing "to", got: ${keys}`);
+      if (!keys.includes("amount")) throw new Error(`Missing "amount", got: ${keys}`);
       console.log(`     Params: ${keys.join(", ")}`);
     });
 
-    await test("toAITools() — create_escrow has {beneficiary, amount}", async () => {
+    await test("toAITools(), create_escrow has {beneficiary, amount}", async () => {
       const ce = tools.find((t: any) => t.function.name === "create_escrow");
       const keys = Object.keys(ce.function.parameters.properties || {});
       if (!keys.includes("beneficiary")) throw new Error(`Missing "beneficiary"`);
@@ -63,14 +63,14 @@ export async function run(): Promise<TestResult> {
       console.log(`     Params: ${keys.join(", ")}`);
     });
 
-    await test("toAITools() — no $schema or $ref (OpenAI compat)", async () => {
+    await test("toAITools(), no $schema or $ref (OpenAI compat)", async () => {
       for (const t of tools) {
         if ("$schema" in t.function.parameters) throw new Error(`${t.function.name} has $schema`);
         if ("$ref" in t.function.parameters) throw new Error(`${t.function.name} has $ref`);
       }
     });
 
-    await test("toAITools() — JSON serializable", async () => {
+    await test("toAITools(), JSON serializable", async () => {
       const json = JSON.stringify(tools);
       if (json.length < 100) throw new Error(`Suspiciously short: ${json.length}`);
       console.log(`     ${json.length} chars`);

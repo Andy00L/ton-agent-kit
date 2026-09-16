@@ -1,4 +1,4 @@
-// tests/18-escrow-advanced.ts — Wrapped from test-escrow.ts
+// tests/18-escrow-advanced.ts, Wrapped from test-escrow.ts
 /**
  * Escrow Contract Test (post gas fix)
  * Full lifecycle + gas handling verification
@@ -61,7 +61,7 @@ async function test(name: string, fn: () => Promise<any>): Promise<any> {
 async function testError(name: string, fn: () => Promise<any>, expectedMsg: string): Promise<void> {
   try {
     await fn();
-    console.log(`  ❌ ${name} — should have thrown`);
+    console.log(`  ❌ ${name}, should have thrown`);
     failed++;
     sectionFailed++;
     errors.push(`${name}: did not throw`);
@@ -72,11 +72,11 @@ async function testError(name: string, fn: () => Promise<any>, expectedMsg: stri
       passed++;
       sectionPassed++;
     } else {
-      console.log(`  ❌ ${name} — wrong error`);
+      console.log(`  ❌ ${name}, wrong error`);
       console.log(`     Expected "${expectedMsg}" got "${err.message.slice(0, 100)}"`);
       failed++;
       sectionFailed++;
-      errors.push(`${name}: wrong error — ${err.message.slice(0, 100)}`);
+      errors.push(`${name}: wrong error, ${err.message.slice(0, 100)}`);
     }
   }
 }
@@ -289,7 +289,7 @@ ${"─".repeat(W)}`);
     // ══════════════════════════════════════════════════════════════
     header("🛡️", 5, "Double-Settle Prevention", "Can't release or refund after already settled");
 
-    await test("release after release — fails silently or rejects", async () => {
+    await test("release after release, fails silently or rejects", async () => {
       try {
         const r = await agentA.runAction("release_escrow", { escrowId: escrow1.escrowId });
         // If it doesn't throw, the TX went through but contract should reject it
@@ -299,7 +299,7 @@ ${"─".repeat(W)}`);
       }
     });
 
-    await test("refund after release — fails", async () => {
+    await test("refund after release, fails", async () => {
       try {
         const r = await agentA.runAction("refund_escrow", { escrowId: escrow1.escrowId });
         console.log(`     Refund sent (contract will reject on-chain)`);
@@ -445,7 +445,7 @@ ${"─".repeat(W)}`);
     console.log(`
   ┌${"─".repeat(W - 4)}┐
   │                                                            │
-  │     🎉  ALL ${total} TESTS PASSED — ESCROW VERIFIED           │
+  │     🎉  ALL ${total} TESTS PASSED, ESCROW VERIFIED           │
   │                                                            │
   │     On-chain lifecycle · Gas fix confirmed · Secure        │
   │                                                            │

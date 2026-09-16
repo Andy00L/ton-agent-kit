@@ -1,4 +1,4 @@
-// tests/27-demo-runloop.ts — Wrapped from demo-runloop.ts
+// tests/27-demo-runloop.ts, Wrapped from demo-runloop.ts
 /**
  * Autonomous Agent Runtime Demo
  * Runs 5 demo scenarios in sequence, each fully autonomous.
@@ -166,7 +166,7 @@ async function runScenario(
 ): Promise<ScenarioResult> {
   // ── Scenario Header ──
   console.log(`\n${"═".repeat(W)}`);
-  console.log(`  📋 SCENARIO ${index}/${total} — ${scenario.name}`);
+  console.log(`  📋 SCENARIO ${index}/${total}, ${scenario.name}`);
   console.log(`${"═".repeat(W)}`);
 
   // ── Init agent with appropriate plugins ──
@@ -207,7 +207,7 @@ async function runScenario(
 
     onIteration: (iteration, maxIterations) => {
       console.log(`\n${"─".repeat(W)}`);
-      console.log(`  🔄 ITERATION ${iteration}/${maxIterations} — Agent is thinking...`);
+      console.log(`  🔄 ITERATION ${iteration}/${maxIterations}, Agent is thinking...`);
       console.log(`${"─".repeat(W)}`);
     },
 
@@ -262,10 +262,10 @@ async function main() {
 
   // ── Header ──
   console.log(`\n${"═".repeat(W)}`);
-  console.log("  🤖 TON Agent Kit — Autonomous Agent Runtime Demo");
+  console.log("  🤖 TON Agent Kit, Autonomous Agent Runtime Demo");
   console.log(`${"═".repeat(W)}\n`);
   console.log("  The agent receives a goal and decides which actions");
-  console.log("  to execute — fully autonomous, no hardcoded steps.\n");
+  console.log("  to execute, fully autonomous, no hardcoded steps.\n");
   console.log(`  Network: ${NETWORK}`);
   console.log(`  Model:   ${model}`);
 

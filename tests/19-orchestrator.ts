@@ -1,4 +1,4 @@
-// tests/19-orchestrator.ts — Wrapped from test-orchestrator.ts
+// tests/19-orchestrator.ts, Wrapped from test-orchestrator.ts
 /**
  * Orchestrator Comprehensive Test Suite
  * Multi-agent, Parallel, Dependencies, Edge cases
@@ -77,7 +77,7 @@ async function test(name: string, fn: () => Promise<any>): Promise<any> {
 async function testError(name: string, fn: () => Promise<any>, expectedMsg: string): Promise<void> {
   try {
     await fn();
-    console.log(`  ❌ ${name} — should have thrown`);
+    console.log(`  ❌ ${name}, should have thrown`);
     failed++;
     sectionFailed++;
     errors.push(`${name}: did not throw`);
@@ -88,17 +88,17 @@ async function testError(name: string, fn: () => Promise<any>, expectedMsg: stri
       passed++;
       sectionPassed++;
     } else {
-      console.log(`  ❌ ${name} — wrong error`);
+      console.log(`  ❌ ${name}, wrong error`);
       console.log(`     Expected "${expectedMsg}" got "${err.message.slice(0, 100)}"`);
       failed++;
       sectionFailed++;
-      errors.push(`${name}: wrong error — ${err.message.slice(0, 100)}`);
+      errors.push(`${name}: wrong error, ${err.message.slice(0, 100)}`);
     }
   }
 }
 
 function skip(name: string, reason: string) {
-  console.log(`  ⏭️  ${name} — ${reason}`);
+  console.log(`  ⏭️  ${name}, ${reason}`);
   skipped++;
 }
 
@@ -123,7 +123,7 @@ async function main() {
 
   console.log(`
 ╔${"═".repeat(W - 2)}╗
-║${" ".repeat(Math.floor((W - 52) / 2))}🤖 TON Agent Kit — Orchestrator Test Suite${" ".repeat(Math.ceil((W - 52) / 2))}║
+║${" ".repeat(Math.floor((W - 52) / 2))}🤖 TON Agent Kit, Orchestrator Test Suite${" ".repeat(Math.ceil((W - 52) / 2))}║
 ║${" ".repeat(Math.floor((W - 50) / 2))}Multi-agent · Parallel · Dependencies · Edge${" ".repeat(Math.ceil((W - 50) / 2))}║
 ╚${"═".repeat(W - 2)}╝
 
@@ -285,7 +285,7 @@ ${"─".repeat(W)}`);
   sectionEnd("Basic Swarm");
 
   // SECTION 3: Complex Swarm
-  header("🔗", 3, "Complex Swarm", "Tasks with dependencies — sequential + parallel mix");
+  header("🔗", 3, "Complex Swarm", "Tasks with dependencies, sequential + parallel mix");
 
   await delay(RATE_MS);
 
@@ -590,7 +590,7 @@ ${"─".repeat(W)}`);
     );
 
     if (result.tasksCompleted < 2) throw new Error(`Expected 2+ completed, got ${result.tasksCompleted}`);
-    console.log(`     ${result.tasksCompleted} ok, ${result.tasksFailed} failed — swarm survived`);
+    console.log(`     ${result.tasksCompleted} ok, ${result.tasksFailed} failed, swarm survived`);
   });
 
   await delay(RATE_MS);
@@ -707,7 +707,7 @@ ${"─".repeat(W)}`);
     console.log(`
   ┌${"─".repeat(W - 4)}┐
   │                                                            │
-  │     🎉  ALL ${total} TESTS PASSED — ORCHESTRATOR VERIFIED     │
+  │     🎉  ALL ${total} TESTS PASSED, ORCHESTRATOR VERIFIED     │
   │                                                            │
   │     Multi-agent swarm · Parallel execution · Dependencies  │
   │     Event hooks · Error recovery · Edge cases              │

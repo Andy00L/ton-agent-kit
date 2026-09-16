@@ -1,4 +1,4 @@
-// tests/26-autonomous-5agents.ts — Wrapped from test-autonomous.ts
+// tests/26-autonomous-5agents.ts, Wrapped from test-autonomous.ts
 /**
  * 5-Agent Autonomous Simulation
  * 4 scripted agents + 1 fully LLM-driven agent run concurrently on testnet.
@@ -101,7 +101,7 @@ async function act(agent: TonAgentKit, logger: AgentLogger, action: string, para
 
 
 // ══════════════════════════════════════════════════════════════
-//  Agent A — price-oracle (every 5 min)
+//  Agent A, price-oracle (every 5 min)
 // ══════════════════════════════════════════════════════════════
 
 async function runAgentA(agent: TonAgentKit, logger: AgentLogger, endTime: number) {
@@ -148,7 +148,7 @@ async function runAgentA(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 }
 
 // ══════════════════════════════════════════════════════════════
-//  Agent B — analytics-provider (every 5 min)
+//  Agent B, analytics-provider (every 5 min)
 // ══════════════════════════════════════════════════════════════
 
 async function runAgentB(agent: TonAgentKit, logger: AgentLogger, endTime: number) {
@@ -191,7 +191,7 @@ async function runAgentB(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 }
 
 // ══════════════════════════════════════════════════════════════
-//  Agent C — trader-bot (every 10 min)
+//  Agent C, trader-bot (every 10 min)
 // ══════════════════════════════════════════════════════════════
 
 async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: number) {
@@ -246,7 +246,7 @@ async function runAgentC(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 }
 
 // ══════════════════════════════════════════════════════════════
-//  Agent D — deal-maker (every 3 min, 20% fail rate)
+//  Agent D, deal-maker (every 3 min, 20% fail rate)
 // ══════════════════════════════════════════════════════════════
 
 async function runAgentD(agent: TonAgentKit, logger: AgentLogger, endTime: number) {
@@ -284,7 +284,7 @@ async function runAgentD(agent: TonAgentKit, logger: AgentLogger, endTime: numbe
 }
 
 // ══════════════════════════════════════════════════════════════
-//  Agent E — autonomous (every 5 min, LLM decides everything)
+//  Agent E, autonomous (every 5 min, LLM decides everything)
 // ══════════════════════════════════════════════════════════════
 
 async function runAgentE(agent: TonAgentKit, logger: AgentLogger, endTime: number) {
@@ -309,7 +309,7 @@ Other agents running right now:
 
 You have access to ALL 68 blockchain actions. No restrictions.
 Register yourself, offer services, buy services, join disputes, vote,
-clean up agents, send TON, check prices, bulk query wallets — anything.
+clean up agents, send TON, check prices, bulk query wallets, anything.
 
 Your wallet: ${walletAddress}
 Network: testnet | Cycle: ${cycle}
@@ -520,8 +520,8 @@ async function main() {
         const price = (priceData as any)?.price ?? (priceData as any)?.usd ?? 0;
         const signal = price < 1.0 ? "buy" : "hold";
         const reasoning = price < 1.0
-          ? `USDT at $${price} is below peg — buy opportunity`
-          : `USDT at $${price} is at/above peg — hold`;
+          ? `USDT at $${price} is below peg, buy opportunity`
+          : `USDT at $${price} is at/above peg, hold`;
         res.json({ source: "trader-bot", fetchedAt: new Date().toISOString(), signal, price: priceData, balance, reasoning });
       } catch (err: any) {
         res.status(500).json({ error: err.message });

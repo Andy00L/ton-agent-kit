@@ -1,4 +1,4 @@
-// tests/28-demo-commerce.ts — Wrapped from demo-agent-commerce.ts
+// tests/28-demo-commerce.ts, Wrapped from demo-agent-commerce.ts
 /**
  * Multi-Agent Commerce Protocol Demo (no counters)
  * Two AI agents with SEPARATE wallets execute REAL on-chain commerce.
@@ -22,7 +22,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function header(step: number, title: string) {
   console.log(`\n${"═".repeat(60)}`);
-  console.log(`  STEP ${step} — ${title}`);
+  console.log(`  STEP ${step}, ${title}`);
   console.log(`${"═".repeat(60)}\n`);
 }
 
@@ -35,15 +35,15 @@ export interface TestResult {
 
 async function main() {
   if (!MNEMONIC_A) {
-    throw new Error("Set TON_MNEMONIC in .env (Agent A — market data provider)");
+    throw new Error("Set TON_MNEMONIC in .env (Agent A, market data provider)");
   }
   if (!MNEMONIC_B) {
-    throw new Error("Set TON_MNEMONIC_AGENT_B in .env (Agent B — trading bot)");
+    throw new Error("Set TON_MNEMONIC_AGENT_B in .env (Agent B, trading bot)");
   }
 
-  console.log("\n🤖 TON Agent Kit — Multi-Agent Commerce Demo\n");
+  console.log("\n🤖 TON Agent Kit, Multi-Agent Commerce Demo\n");
   console.log("  Two AI agents with SEPARATE wallets negotiate,");
-  console.log("  pay, and rate each other — all on-chain.\n");
+  console.log("  pay, and rate each other, all on-chain.\n");
   console.log(`  Network: ${NETWORK}`);
 
   const viewer = NETWORK === "testnet"
@@ -84,8 +84,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 1 — IDENTITY
-  header(1, "IDENTITY — Register AI Agents (separate wallets)");
+  // STEP 1, IDENTITY
+  header(1, "IDENTITY, Register AI Agents (separate wallets)");
 
   const providerReg = await agentA.runAction("register_agent", {
     name: "market-data-provider",
@@ -112,13 +112,13 @@ async function main() {
   console.log(`     Capabilities: ${traderReg.capabilities.join(", ")}`);
 
   if (addrA !== addrB) {
-    console.log(`\n  ✅ Addresses are DIFFERENT — true multi-agent setup!`);
+    console.log(`\n  ✅ Addresses are DIFFERENT, true multi-agent setup!`);
   }
 
   await sleep(2000);
 
-  // STEP 2 — DISCOVERY
-  header(2, "DISCOVERY — Agent B Finds a Price Feed Provider");
+  // STEP 2, DISCOVERY
+  header(2, "DISCOVERY, Agent B Finds a Price Feed Provider");
 
   const discovery = await agentB.runAction("discover_agent", {
     capability: "price_feed",
@@ -132,8 +132,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 3 — ESCROW
-  header(3, "ESCROW — Agent B Deploys Payment Contract");
+  // STEP 3, ESCROW
+  header(3, "ESCROW, Agent B Deploys Payment Contract");
 
   console.log("  💰 Agent B deploys escrow contract to pay Agent A...\n");
   const escrow = await agentB.runAction("create_escrow", {
@@ -153,8 +153,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 4 — DEPOSIT
-  header(4, "DEPOSIT — Agent B Funds the Escrow");
+  // STEP 4, DEPOSIT
+  header(4, "DEPOSIT, Agent B Funds the Escrow");
 
   const balanceBefore = await agentA.runAction("get_balance", {}) as any;
   console.log(`  📊 Agent A balance BEFORE: ${balanceBefore.balance} TON`);
@@ -189,8 +189,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 5 — SERVICE
-  header(5, "SERVICE — Agent A Delivers Market Data");
+  // STEP 5, SERVICE
+  header(5, "SERVICE, Agent A Delivers Market Data");
 
   console.log("  📊 Agent A (market-data-provider) fulfills the request...\n");
   try {
@@ -211,10 +211,10 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 6 — RELEASE
-  header(6, "RELEASE — Agent B Releases Payment to Agent A");
+  // STEP 6, RELEASE
+  header(6, "RELEASE, Agent B Releases Payment to Agent A");
 
-  console.log("  🔓 Service confirmed — Agent B releasing escrow to Agent A...\n");
+  console.log("  🔓 Service confirmed, Agent B releasing escrow to Agent A...\n");
   await sleep(3000);
   const release = await agentB.runAction("release_escrow", {
     escrowId: escrow.escrowId,
@@ -242,8 +242,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 7 — REPUTATION
-  header(7, "REPUTATION — Both Agents Rate Each Other");
+  // STEP 7, REPUTATION
+  header(7, "REPUTATION, Both Agents Rate Each Other");
 
   const providerRep = await agentA.runAction("get_agent_reputation", {
     agentId: "agent_market-data-provider",
@@ -267,8 +267,8 @@ async function main() {
 
   await sleep(2000);
 
-  // STEP 8 — VERIFY
-  header(8, "VERIFY — Agent A Received Payment");
+  // STEP 8, VERIFY
+  header(8, "VERIFY, Agent A Received Payment");
 
   await sleep(3000);
   const balanceAfter = await agentA.runAction("get_balance", {}) as any;
@@ -284,7 +284,7 @@ async function main() {
 
   // FINAL SUMMARY
   console.log(`\n${"═".repeat(60)}`);
-  console.log("  ✅ MULTI-AGENT COMMERCE PROTOCOL — COMPLETE");
+  console.log("  ✅ MULTI-AGENT COMMERCE PROTOCOL, COMPLETE");
   console.log(`${"═".repeat(60)}\n`);
   console.log("  Flow executed:");
   console.log("  ┌──────────────────────────────────────────────────────┐");
@@ -316,7 +316,7 @@ async function main() {
   console.log("  Two AI agents with separate wallets discover each other,");
   console.log("  negotiate payment via smart contract escrow,");
   console.log("  exchange services, and build on-chain reputation");
-  console.log("  — all on TON blockchain.\n");
+  console.log(" , all on TON blockchain.\n");
 }
 
 export async function run(): Promise<TestResult> {

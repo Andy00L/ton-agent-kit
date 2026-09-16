@@ -1,4 +1,4 @@
-// tests/17-mcp-sse.ts — Section 16: MCP SSE Transport
+// tests/17-mcp-sse.ts, Section 16: MCP SSE Transport
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 const http = require("http");

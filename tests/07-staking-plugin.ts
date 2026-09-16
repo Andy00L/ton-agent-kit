@@ -1,4 +1,4 @@
-// tests/07-staking-plugin.ts — Section 6: Staking Plugin
+// tests/07-staking-plugin.ts, Section 6: Staking Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {

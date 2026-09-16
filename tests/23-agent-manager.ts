@@ -1,4 +1,4 @@
-// tests/23-agent-manager.ts — Wrapped from test-agent-manager.ts
+// tests/23-agent-manager.ts, Wrapped from test-agent-manager.ts
 /**
  * Agent Lifecycle Manager Test Suite
  */

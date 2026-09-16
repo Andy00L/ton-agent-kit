@@ -1,4 +1,4 @@
-// tests/04-nft-plugin.ts — Section 3: NFT Plugin
+// tests/04-nft-plugin.ts, Section 3: NFT Plugin
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 export async function run(): Promise<TestResult> {
@@ -6,7 +6,7 @@ export async function run(): Promise<TestResult> {
   const { agent: mainAgent } = await createMainnetAgent();
   const { test, testError, skip, result } = createTestContext();
 
-  await test("get_nft_collection (Telegram Usernames — mainnet)", async () => {
+  await test("get_nft_collection (Telegram Usernames, mainnet)", async () => {
     const r = await mainAgent.runAction("get_nft_collection", {
       collectionAddress: "EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi",
     });

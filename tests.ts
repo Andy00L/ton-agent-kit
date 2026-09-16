@@ -1,5 +1,5 @@
 /**
- * TON Agent Kit — Interactive Test Runner
+ * TON Agent Kit: Interactive Test Runner
  *
  * Usage:
  *   bun run tests.ts              Interactive menu

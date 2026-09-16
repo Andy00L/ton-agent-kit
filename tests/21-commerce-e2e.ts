@@ -1,4 +1,4 @@
-// tests/21-commerce-e2e.ts — Wrapped from test-commerce.ts
+// tests/21-commerce-e2e.ts, Wrapped from test-commerce.ts
 /**
  * Agent Commerce E2E Test Suite
  * 5 wallets, 2 servers, full commerce flow
@@ -89,7 +89,7 @@ async function createEscrowWithRetry(agent: any, params: any, retries = 2): Prom
 }
 
 function skip(name: string, reason: string) {
-  console.log(`  ⏭️  ${name} — ${reason}`);
+  console.log(`  ⏭️  ${name}, ${reason}`);
   skipped++;
 }
 
@@ -120,7 +120,7 @@ async function main() {
 
   console.log(`
 ╔${"═".repeat(W - 2)}╗
-║${" ".repeat(6)}🏪 Agent Commerce E2E — Full Protocol Test${" ".repeat(7)}║
+║${" ".repeat(6)}🏪 Agent Commerce E2E, Full Protocol Test${" ".repeat(7)}║
 ╚${"═".repeat(W - 2)}╝
 
   Network:   testnet
@@ -382,7 +382,7 @@ ${"─".repeat(W)}`);
     sectionEnd("Escrow + x402 Happy Path");
 
     // SECTION 4: Auto-Release
-    header("⏰", 4, "Auto-Release", "Buyer receives service but doesn't release — seller still paid");
+    header("⏰", 4, "Auto-Release", "Buyer receives service but doesn't release, seller still paid");
 
     const escrow2 = await test("Agent B creates escrow (1 min deadline)", async () => {
       const r = await agentB.runAction("create_escrow", {
@@ -429,7 +429,7 @@ ${"─".repeat(W)}`);
     console.log(`\n  ⏳ 20s cooldown before next escrow...\n`);
     await delay(20000);
 
-    // SECTION 5: No Delivery — Buyer Protected
+    // SECTION 5: No Delivery, Buyer Protected
     header("🛡️", 5, "No Delivery (Buyer Protected)", "Seller doesn't deliver → buyer gets refund");
 
     const escrow3 = await test("Agent B creates escrow (1 min deadline)", async () => {
@@ -453,7 +453,7 @@ ${"─".repeat(W)}`);
 
       await delay(12000);
 
-      console.log(`\n  ⏳ Waiting for deadline (~50s — seller never delivers)...\n`);
+      console.log(`\n  ⏳ Waiting for deadline (~50s, seller never delivers)...\n`);
       await delay(50000);
 
       await test("No-delivery: auto-release then refund (contract-version adaptive)", async () => {
@@ -467,9 +467,9 @@ ${"─".repeat(W)}`);
 
         if (autoReleased) {
           console.log(`     Old contract: auto-released without delivery check`);
-          console.log(`     (New contract will block this — recompile to enable deliveryConfirmed)`);
+          console.log(`     (New contract will block this, recompile to enable deliveryConfirmed)`);
         } else {
-          console.log(`     Auto-release blocked (no delivery confirmation) — refunding...`);
+          console.log(`     Auto-release blocked (no delivery confirmation), refunding...`);
           const r = await agentB.runAction("refund_escrow", { escrowId: escrow3.escrowId });
           console.log(`     Refund: ${r.status}`);
         }

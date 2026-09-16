@@ -1,4 +1,4 @@
-// tests/13-cross-plugin-edge.ts — Section 12: Cross-Plugin Edge Cases
+// tests/13-cross-plugin-edge.ts, Section 12: Cross-Plugin Edge Cases
 import {
   createTestnetAgent,
   createMainnetAgent,
@@ -16,7 +16,7 @@ export async function run(): Promise<TestResult> {
   const { agent: mainAgent } = await createMainnetAgent();
   const { test, testError, skip, result } = createTestContext();
 
-  await test("runAction with unknown action name — throws", async () => {
+  await test("runAction with unknown action name, throws", async () => {
     try {
       await agent.runAction("nonexistent_action", {});
       throw new Error("Should have thrown");

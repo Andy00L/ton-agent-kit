@@ -1,4 +1,4 @@
-// tests/10-escrow-onchain.ts — Section 9: Escrow On-Chain
+// tests/10-escrow-onchain.ts, Section 9: Escrow On-Chain
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -24,7 +24,7 @@ export async function run(): Promise<TestResult> {
     console.log(`\n  ⏳ 12s for deployment...\n`);
     await delay(12000);
 
-    await test("get_escrow_info (after create — status: created)", async () => {
+    await test("get_escrow_info (after create, status: created)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
       console.log(`     On-chain status: ${r.onChain.status}`);
       console.log(`     Depositor:  ${r.onChain.depositor?.slice(0, 24)}...`);
@@ -42,7 +42,7 @@ export async function run(): Promise<TestResult> {
     console.log(`\n  ⏳ 12s for deposit confirmation...\n`);
     await delay(12000);
 
-    await test("get_escrow_info (after deposit — status: funded)", async () => {
+    await test("get_escrow_info (after deposit, status: funded)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
       console.log(`     Status: ${r.onChain.status} | Balance: ${r.onChain.balance}`);
       if (r.onChain.status !== "funded") throw new Error(`Expected funded, got ${r.onChain.status}`);
@@ -56,7 +56,7 @@ export async function run(): Promise<TestResult> {
     console.log(`\n  ⏳ 12s for release confirmation...\n`);
     await delay(12000);
 
-    await test("get_escrow_info (after release — released: true, balance: 0)", async () => {
+    await test("get_escrow_info (after release, released: true, balance: 0)", async () => {
       const r = await agent.runAction("get_escrow_info", { escrowId: escrow.escrowId });
       console.log(`     Released: ${r.onChain.released} | Balance: ${r.onChain.balance}`);
       if (!r.onChain.released) throw new Error("Expected released: true");
@@ -64,13 +64,13 @@ export async function run(): Promise<TestResult> {
   }
 
   await testError(
-    "create_escrow (missing beneficiary — schema rejects)",
+    "create_escrow (missing beneficiary, schema rejects)",
     () => agent.runAction("create_escrow", { amount: "0.1" }),
     "Invalid params",
   );
 
   await testError(
-    "create_escrow (missing amount — schema rejects)",
+    "create_escrow (missing amount, schema rejects)",
     () => agent.runAction("create_escrow", { beneficiary: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3" }),
     "Invalid params",
   );
@@ -81,7 +81,7 @@ export async function run(): Promise<TestResult> {
   });
 
   await testError(
-    "get_escrow_info (nonexistent ID — rejects)",
+    "get_escrow_info (nonexistent ID, rejects)",
     () => agent.runAction("get_escrow_info", { escrowId: "escrow_fake_123" }),
     "not found",
   );

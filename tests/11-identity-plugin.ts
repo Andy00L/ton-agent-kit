@@ -1,4 +1,4 @@
-// tests/11-identity-plugin.ts — Section 10: Identity Plugin
+// tests/11-identity-plugin.ts, Section 10: Identity Plugin
 import { createTestnetAgent, createTestContext, TestResult } from "./_setup";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -18,7 +18,7 @@ export async function run(): Promise<TestResult> {
     return r;
   });
 
-  await test("register_agent (second agent — minimal)", async () => {
+  await test("register_agent (second agent, minimal)", async () => {
     const r = await agent.runAction("register_agent", {
       name: "test-v4-data",
       capabilities: ["price_feed"],
@@ -42,7 +42,7 @@ export async function run(): Promise<TestResult> {
     console.log(`     Found: 0 (correct)`);
   });
 
-  await test("discover_agent (all — no filter)", async () => {
+  await test("discover_agent (all, no filter)", async () => {
     const r = await agent.runAction("discover_agent", {});
     console.log(`     Total agents: ${r.count}`);
   });
@@ -90,7 +90,7 @@ export async function run(): Promise<TestResult> {
   }
 
   await testError(
-    "reputation (nonexistent agent — rejects)",
+    "reputation (nonexistent agent, rejects)",
     () => agent.runAction("get_agent_reputation", { agentId: "fake_agent_999" }),
     "not found",
   );
@@ -123,7 +123,7 @@ export async function run(): Promise<TestResult> {
     if (r.available !== true) throw new Error("Expected available=true");
   });
 
-  await test("discover_agent (available only — default)", async () => {
+  await test("discover_agent (available only, default)", async () => {
     const r = await agent.runAction("discover_agent", { capability: "testing" });
     console.log(`     Found (available): ${r.count}`);
   });
@@ -169,8 +169,8 @@ export async function run(): Promise<TestResult> {
     console.log(`     Gas spent: ${spent.toFixed(4)} TON (should be 0.03-0.07)`);
     // With real refund: ~0.03-0.06 TON. With bounce (contract dead): ~0.004 TON.
     // Bounce would pass < 0.08 check but fail > 0.01 check.
-    if (spent < 0.01) throw new Error(`Spent only ${spent.toFixed(4)} TON — contract likely bouncing (dead)`);
-    if (spent > 0.08) throw new Error(`Too much gas spent: ${spent.toFixed(4)} TON — refund not working`);
+    if (spent < 0.01) throw new Error(`Spent only ${spent.toFixed(4)} TON, contract likely bouncing (dead)`);
+    if (spent > 0.08) throw new Error(`Too much gas spent: ${spent.toFixed(4)} TON, refund not working`);
   });
 
   await test("storageInfo getter callable", async () => {
@@ -181,10 +181,10 @@ export async function run(): Promise<TestResult> {
       });
       console.log(`     Result: ${JSON.stringify(r.result || r).slice(0, 120)}`);
     } catch (e: any) {
-      // Getter exists but SDK may not decode Tact struct — that's OK
+      // Getter exists but SDK may not decode Tact struct, that's OK
       console.log(`     Getter exists (decode: ${e.message?.slice(0, 60)})`);
     }
-    // Verify simpler getter works — storageFundBalance returns a plain Int
+    // Verify simpler getter works, storageFundBalance returns a plain Int
     const r2 = await agent.runAction("call_contract_method", {
       address: "0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9",
       method: "storageFundBalance",

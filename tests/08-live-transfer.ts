@@ -1,4 +1,4 @@
-// tests/08-live-transfer.ts — Section 7: Live Transfer
+// tests/08-live-transfer.ts, Section 7: Live Transfer
 import { createTestnetAgent, createMainnetAgent, createTestContext, TestResult } from "./_setup";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -9,7 +9,7 @@ export async function run(): Promise<TestResult> {
   const { test, testError, skip, result } = createTestContext();
 
   // Get initial balance for later verification
-  const bal = await test("get_balance (initial — for later verification)", async () => {
+  const bal = await test("get_balance (initial, for later verification)", async () => {
     const r = await agent.runAction("get_balance", {});
     console.log(`     Balance: ${r.balance} TON`);
     if (parseFloat(r.balance) <= 0) throw new Error("Balance is 0");
@@ -17,7 +17,7 @@ export async function run(): Promise<TestResult> {
   });
 
   // ── simulate flag (dry-run) ──
-  await test("transfer_ton simulate=true (dry-run — does NOT send)", async () => {
+  await test("transfer_ton simulate=true (dry-run, does NOT send)", async () => {
     const r = await agent.runAction("transfer_ton", {
       to: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3",
       amount: "0.01",
@@ -48,9 +48,9 @@ export async function run(): Promise<TestResult> {
   await delay(10000);
 
   // ── simulateFirst flag (failure path) ──
-  await test("transfer_ton simulateFirst=true (999999 TON — aborts)", async () => {
+  await test("transfer_ton simulateFirst=true (999999 TON, aborts)", async () => {
     // Note: the balance check fires before BOC construction, so this throws
-    // directly. That's the correct behavior — fast-fail for obvious cases.
+    // directly. That's the correct behavior, fast-fail for obvious cases.
     try {
       const r = await agent.runAction("transfer_ton", {
         to: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3",
@@ -62,7 +62,7 @@ export async function run(): Promise<TestResult> {
       if (r.success !== false) throw new Error("Expected success=false");
       console.log(`     Aborted: ${r.reason || r.message}`);
     } catch (err: any) {
-      // Balance guard threw — also correct
+      // Balance guard threw, also correct
       if (err.message.includes("Insufficient")) {
         console.log(`     Correctly rejected: ${err.message.slice(0, 80)}`);
       } else {
@@ -72,7 +72,7 @@ export async function run(): Promise<TestResult> {
   });
 
   // ── Normal mode (unchanged behavior) ──
-  await test("transfer_ton (0.01 TON → wallet B — normal mode)", async () => {
+  await test("transfer_ton (0.01 TON → wallet B, normal mode)", async () => {
     const r = await agent.runAction("transfer_ton", {
       to: "0QBQ-vTFmOnzUMYx66UHSljnn1DzP9iCE8qw77flvWS9VXK3",
       amount: "0.01",
