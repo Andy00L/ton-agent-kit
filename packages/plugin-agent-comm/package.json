@@ -1,5 +1,31 @@
 {
   "name": "@ton-agent-kit/plugin-agent-comm",
   "version": "1.3.6",
-  "main": "src/index.ts"
+  "description": "Agent communication plugin for TON Agent Kit: on-chain intent broadcasting, offer negotiation, and deal settlement",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@ton-agent-kit/core": "^1.0.0",
+    "@ton-agent-kit/plugin-identity": "^1.6.0"
+  },
+  "peerDependencies": {
+    "zod": ">=4.0.0",
+    "@ton/core": ">=0.63.1",
+    "@ton/ton": ">=16.2.0"
+  },
+  "keywords": [
+    "ton",
+    "blockchain",
+    "ai",
+    "agent",
+    "sdk"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Andy00L/ton-agent-kit.git"
+  }
 }

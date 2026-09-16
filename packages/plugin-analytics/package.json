@@ -1,7 +1,7 @@
 {
   "name": "@ton-agent-kit/plugin-analytics",
   "version": "1.1.2",
-  "description": "Analytics plugin for TON Agent Kit â€” transaction history and wallet info",
+  "description": "Analytics plugin for TON Agent Kit: transaction history and wallet info",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {

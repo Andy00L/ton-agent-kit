@@ -17,3 +17,10 @@ coverage/
 bun.lock
 setup.py
 .claude
+
+# Compiler output accidentally emitted next to the sources
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+
+# Throwaway probes and one-off outputs
+.scratch/

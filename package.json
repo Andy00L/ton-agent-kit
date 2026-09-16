@@ -1,7 +1,7 @@
 {
   "name": "ton-agent-kit",
   "version": "1.0.0",
-  "description": "Connect any AI agent to TON protocols — the Solana Agent Kit for TON",
+  "description": "Connect any AI agent to TON protocols: the Solana Agent Kit for TON",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -33,23 +33,23 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.4.2"
   },
   "dependencies": {
     "@grammyjs/runner": "^2.0.3",
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "@ston-fi/omniston-sdk": "^0.7.8",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@ston-fi/omniston-sdk": "^0.7.9",
     "@tact-lang/compiler": "^1.6.13",
     "@ton/core": "^0.63.1",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^16.2.2",
     "@types/express": "^5.0.6",
     "express": "^5.2.1",
-    "grammy": "^1.41.1",
-    "openai": "^6.28.0",
-    "zod": "^4.3.6"
+    "grammy": "^1.46.0",
+    "openai": "^6.49.0",
+    "zod": "^4.6.5"
   },
   "overrides": {
-    "zod": "4.3.6"
+    "zod": "$zod"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@ton-agent-kit/plugin-dns",
   "version": "1.0.4",
-  "description": "DNS plugin for TON Agent Kit â€” resolve and manage .ton domain names",
+  "description": "DNS plugin for TON Agent Kit: resolve and manage .ton domain names",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
