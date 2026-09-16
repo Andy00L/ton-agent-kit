@@ -13,6 +13,7 @@
     "build:plugins": "npm run build -w packages/plugin-token -w packages/plugin-defi -w packages/plugin-nft -w packages/plugin-dns -w packages/plugin-payments",
     "build:mcp": "npm run build -w packages/mcp-server",
     "test": "npm test --workspaces --if-present",
+    "test:contracts": "bun contracts/test/escrow.sandbox.test.mjs",
     "clean": "rm -rf packages/*/dist examples/*/dist node_modules"
   },
   "keywords": [
@@ -32,6 +33,8 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@ton/sandbox": "^0.44.0",
+    "@ton/test-utils": "^0.12.0",
     "dotenv": "^17.4.2"
   },
   "dependencies": {

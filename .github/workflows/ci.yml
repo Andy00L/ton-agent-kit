@@ -68,6 +68,8 @@ jobs:
         run: bun packages/core/test/methods-proxy.test.mjs
       - name: Actions can reach other actions through the context
         run: bun packages/core/test/context-run-action.test.mjs
+      - name: Escrow contract behaviour in the sandbox
+        run: npm run test:contracts
 
   manifests:
     name: Package manifests
