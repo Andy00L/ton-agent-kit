@@ -2,6 +2,12 @@ import { z } from "zod";
 import { Address, toNano, internal } from "@ton/core";
 import { defineAction, type SwapResult, sendTransaction } from "@ton-agent-kit/core";
 
+/** One hundred percent expressed in basis points. */
+const BASIS_POINTS = 10_000n;
+
+/** Slippage applied when the caller names none, in percent. */
+const DEFAULT_SLIPPAGE_PERCENT = 1;
+
 export const swapDedustAction = defineAction<
   { fromToken: string; toToken: string; amount: string; slippage?: number },
   SwapResult
@@ -13,7 +19,13 @@ export const swapDedustAction = defineAction<
     fromToken: z.string().describe("Source token: 'TON' or Jetton master address"),
     toToken: z.string().describe("Destination token: 'TON' or Jetton master address"),
     amount: z.string().describe("Amount to swap in source token units (e.g., '10')"),
-    slippage: z.number().optional().default(1).describe("Slippage tolerance in percent (default: 1)"),
+    slippage: z
+      .number()
+      .min(0)
+      .max(100)
+      .optional()
+      .default(DEFAULT_SLIPPAGE_PERCENT)
+      .describe("Slippage tolerance in percent, 0 to 100 (default: 1). Fractions are accepted."),
   }),
   handler: async (agent, params) => {
     // Dynamic import for DeDust SDK
@@ -53,8 +65,13 @@ export const swapDedustAction = defineAction<
       amountIn,
     });
 
-    // Apply slippage
-    const minAmountOut = (amountOut * BigInt(100 - (params.slippage || 1))) / 100n;
+    // Slippage is a percentage and may be fractional, so the arithmetic runs in
+    // basis points. BigInt(100 - 0.5) throws: a bigint cannot be built from a
+    // non-integer, which made every fractional slippage a RangeError. The
+    // nullish default also keeps an explicit 0 from being read as "unset".
+    const slippagePercent = params.slippage ?? DEFAULT_SLIPPAGE_PERCENT;
+    const slippageBps = BigInt(Math.round(slippagePercent * 100));
+    const minAmountOut = (amountOut * (BASIS_POINTS - slippageBps)) / BASIS_POINTS;
 
     // Build a sender shim compatible with DeDust SDK
     const sender = {

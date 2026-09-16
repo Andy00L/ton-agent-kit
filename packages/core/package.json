@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node --experimental-strip-types test/cache.test.mjs"
+    "test": "node --experimental-strip-types test/cache.test.mjs && node --experimental-strip-types test/amounts.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

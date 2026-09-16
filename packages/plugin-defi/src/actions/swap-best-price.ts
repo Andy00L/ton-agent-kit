@@ -1,7 +1,15 @@
 import { z } from "zod";
 import { Address, internal, Cell } from "@ton/core";
 
-import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import {
+  defineAction,
+  describeError,
+  fetchJettonMetadata,
+  fromBaseUnits,
+  sendTransaction,
+  toBaseUnits,
+  tonapiBase,
+} from "@ton-agent-kit/core";
 import type { Quote, QuoteResponseEvent } from "@ston-fi/omniston-sdk";
 
 /**
@@ -38,7 +46,6 @@ const TOKEN_ADDRESSES: Record<string, string> = {
   TON: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
   USDT: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
   NOT: "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT",
-  DOGS: "EQCvxJy4eG8hyHBFsZ7DUELKnuN0w-none-UGKjbGTbsGoODOG",
   STON: "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO",
 };
 
@@ -82,9 +89,26 @@ export const swapBestPriceAction = defineAction<SwapBestPriceInput, SwapBestPric
     const fromAddr = resolveTokenAddress(params.fromToken);
     const toAddr = resolveTokenAddress(params.toToken);
 
-    // Convert amount to base units (nanotons / base jetton units, 9 decimals)
-    const decimals = 9;
-    const bidUnits = (BigInt(Math.round(parseFloat(params.amount) * 1e9))).toString();
+    // Decimals are declared per token and the two legs rarely agree. Omniston
+    // quotes carry base units only, so reading them is the only way to report
+    // an amount: a 38.5 USDT quote formatted at 9 decimals reads "0.0385".
+    const apiBase = tonapiBase(agent.network);
+    const [bidDecimals, askDecimals] = await Promise.all([
+      resolveTokenDecimals(apiBase, fromAddr, agent.config.TONAPI_KEY),
+      resolveTokenDecimals(apiBase, toAddr, agent.config.TONAPI_KEY),
+    ]);
+    if (!bidDecimals.ok) {
+      return { success: false, error: bidDecimals.reason, message: bidDecimals.reason };
+    }
+    if (!askDecimals.ok) {
+      return { success: false, error: askDecimals.reason, message: askDecimals.reason };
+    }
+
+    const bid = toBaseUnits(params.amount, bidDecimals.value);
+    if (!bid.ok) {
+      return { success: false, error: bid.reason, message: bid.reason };
+    }
+    const bidUnits = bid.value.toString();
 
     // Create Omniston instance
     // Always use production, the sandbox has limited or no resolvers
@@ -170,7 +194,7 @@ export const swapBestPriceAction = defineAction<SwapBestPriceInput, SwapBestPric
 
       // Human-readable output amount
       const askUnits = BigInt(bestQuote.askUnits);
-      const amountOut = formatUnits(askUnits, decimals);
+      const amountOut = fromBaseUnits(askUnits, askDecimals.value);
 
       // Effective price
       const amountInNum = parseFloat(params.amount);
@@ -282,6 +306,27 @@ export const swapBestPriceAction = defineAction<SwapBestPriceInput, SwapBestPric
 /**
  * Resolve a token symbol or address to an Omniston-compatible address.
  */
+/** Decimals of the native coin. TON has no jetton master to read. */
+const NATIVE_TON_DECIMALS = 9;
+
+/**
+ * Decimals for one leg of a swap: fixed for the native coin, read from the
+ * jetton master otherwise.
+ */
+async function resolveTokenDecimals(
+  apiBase: string,
+  tokenAddress: string,
+  apiKey?: string,
+): Promise<{ ok: true; value: number } | { ok: false; reason: string }> {
+  if (tokenAddress === TOKEN_ADDRESSES.TON) {
+    return { ok: true, value: NATIVE_TON_DECIMALS };
+  }
+  const metadata = await fetchJettonMetadata(apiBase, tokenAddress, apiKey);
+  return metadata.ok
+    ? { ok: true, value: metadata.value.decimals }
+    : { ok: false, reason: metadata.reason };
+}
+
 function resolveTokenAddress(token: string): string {
   const upper = token.toUpperCase();
   if (TOKEN_ADDRESSES[upper]) return TOKEN_ADDRESSES[upper];
@@ -289,13 +334,3 @@ function resolveTokenAddress(token: string): string {
   return token;
 }
 
-/**
- * Format base units (bigint) to human-readable string with given decimals.
- */
-function formatUnits(units: bigint, decimals: number): string {
-  const divisor = 10n ** BigInt(decimals);
-  const whole = units / divisor;
-  const frac = units % divisor;
-  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
-  return fracStr ? `${whole}.${fracStr}` : whole.toString();
-}

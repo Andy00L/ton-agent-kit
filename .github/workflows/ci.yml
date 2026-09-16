@@ -34,7 +34,7 @@ jobs:
       - name: Paywall regression checks
         if: matrix.node == '22'
         run: npm test -w packages/x402-middleware
-      - name: Action cache regression checks
+      - name: Action cache and token amount regression checks
         if: matrix.node == '22'
         run: npm test -w packages/core
 

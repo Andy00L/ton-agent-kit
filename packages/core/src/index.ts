@@ -26,6 +26,14 @@ export {
 } from "./wallet";
 export type { SigningWallet, WalletConfig, WalletVersion } from "./wallet";
 
+/** Token amounts: exact conversion between decimal strings and base units */
+export { fromBaseUnits, toBaseUnits } from "./amounts";
+export type { TokenAmountResult } from "./amounts";
+
+/** TonAPI: endpoints, auth headers, and jetton metadata */
+export { fetchJettonMetadata, TONAPI_ENDPOINTS, tonapiBase, tonapiHeaders } from "./tonapi";
+export type { JettonMetadata, JettonMetadataResult } from "./tonapi";
+
 /** Validated JSON over HTTP, the single boundary for upstream API responses */
 export { fetchJson } from "./http";
 export type { JsonResult } from "./http";

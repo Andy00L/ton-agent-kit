@@ -1,18 +1,24 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
 import { JettonMaster, JettonWallet } from "@ton/ton";
-import { defineAction, type TransactionResult, sendTransaction, explorerUrl, toFriendlyAddress } from "@ton-agent-kit/core";
+import {
+  defineAction,
+  fetchJettonMetadata,
+  sendTransaction,
+  toBaseUnits,
+  toFriendlyAddress,
+  tonapiBase,
+} from "@ton-agent-kit/core";
 
-export const transferJettonAction = defineAction<
-  { to: string; amount: string; jettonAddress: string },
-  TransactionResult
->({
+export const transferJettonAction = defineAction({
   name: "transfer_jetton",
   description:
     "Transfer Jettons (TON tokens like USDT, NOT, etc.) to another address. Requires the Jetton master contract address.",
   schema: z.object({
     to: z.string().describe("Destination address"),
-    amount: z.string().describe("Amount to send in token units (e.g., '100')"),
+    amount: z
+      .string()
+      .describe("Amount to send in the token's own units, as a plain decimal string (e.g. '100.5')"),
     jettonAddress: z
       .string()
       .describe("Jetton master contract address (e.g., USDT address on TON)"),
@@ -21,14 +27,26 @@ export const transferJettonAction = defineAction<
     const toAddress = Address.parse(params.to);
     const jettonMasterAddress = Address.parse(params.jettonAddress);
 
-    // Get the sender's Jetton wallet address
-    const jettonMaster = agent.connection.open(
-      JettonMaster.create(jettonMasterAddress)
-    ) as any;
-
-    const jettonWalletAddress = await jettonMaster.getWalletAddress(
-      agent.wallet.address
+    // Decimals are declared per jetton, so the amount cannot be converted
+    // before they are read. USDT on TON declares 6; treating it as 9 sends a
+    // thousand times what the caller asked for.
+    const metadata = await fetchJettonMetadata(
+      tonapiBase(agent.network),
+      params.jettonAddress,
+      agent.config.TONAPI_KEY,
     );
+    if (!metadata.ok) {
+      return { status: "rejected" as const, reason: metadata.reason };
+    }
+
+    const units = toBaseUnits(params.amount, metadata.value.decimals);
+    if (!units.ok) {
+      return { status: "rejected" as const, reason: units.reason };
+    }
+
+    // Get the sender's Jetton wallet address
+    const jettonMaster = agent.connection.open(JettonMaster.create(jettonMasterAddress));
+    const jettonWalletAddress = await jettonMaster.getWalletAddress(agent.wallet.address);
 
     // Build transfer message
     const forwardPayload = beginCell().storeUint(0, 32).storeStringTail("").endCell();
@@ -36,7 +54,7 @@ export const transferJettonAction = defineAction<
     const transferBody = beginCell()
       .storeUint(0xf8a7ea5, 32) // transfer op
       .storeUint(0, 64) // query_id
-      .storeCoins(BigInt(Math.floor(parseFloat(params.amount) * 1e9))) // amount in raw units (assuming 9 decimals)
+      .storeCoins(units.value) // amount in the jetton's own base units
       .storeAddress(toAddress) // destination
       .storeAddress(agent.wallet.address) // response destination
       .storeBit(0) // no custom payload
@@ -54,13 +72,18 @@ export const transferJettonAction = defineAction<
       }),
     ]);
 
+    // sendTransaction returns nothing, so there is no hash to report and no
+    // explorer link to build. Reporting "pending" produced a link to
+    // /transaction/pending, which never resolves.
     return {
-      txHash: "pending",
-      status: "sent",
+      status: "sent" as const,
       to: params.to,
       friendlyTo: toFriendlyAddress(toAddress, agent.network),
-      explorerUrl: explorerUrl("pending", agent.network),
-      fee: "~0.037 TON",
+      amount: params.amount,
+      symbol: metadata.value.symbol,
+      decimals: metadata.value.decimals,
+      baseUnits: units.value.toString(),
+      attached: "0.05 TON, of which 0.01 TON is forwarded to the recipient",
     };
   },
   examples: [
@@ -70,8 +93,17 @@ export const transferJettonAction = defineAction<
         amount: "100",
         jettonAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
       },
-      output: { txHash: "abc123", status: "sent", fee: "~0.037 TON" },
-      description: "Send 100 USDT to an address",
+      output: {
+        status: "sent",
+        to: "EQBx2...",
+        friendlyTo: "EQBx2...",
+        amount: "100",
+        symbol: "USDT",
+        decimals: 6,
+        baseUnits: "100000000",
+        attached: "0.05 TON, of which 0.01 TON is forwarded to the recipient",
+      },
+      description: "Send 100 USDT, which the master declares with 6 decimals",
     },
   ],
 });
