@@ -26,7 +26,7 @@ clone, which it did not before.
   `subwalletNumber` next to `networkGlobalId` instead of inside the client
   context the type declares, so both were dropped. A non-zero workchain or a
   non-zero subwallet number therefore derived a different address from the one
-  the caller asked for.
+  the caller asked for. **Read the upgrade note below before updating.**
   sourceRef: `@ton/ton/dist/wallets/v5r1/WalletV5R1WalletId.d.ts`
 - **Transfers were signed without a send mode.** `createTransfer` has no
   default for `sendMode`, so every call that omitted it serialized an undefined
@@ -105,6 +105,23 @@ clone, which it did not before.
 - `fetchJson`, `describeError`, `isSigningWallet`, `createWalletContract`,
   `openWalletContract`, `sendFromWalletContract` and `DEFAULT_SEND_MODE` are
   now part of the `@ton-agent-kit/core` public surface.
+
+## Upgrade note: wallet v5 addresses
+
+The wallet id fix changes the derived address for some configurations. Checked
+against `@ton/ton` 16.2.2:
+
+| Configuration | Address |
+|---|---|
+| `workchain: 0`, `subwalletNumber: 0` (the default, mainnet and testnet) | unchanged |
+| `subwalletNumber` other than 0 | **changes** |
+| `workchain` other than 0 | **changes** |
+
+If you used the defaults, nothing moves and there is nothing to do. If you set a
+custom `subwalletNumber` or `workchain`, the address this version derives is the
+correct one for that configuration, and your funds are at the address the
+previous version derived. Recover them by pinning the previous package version,
+sweeping the balance, then upgrading.
 
 ## Known issues
 
