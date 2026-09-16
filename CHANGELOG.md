@@ -6,6 +6,119 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Packages under the `@ton-agent-kit` npm scope carry their own versions. The
 version numbers below track the repository snapshot, not any single package.
 
+## [1.3.0] - 2026-09-16
+
+Third and fourth audit passes. The third closed a key-loss path, a fabricated
+transfer recipient and a cache that served write actions. The fourth went after
+optimization, readability and the arithmetic that moves money, and found that
+three packages had never been typechecked at all.
+
+### Fixed
+
+- **`transfer_jetton` sent a thousand times the requested amount for any
+  six-decimal token.** Every jetton amount in the kit was built with
+  `parseFloat(amount) * 1e9`. TonAPI answers `"decimals": "6"` for USDT on TON,
+  and the action's own example is "Send 100 USDT", which built 100000000000
+  base units, that is 100,000 USDT. Decimals are now read off the jetton master
+  and the transfer is refused when they cannot be read.
+- **`swap_best_price` formatted both legs at nine decimals.** A real 38.5 USDT
+  quote came back as `"0.0385"`, and the derived price string carried the same
+  error. Decimals are resolved per leg, the two lookups in parallel.
+- **`swap_dedust` threw `RangeError` on any fractional slippage.**
+  `BigInt(100 - 0.5)` cannot be built, so 0.5% and 2.5% both failed outright,
+  and `slippage: 0` was silently read as 1% through a `||` default. The
+  arithmetic runs in basis points.
+- **The `DOGS` entry in the `swap_best_price` token map was never an address.**
+  Fifty characters carrying a literal `-none-` placeholder, which
+  `Address.parse` rejects. Deleted. The other four parse.
+- **Every on-chain rating was built with the wrong opcode.**
+  `reputation-helpers.ts` carried four opcodes copied by hand from the compiled
+  Tact wrapper. `OP_RATE` read 2804297358 while the contract answers to
+  1335410632, a value that appears nowhere else in the repository. The
+  generated `loadRate` returns `Invalid prefix` for that body, so
+  `get_agent_reputation` with `addTask=true` burned a bounced transaction and
+  still reported `onChain: true`. The four hand-rolled builders are deleted in
+  favour of the generated `storeX` serializers.
+- **`createDcaStrategy` and `createPriceMonitorStrategy` called an action that
+  does not exist.** Both named `get_token_price`; the DeFi action is
+  `get_price`. Both templates failed on their first step, on every run.
+- **Any schedule longer than 24.8 days became a 1 ms interval.** 30 days is
+  2,592,000,000 ms, past the 2^31-1 that Node timers hold, so Node substituted
+  1: measured at 28 ticks in 402 ms, a monthly strategy firing about a hundred
+  times a second. `parseSchedule` refuses it, and refuses a zero interval too.
+- **Scheduled ticks overlapped.** `setInterval` does not wait for an async
+  callback, so a run that outlived its interval started again on top of itself
+  and the second run's `reset()` cleared results the first was still reading.
+- **`createPaymentServer` threw `ReferenceError: require is not defined`.** It
+  reached for `require("express")` in a module Node parses as an ES module. The
+  1.2.0 release fixed exactly this inside `FileReplayStore` and missed this one.
+- **Every paid route built its own default replay store over the same file.**
+  `new FileReplayStore()` was written as a destructuring default, evaluated per
+  `tonPaywall()` call, so four routes held four stores with four in-memory sets
+  and every write erased the other three. A restart then made every payment on
+  every other route replayable. The default is one shared instance per file
+  path, exported as `defaultReplayStore`.
+- **One verified payment served unlimited responses for `proofTTL` seconds.**
+  The cache exists so a client that paid and lost the response can retry, but
+  nothing counted the uses. At the 300 second default that is one 0.001 TON
+  payment buying every request carrying its hash for five minutes. The budget
+  is three.
+- **`register_agent` threw out of its handler** on a JSON `capabilities` string
+  that did not decode to an array, because `JSON.parse` returns `any` and
+  `{"a":1}` reached `capabilities.join`.
+- Third-pass fixes, previously unrecorded here: a key-loss path in
+  `ensureServerSecret`, an argument remapper in `runLoop` that could rename a
+  jetton master address into the `to` field of a transfer, and an action cache
+  whose denylist let unlisted write actions return cached successes.
+
+### Changed
+
+- **Three packages had no build script, so CI never typechecked them.**
+  `npm run build` resolves to `npm run build --workspaces --if-present`, which
+  skips a workspace silently. `x402-middleware` (the package that went to 2.0.0
+  for a paywall bypass), `strategies` and `plugin-agent-comm` had none: 2837
+  lines went through CI unchecked. All three now declare a tsconfig and a
+  build. The first two were clean. `strategies` was not.
+- **`strategies` did not compile.** Every lifecycle hook was called with the
+  strategy name in place of its first declared argument, `strategy.onError`
+  received two of the three arguments it declares, `onComplete` was called with
+  two different shapes on two paths, and `StrategyContext` declared no
+  `getResult` although every template calls it. Eleven errors, now zero.
+- **Token amount conversion lives once**, in `@ton-agent-kit/core`, as
+  `toBaseUnits` and `fromBaseUnits`. Both work on the decimal string and never
+  touch `Number`, so a balance above 2^53 keeps every digit and a small one
+  does not come back in scientific notation. `toBaseUnits` returns a reason
+  rather than a guess for scientific notation, signs, junk, and more decimal
+  places than the token declares.
+- `TONAPI_ENDPOINTS`, `tonapiBase`, `tonapiHeaders` and `fetchJettonMetadata`
+  are exported from core. Five packages were rebuilding the endpoint ternary
+  inline, sixteen times between them.
+- The documentation was checked claim by claim against the code. Two examples
+  called methods that do not exist, `docs/x402-protocol.md` still published the
+  amount tolerance that was the paywall bypass, two version tables were wrong
+  in 21 of 21 rows, and `examples/telegram-bot` was referenced four times
+  without existing. The README gained the clone-and-build section it never had,
+  and a Known limitations section.
+- 150 long dashes across the 28 test suites and the runner became commas.
+
+### Added
+
+- `packages/core/test/amounts.test.mjs`, 8 checks including the exact 1000x
+  factor against the arithmetic that was deleted.
+- `packages/plugin-identity/test/message-bodies.test.mjs`, 5 checks: each
+  message body round-trips through the generated parser, the Rate opcode
+  equals the value in the ABI header map, and no source file writes an opcode
+  by hand.
+- `packages/strategies/test/scheduler.test.mjs`, 9 checks covering the timer
+  limit, the overlap guard, and a cross-check that every action a shipped
+  template calls is registered by one of the twelve plugins.
+- Four checks in `packages/x402-middleware/test/verification.test.mjs`. One
+  drives the real middleware over a stubbed transaction six times and asserts
+  exactly three responses, then three 402s.
+- CI runs all of these. The Bun job installs dependencies and covers
+  `wallet-store` and `plugin-identity`; the Node 22 job covers `core`,
+  `x402-middleware` and `strategies`.
+
 ## [1.2.0] - 2026-09-16
 
 Second audit pass, concentrated on the paths that move money. Three defects in
@@ -195,12 +308,13 @@ sweeping the balance, then upgrading.
 2. **`@ton/ton` 16.3.0 has not been adopted.** The range stays `^16.2.2`. The
    release changes the wallet v5 types and the shape of
    `account.balance.coins`, so it needs a pass with on-chain tests.
-3. **Correction to the line that stood here.** An earlier revision claimed the
-   `tests/` scripts have no runner. They do: `tests.ts` at the repository root
-   is an interactive runner (`bun run tests.ts`), documented in the README, and
-   it covers 28 suites. What is true is narrower: several packages still
-   declare `"test": "jest"` with no jest configuration. `core`,
-   `x402-middleware` and `wallet-store` now run real checks through `npm test`.
+3. **16 of the 21 packages have no `test` script**, which is honest: no package
+   declares a runner it does not have, and the `"test": "jest"` entries with no
+   jest configuration are gone. `core`, `x402-middleware`, `strategies`,
+   `wallet-store` and `plugin-identity` run real checks through `npm test`, all
+   of them in CI. The `tests/` tree is separate: `tests.ts` at the repository
+   root is an interactive runner covering 28 suites, and 27 of them need a
+   funded testnet wallet, so none of those run in CI.
 4. **The contracts have no test harness.** `tests/20-x402-security.ts` covers
    replay and the wrong recipient but never an underpayment, which is why the
    paywall bypass fixed in 1.2.0 survived it. There is no `@ton/sandbox` or
