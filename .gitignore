@@ -24,3 +24,6 @@ packages/*/src/**/*.d.ts
 
 # Throwaway probes and one-off outputs
 .scratch/
+
+# npm auth token, never committed
+.npmrc
