@@ -40,6 +40,9 @@ jobs:
       - name: Strategy scheduling regression checks
         if: matrix.node == '22'
         run: npm test -w packages/strategies
+      - name: Task dispatch regression checks
+        if: matrix.node == '22'
+        run: npm test -w packages/orchestrator
 
   bun-checks:
     name: Regression checks that need Bun
@@ -59,6 +62,8 @@ jobs:
         run: bun packages/wallet-store/test/secret.test.mjs
       - name: Reputation message bodies match the contract
         run: bun packages/plugin-identity/test/message-bodies.test.mjs
+      - name: The agent.methods proxy is not a thenable
+        run: bun packages/core/test/methods-proxy.test.mjs
 
   manifests:
     name: Package manifests

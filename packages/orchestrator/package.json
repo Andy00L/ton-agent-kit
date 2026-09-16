@@ -8,7 +8,8 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --experimental-strip-types test/dispatcher.test.mjs"
   },
   "peerDependencies": {
     "@ton-agent-kit/core": ">=1.0.0",

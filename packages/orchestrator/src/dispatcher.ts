@@ -3,6 +3,19 @@ import type { AgentConfig, Task, TaskResult, SwarmOptions } from "./types";
 import type { EventBus } from "./events";
 
 /**
+ * Turn a caught value into a message without assuming it is an `Error`.
+ *
+ * `@ton-agent-kit/core` exports the same helper, but this package declares no
+ * dependency on it and imports nothing from it, so three lines stay here rather
+ * than pulling the whole SDK in for them.
+ */
+function describeSettlementError(caught: unknown): string {
+  if (caught instanceof Error) return caught.message;
+  if (typeof caught === "string") return caught;
+  return String(caught);
+}
+
+/**
  * Wraps a promise with a timeout that rejects if the promise does not settle within the given duration.
  *
  * @typeParam T - The resolved type of the wrapped promise
@@ -64,8 +77,8 @@ export class Dispatcher {
   /**
    * Execute all tasks respecting dependency order.
    * Tasks without unmet dependencies run in parallel (via `Promise.allSettled`).
-   * Results from completed dependencies are injected as `_context` in params,
-   * and matching result fields are auto-mapped to action parameter names.
+   * Result fields of completed dependencies whose names match a parameter of
+   * the action are auto-mapped into its params.
    *
    * @param tasks - The validated task plan to execute
    * @param agents - Map of agent name to {@link AgentConfig} containing the agent instances
@@ -117,8 +130,10 @@ export class Dispatcher {
       };
 
       /**
-       * Build params for a task by auto-mapping dependency result fields
-       * to matching parameter names, plus _context as fallback.
+       * Build params for a task by auto-mapping dependency result fields to
+       * matching parameter names. A _context bag used to be attached here as a
+       * fallback, but runAction parses params through the action's zod schema
+       * and zod strips unknown keys, so no handler ever received it.
        */
       const buildParams = (
         task: Task,
@@ -128,13 +143,10 @@ export class Dispatcher {
 
         const paramNames = getActionParamNames(agentConfig, task.action);
         const merged = { ...task.params };
-        const ctx: Record<string, any> = {};
 
         for (const depId of task.dependsOn) {
           const depResult = resultMap.get(depId);
           if (!depResult || !depResult.result) continue;
-
-          ctx[depId] = depResult.result;
 
           // Auto-map: if the dependency result has a key that matches
           // one of this action's parameter names, inject it
@@ -147,7 +159,6 @@ export class Dispatcher {
           }
         }
 
-        merged._context = ctx;
         return merged;
       };
 
@@ -155,9 +166,20 @@ export class Dispatcher {
       const executeTask = async (task: Task): Promise<TaskResult> => {
         const agentConfig = agents.get(task.agent);
         if (!agentConfig) {
-          throw new Error(
-            `Agent '${task.agent}' not found. Available: ${[...agents.keys()].join(", ")}`,
-          );
+          // Returned, never thrown. A rejection here used to arrive in the
+          // batch as taskId "unknown", so pending.delete removed nothing, the
+          // loop re-selected the same tasks forever and results grew without
+          // bound. Measured at 148 s of CPU and 1.15 GB with two tasks naming
+          // a missing agent.
+          return {
+            taskId: task.id,
+            agent: task.agent,
+            action: task.action,
+            result: null,
+            error: `Agent '${task.agent}' not found. Available: ${[...agents.keys()].join(", ")}`,
+            duration: 0,
+            timestamp: Date.now(),
+          };
         }
 
         const params = buildParams(task, agentConfig);
@@ -167,7 +189,7 @@ export class Dispatcher {
         this.events.log(`Starting: ${label}`);
 
         const start = Date.now();
-        let lastError: Error | null = null;
+        let lastFailure = "no attempt ran";
 
         for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
           if (attempt > 0) {
@@ -198,10 +220,10 @@ export class Dispatcher {
               `Completed: ${label} in ${taskResult.duration}ms`,
             );
             return taskResult;
-          } catch (e) {
-            lastError = e as Error;
+          } catch (caught: unknown) {
+            lastFailure = describeSettlementError(caught);
             this.events.log(
-              `Error in ${label} (attempt ${attempt + 1}): ${lastError.message}`,
+              `Error in ${label} (attempt ${attempt + 1}): ${lastFailure}`,
             );
           }
         }
@@ -212,31 +234,38 @@ export class Dispatcher {
           agent: task.agent,
           action: task.action,
           result: null,
-          error: lastError!.message,
+          error: lastFailure,
           duration: Date.now() - start,
           timestamp: Date.now(),
         };
-        this.events.taskError(task, lastError!);
-        this.events.log(`Failed: ${label} — ${lastError!.message}`);
+        // A non-null assertion stood here. With maxRetries below zero the loop
+        // body never runs, lastError stays null, and reading .message off it
+        // throws out of a function whose whole job is to report failures.
+        this.events.taskError(task, new Error(lastFailure));
+        this.events.log(`Failed: ${label}, ${lastFailure}`);
         return taskResult;
       };
 
       let batch: TaskResult[];
       if (this.parallel && ready.length > 1) {
         const settled = await Promise.allSettled(ready.map(executeTask));
-        batch = settled.map((s) =>
-          s.status === "fulfilled"
-            ? s.value
-            : {
-                taskId: "unknown",
-                agent: "unknown",
-                action: "unknown",
-                result: null,
-                error: (s.reason as Error).message,
-                duration: 0,
-                timestamp: Date.now(),
-              },
-        );
+        batch = settled.map((settlement, index) => {
+          if (settlement.status === "fulfilled") return settlement.value;
+          // executeTask returns on every path it knows about, so reaching here
+          // means something unforeseen threw. The id comes from the task that
+          // was dispatched, never the string "unknown", because dropping it
+          // leaves the task pending forever.
+          const task = ready[index];
+          return {
+            taskId: task.id,
+            agent: task.agent,
+            action: task.action,
+            result: null,
+            error: describeSettlementError(settlement.reason),
+            duration: 0,
+            timestamp: Date.now(),
+          };
+        });
       } else {
         batch = [];
         for (const task of ready) {

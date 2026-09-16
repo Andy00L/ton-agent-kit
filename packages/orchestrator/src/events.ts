@@ -2,10 +2,18 @@ import type { Task, TaskResult, SwarmOptions } from "./types";
 
 /**
  * Fires orchestration event callbacks from SwarmOptions.
- * Thin wrapper — no EventEmitter overhead, just direct callback invocation.
+ * A thin wrapper: no EventEmitter overhead, just direct callback invocation.
  */
 export class EventBus {
-  constructor(private opts: SwarmOptions) {}
+  // Declared and assigned rather than written as a constructor parameter
+  // property. Every package here publishes its TypeScript source as `main`, and
+  // Node's type stripping refuses a parameter property outright, so a consumer
+  // on `--experimental-strip-types` could not load this file at all.
+  private opts: SwarmOptions;
+
+  constructor(opts: SwarmOptions) {
+    this.opts = opts;
+  }
 
   /** Fire when the planner produces a task list */
   planReady(tasks: Task[]): void {

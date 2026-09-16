@@ -160,11 +160,18 @@ export class TonAgentKit {
       config: this.config as Record<string, string>,
     };
 
-    // Create methods proxy for convenient access
+    // Create methods proxy for convenient access.
+    //
+    // The trap answers undefined for `then` and for every symbol. Answering a
+    // function for `then` made the proxy a thenable, so `await agent.methods`
+    // called it as one: runAction("then", resolve) rejected with "Action not
+    // found" and called neither callback, which surfaces as an unhandled
+    // rejection that ends the process rather than a catchable error.
     this.methods = new Proxy(
       {} as Record<string, (params: any) => Promise<any>>,
       {
-        get: (_target, prop: string) => {
+        get: (_target, prop: string | symbol) => {
+          if (typeof prop === "symbol" || prop === "then") return undefined;
           return (params: any) => this.runAction(prop, params);
         },
       },
@@ -582,8 +589,11 @@ export class TonAgentKit {
         tools,
       });
 
+      // An OpenAI-compatible provider can answer with an empty choices array,
+      // for instance when a content filter fires. Reading .message off
+      // undefined threw out of the loop instead of ending it.
       const choice = response.choices[0];
-      if (!choice.message) break;
+      if (!choice?.message) break;
 
       messages.push(choice.message);
 

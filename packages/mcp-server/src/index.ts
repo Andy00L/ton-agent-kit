@@ -299,7 +299,27 @@ async function main() {
         const sseTransport = new SSEServerTransport("/messages", res);
         transports.set(sseTransport.sessionId, sseTransport);
         res.on("close", () => { transports.delete(sseTransport.sessionId); });
-        await server.connect(sseTransport);
+        try {
+          await server.connect(sseTransport);
+        } catch (caught: unknown) {
+          // One Server holds one transport, so a second concurrent client
+          // makes connect() throw "Already connected". This handler is async,
+          // so the rejection used to go unhandled and take the whole process
+          // down: one operator opening a second tab killed the server for
+          // everyone.
+          transports.delete(sseTransport.sessionId);
+          const reason = caught instanceof Error ? caught.message : String(caught);
+          console.error(`[startSseTransport] refusing a second SSE client: ${reason}`);
+          if (!res.headersSent) {
+            res.writeHead(409, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              error: "Already connected",
+              message: "This MCP server serves one SSE client at a time. Close the other session first.",
+            }));
+          } else {
+            res.end();
+          }
+        }
         return;
       }
 
@@ -331,7 +351,6 @@ async function main() {
 
     httpServer.listen(ssePort, () => {
       console.error(`\n  MCP Server (SSE) on http://localhost:${ssePort}`);
-      console.error(`  Auth: Bearer ${token.slice(0, 8)}...${token.slice(-4)}`);
       console.error(`  Actions: ${agent.actionCount} | Network: ${agent.network}\n`);
     });
   } else {
