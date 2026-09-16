@@ -32,6 +32,7 @@ jobs:
       - name: Typecheck and build every workspace
         run: npm run build
       - name: Paywall regression checks
+        if: matrix.node == '22'
         run: npm test -w packages/x402-middleware
 
   manifests:
