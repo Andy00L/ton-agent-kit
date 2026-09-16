@@ -18,9 +18,11 @@ bun.lock
 setup.py
 .claude
 
-# Compiler output accidentally emitted next to the sources
+# Compiler output accidentally emitted next to the sources. The files list in
+# each manifest packs everything under src, so a stray artifact here ships.
 packages/*/src/**/*.js
 packages/*/src/**/*.d.ts
+packages/*/src/**/*.map
 
 # Throwaway probes and one-off outputs
 .scratch/
