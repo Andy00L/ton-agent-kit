@@ -195,12 +195,21 @@ sweeping the balance, then upgrading.
 2. **`@ton/ton` 16.3.0 has not been adopted.** The range stays `^16.2.2`. The
    release changes the wallet v5 types and the shape of
    `account.balance.coins`, so it needs a pass with on-chain tests.
-3. **The `tests/` scripts are not wired to a runner.** Several packages declare
-   `"test": "jest"` with no jest configuration, so `npm test` does nothing
-   useful. The numbered scripts under `tests/` run individually against
-   testnet.
-4. **`any` still exists outside the files this release touched**, mostly in the
-   Tact contract bindings and the reputation helpers.
+3. **Correction to the line that stood here.** An earlier revision claimed the
+   `tests/` scripts have no runner. They do: `tests.ts` at the repository root
+   is an interactive runner (`bun run tests.ts`), documented in the README, and
+   it covers 28 suites. What is true is narrower: several packages still
+   declare `"test": "jest"` with no jest configuration. `core`,
+   `x402-middleware` and `wallet-store` now run real checks through `npm test`.
+4. **The contracts have no test harness.** `tests/20-x402-security.ts` covers
+   replay and the wrong recipient but never an underpayment, which is why the
+   paywall bypass fixed in 1.2.0 survived it. There is no `@ton/sandbox` or
+   Blueprint setup, so `contracts/escrow.tact` and `contracts/reputation.tact`,
+   which hold funds, are covered only by scripts that run against live testnet.
+5. **`any` still exists outside the files this release touched**: 23 occurrences
+   in `core/src/agent.ts`, 11 in `wallet-store`, 11 in
+   `plugin-identity/src/reputation-helpers.ts`, and the generated Tact
+   bindings.
 
 ## Earlier history
 
