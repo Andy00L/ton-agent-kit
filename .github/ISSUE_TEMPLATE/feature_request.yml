@@ -1,0 +1,32 @@
+name: Feature request
+description: A new action, plugin, adapter or capability.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The agent workflow you cannot build today, not the API you imagine.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape
+      description: Action name, inputs, outputs. A zod schema sketch is ideal.
+      render: typescript
+  - type: input
+    id: protocol
+    attributes:
+      label: Protocol or contract involved
+      placeholder: "STON.fi, DeDust, TON DNS, a specific jetton master, ..."
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to open the pull request

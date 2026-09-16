@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in a published package does not behave as documented.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the bug touches keys, funds, escrow or payment verification, stop and
+        follow [SECURITY.md](../blob/main/SECURITY.md) instead. Do not post it here.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - "@ton-agent-kit/core"
+        - "@ton-agent-kit/mcp-server"
+        - "@ton-agent-kit/orchestrator"
+        - "@ton-agent-kit/plugin-token"
+        - "@ton-agent-kit/plugin-defi"
+        - "@ton-agent-kit/plugin-nft"
+        - "@ton-agent-kit/plugin-dns"
+        - "@ton-agent-kit/plugin-staking"
+        - "@ton-agent-kit/plugin-analytics"
+        - "@ton-agent-kit/plugin-escrow"
+        - "@ton-agent-kit/plugin-identity"
+        - "@ton-agent-kit/plugin-payments"
+        - "@ton-agent-kit/plugin-agent-comm"
+        - "@ton-agent-kit/plugin-memory"
+        - "@ton-agent-kit/plugin-endpoints"
+        - "@ton-agent-kit/x402-middleware"
+        - "@ton-agent-kit/wallet-store"
+        - "@ton-agent-kit/strategies"
+        - "@ton-agent-kit/network-mode"
+        - "@ton-agent-kit/langchain"
+        - "@ton-agent-kit/ai-tools"
+        - "other or not sure"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "1.2.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options: ["testnet", "mainnet", "not applicable"]
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Paste the error. Redact addresses only if you have to, and never paste a mnemonic or a private key.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest script that shows it. A testnet transaction hash helps for anything on-chain.
+      render: typescript
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Node version, OS, package manager
+      placeholder: "Node 22.11.0, macOS 15, npm 10.9.0"
+    validations:
+      required: true

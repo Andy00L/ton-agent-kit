@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Andy00L/ton-agent-kit/security/advisories/new
+    about: Report privately. Never open a public issue for a bug that can move funds.
+  - name: Usage question
+    url: https://github.com/Andy00L/ton-agent-kit/discussions
+    about: Ask how to wire something up.
