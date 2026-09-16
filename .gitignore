@@ -29,3 +29,10 @@ packages/*/src/**/*.map
 
 # npm auth token, never committed
 .npmrc
+
+# Tact build output. The bindings the packages publish are committed under
+# packages/*/src/contracts/; a second copy here drifted from them. The .fc and
+# .fif files are compiler intermediates that nothing in this repository reads.
+contracts/output/*.ts
+contracts/output/*.fc
+contracts/output/*.fif
