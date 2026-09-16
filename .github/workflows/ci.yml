@@ -34,6 +34,20 @@ jobs:
       - name: Paywall regression checks
         if: matrix.node == '22'
         run: npm test -w packages/x402-middleware
+      - name: Action cache regression checks
+        if: matrix.node == '22'
+        run: npm test -w packages/core
+
+  wallet-store:
+    name: Wallet store regression checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Master key and wallet write path
+        run: bun packages/wallet-store/test/secret.test.mjs
 
   manifests:
     name: Package manifests

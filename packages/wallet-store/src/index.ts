@@ -5,7 +5,7 @@
 
 import Database from "bun:sqlite";
 import crypto from "crypto";
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync, rmdirSync } from "fs";
+import { appendFileSync, chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 // ── Provider config ──
@@ -70,24 +70,81 @@ export const LLM_PROVIDERS: Record<string, ProviderConfig> = {
 
 // ── Server secret ──
 
-export function ensureServerSecret(): string {
-  const envPath = ".env";
-  let content = "";
-  try {
-    content = readFileSync(envPath, "utf-8");
-  } catch {
-    content = "";
+/** Name of the variable holding the master key, in the environment and in .env. */
+const ENCRYPTION_KEY_VARIABLE = "WALLET_ENCRYPTION_KEY";
+
+/** The key is 32 random bytes rendered as 64 hex characters. */
+const ENCRYPTION_KEY_FORMAT = /^[0-9a-fA-F]{64}$/;
+
+/**
+ * Matches the key in a .env file, tolerating the shapes a human or a secrets
+ * tool writes: a leading `export`, spaces around `=`, single or double quotes.
+ * The strict original missed all of them, and every miss minted a new key.
+ */
+const ENCRYPTION_KEY_LINE =
+  /^[ \t]*(?:export[ \t]+)?WALLET_ENCRYPTION_KEY[ \t]*=[ \t]*["']?([0-9a-fA-F]{64})["']?[ \t]*$/m;
+
+/**
+ * Resolve the master key that every stored mnemonic is encrypted under.
+ *
+ * Resolution order: the environment, then the file, then mint a new one. A
+ * platform-injected secret (Docker, Kubernetes, Fly) must win over anything
+ * on disk, which is why the environment is read first.
+ *
+ * This function refuses to mint a key whenever it cannot prove that none
+ * exists. Nothing in an encrypted blob says which key produced it and there is
+ * no rotation path, so generating a key over one still in use makes every
+ * stored wallet permanently unreadable and the funds behind those mnemonics
+ * unrecoverable. A read error that is not "file absent", or a key present in a
+ * shape this function cannot parse, is a hard failure rather than a reason to
+ * generate.
+ *
+ * @param envPath - Where the .env file lives. Defaults to `.env` relative to
+ * the current working directory, so a service that can start from more than
+ * one directory should pass an absolute path.
+ * @since 1.1.0
+ */
+export function ensureServerSecret(envPath: string = ".env"): string {
+  const fromEnvironment = process.env[ENCRYPTION_KEY_VARIABLE]?.trim();
+  if (fromEnvironment) {
+    if (!ENCRYPTION_KEY_FORMAT.test(fromEnvironment)) {
+      throw new Error(
+        `[ensureServerSecret] ${ENCRYPTION_KEY_VARIABLE} is set but is not 64 hex characters.`,
+      );
+    }
+    return fromEnvironment;
   }
 
-  const match = content.match(/^WALLET_ENCRYPTION_KEY=([0-9a-fA-F]{64})$/m);
-  if (match) return match[1];
+  let content: string | null = null;
+  try {
+    content = readFileSync(envPath, "utf-8");
+  } catch (caught: unknown) {
+    const code = (caught as NodeJS.ErrnoException).code;
+    if (code !== "ENOENT") {
+      throw new Error(
+        `[ensureServerSecret] Could not read ${envPath} (${code}). Refusing to generate a new key: ` +
+          `if one is already in that file, replacing it would make every stored wallet unreadable.`,
+      );
+    }
+  }
 
-  // Remove any existing incomplete key line
-  const lines = content.split("\n").filter(l => !l.startsWith("WALLET_ENCRYPTION_KEY="));
+  if (content !== null) {
+    const match = content.match(ENCRYPTION_KEY_LINE);
+    if (match) return match[1];
+    if (content.includes(ENCRYPTION_KEY_VARIABLE)) {
+      throw new Error(
+        `[ensureServerSecret] ${envPath} declares ${ENCRYPTION_KEY_VARIABLE} but the value is not 64 hex ` +
+          `characters. Fix it by hand. Generating a new key here would orphan every wallet encrypted ` +
+          `under the old one.`,
+      );
+    }
+  }
 
   const secret = crypto.randomBytes(32).toString("hex");
-  lines.push(`WALLET_ENCRYPTION_KEY=${secret}`);
-  writeFileSync(envPath, lines.join("\n"));
+  // Append. The previous version rebuilt the whole file from a possibly empty
+  // string, which erased every other variable in it, TON_MNEMONIC included.
+  const separator = content && !content.endsWith("\n") ? "\n" : "";
+  appendFileSync(envPath, `${separator}${ENCRYPTION_KEY_VARIABLE}=${secret}\n`, { mode: 0o600 });
   return secret;
 }
 
@@ -106,6 +163,20 @@ export class SecretStore {
 
     this.db = new Database(dbPath);
     this.db.exec("PRAGMA journal_mode=WAL;");
+
+    // The database holds the ciphertext of every mnemonic. Created with the
+    // default mode it is world-readable, which hands a local attacker the data
+    // the encryption exists to protect. WAL mode adds -wal and -shm siblings,
+    // so they get the same treatment. No-op on Windows, correct everywhere else.
+    for (const path of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+      try {
+        if (existsSync(path)) chmodSync(path, 0o600);
+      } catch (caught: unknown) {
+        console.error(
+          `[SecretStore] Could not restrict permissions on ${path}: ${caught instanceof Error ? caught.message : String(caught)}`,
+        );
+      }
+    }
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS user_wallets (
         uid INTEGER PRIMARY KEY,
@@ -127,10 +198,26 @@ export class SecretStore {
 
   // ── Wallet methods ──
 
+  /**
+   * Store a wallet for a user.
+   *
+   * Refuses to overwrite an existing one. The previous version used
+   * `INSERT OR REPLACE`, so a retried request or a second "create wallet"
+   * click silently replaced a funded wallet's mnemonic with no error and no
+   * way to recover it. Replacing one now takes an explicit `deleteWallet`
+   * first, which makes the destruction a decision rather than an accident.
+   *
+   * @throws When a wallet already exists for `uid`.
+   */
   saveWallet(uid: number, mnemonic: string, address: string): void {
+    if (this.hasWallet(uid)) {
+      throw new Error(
+        `[SecretStore] A wallet already exists for uid ${uid}. Call deleteWallet first to replace it.`,
+      );
+    }
     const blob = this.encrypt(uid, "wallet:", mnemonic);
     this.db.run(
-      `INSERT OR REPLACE INTO user_wallets (uid, blob, address, created_at) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO user_wallets (uid, blob, address, created_at) VALUES (?, ?, ?, ?)`,
       [uid, blob, address, Date.now()],
     );
   }
@@ -215,7 +302,10 @@ export class SecretStore {
     const tag = Buffer.from(parts[1], "base64");
     const encrypted = Buffer.from(parts[2], "base64");
     const key = this.deriveKey(uid, prefix);
-    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    // Pin the tag length. Without it GCM accepts any legal size down to 4
+    // bytes, so anyone who can write to the database can forge against 32 bits
+    // of authentication instead of 128.
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
   }

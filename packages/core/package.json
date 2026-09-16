@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "node --experimental-strip-types test/cache.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

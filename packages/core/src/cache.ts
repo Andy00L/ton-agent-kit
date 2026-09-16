@@ -77,7 +77,7 @@ export class ActionCache {
       get_nft_info: 120000, get_nft_collection: 120000, get_jetton_info: 120000,
       resolve_domain: 300000, lookup_address: 300000, get_domain_info: 300000,
       get_transaction_history: 10000, get_portfolio_metrics: 30000, get_equity_curve: 60000,
-      get_escrow_info: 10000, get_agent_reputation: 30000, discover_agent: 30000,
+      get_escrow_info: 10000, discover_agent: 30000,
       get_open_disputes: 15000, discover_intents: 15000, get_offers: 10000,
       get_agent_cleanup_info: 30000,
       ...(config?.actionTTLs || {}),
@@ -240,7 +240,15 @@ export class ActionCache {
    * @since 1.0.0
    */
   isCacheable(actionName: string): boolean {
-    return this.enabled && !this.noCacheActions.has(actionName);
+    if (!this.enabled) return false;
+    if (this.noCacheActions.has(actionName)) return false;
+    // An allowlist, not a denylist. Caching used to be the default for any name
+    // the denylist had not been taught, so every action a plugin added later
+    // was cached: delete_context and close_x402_endpoint both returned a cached
+    // success without running, and a third-party action that moves funds would
+    // have had its second call answered from the first call's result. An action
+    // is cacheable only once someone gives it a TTL.
+    return actionName in this.actionTTLs;
   }
 
   /**
@@ -257,8 +265,35 @@ export class ActionCache {
     return this.actionTTLs[actionName] || this.defaultTTL;
   }
 
-  private makeKey(actionName: string, params: any): string {
-    const paramStr = params ? JSON.stringify(params, Object.keys(params).sort()) : "{}";
-    return actionName + ":" + paramStr;
+  private makeKey(actionName: string, params: unknown): string {
+    return actionName + ":" + stableStringify(params ?? {});
   }
+}
+
+/**
+ * Serialize a value with object keys sorted at every depth.
+ *
+ * `JSON.stringify(params, Object.keys(params).sort())` looks like it does this
+ * but the second argument is a replacer array, applied recursively, so every
+ * nested object collapses to `{}` and two calls that differ only inside a
+ * nested field share one cache key. That served one caller another caller's
+ * result.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value) ?? "null";
+  }
+  if (Array.isArray(value)) {
+    return "[" + value.map(stableStringify).join(",") + "]";
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, entryValue]) => entryValue !== undefined)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return (
+    "{" +
+    entries
+      .map(([key, entryValue]) => JSON.stringify(key) + ":" + stableStringify(entryValue))
+      .join(",") +
+    "}"
+  );
 }

@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@ton-agent-kit/core"><img src="https://img.shields.io/npm/v/@ton-agent-kit/core?label=%40ton-agent-kit%2Fcore" alt="npm"></a>
   <a href="https://www.npmjs.com/search?q=%40ton-agent-kit"><img src="https://img.shields.io/badge/npm-21%20packages-blue" alt="npm packages"></a>
+  <a href="https://github.com/Andy00L/ton-agent-kit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Andy00L/ton-agent-kit/ci.yml?branch=main&label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
@@ -66,7 +67,7 @@ import { TonAgentKit, KeypairWallet } from "@ton-agent-kit/core";
 import TokenPlugin from "@ton-agent-kit/plugin-token";
 import DefiPlugin from "@ton-agent-kit/plugin-defi";
 
-const wallet = await KeypairWallet.fromMnemonic(process.env.TON_MNEMONIC!, {
+const wallet = await KeypairWallet.fromMnemonic(process.env.TON_MNEMONIC!.split(" "), {
   network: "testnet",
   version: "V5R1",
 });
@@ -503,7 +504,11 @@ app.get("/api/price", tonPaywall({
 });
 ```
 
-Anti-replay protection with 3 store backends: `FileReplayStore`, `RedisReplayStore`, `MemoryReplayStore`. Custom stores just need `has(hash)` and `add(hash)`.
+Anti-replay protection with 3 store backends: `FileReplayStore`, `RedisReplayStore`, `MemoryReplayStore`.
+A custom store implements `has(hash)` and `add(hash)`, and should implement `claim(hash)` too: `claim`
+records the hash and reports whether the caller was first, in one atomic step. Without it the middleware
+falls back to `has` then `add`, and two requests carrying the same payment can both pass `has` before
+either reaches `add`. Version 2.0.0 fixed that race and a paywall bypass; see [SECURITY.md](SECURITY.md).
 
 The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints`) lets agents open/close x402 endpoints at runtime. Endpoints are advertised in offers via the on-chain `endpoint` field.
 

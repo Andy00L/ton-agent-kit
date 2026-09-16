@@ -614,25 +614,15 @@ export class TonAgentKit {
           params = {};
         }
 
-        // Remap misnamed parameters to match the action schema
-        const matchedAction = actions.find((a) => a.name === actionName);
-        if (matchedAction) {
-          const expectedSchema = toJSONSchema(matchedAction.schema) as any;
-          const expectedKeys = new Set(Object.keys(expectedSchema.properties || {}));
-          const paramKeys = Object.keys(params);
-          for (const key of paramKeys) {
-            if (!expectedKeys.has(key)) {
-              // Find a matching expected key that isn't already provided
-              for (const expected of expectedKeys) {
-                if (!(expected in params) && key.toLowerCase().includes(expected.toLowerCase())) {
-                  params[expected] = params[key];
-                  delete params[key];
-                  break;
-                }
-              }
-            }
-          }
-        }
+        // The model's arguments go to zod exactly as it produced them.
+        //
+        // A previous version tried to rescue misnamed keys by substring match,
+        // which let an unrelated field become a money-moving one: with
+        // transfer_ton, "token".includes("to") is true, so a jetton master
+        // address was silently promoted to the recipient of the transfer and
+        // passed validation. A rejected call is already reported back to the
+        // model as a tool result below, so it can correct itself. Guessing what
+        // it meant is strictly worse than telling it that it was wrong.
 
         if (options?.onActionStart) {
           options.onActionStart(actionName, params);
