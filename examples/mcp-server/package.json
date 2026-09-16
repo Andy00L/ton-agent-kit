@@ -20,7 +20,7 @@
     "@ton-agent-kit/plugin-analytics": "^1.0.0",
     "@ton-agent-kit/plugin-payments": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.23.0"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
