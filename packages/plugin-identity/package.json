@@ -8,7 +8,8 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "bun test/message-bodies.test.mjs"
   },
   "dependencies": {
     "@ton-agent-kit/core": "^1.3.0"

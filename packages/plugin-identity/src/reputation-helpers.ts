@@ -1,11 +1,10 @@
-import { beginCell, Cell, Address } from "@ton/core";
+import { Cell, Address } from "@ton/core";
 import { createHash } from "crypto";
 
-// Opcodes from the compiled Tact wrapper (contracts/output/Reputation_Reputation.ts)
-const OP_REGISTER = 950051591;
-const OP_RATE = 2804297358;
-const OP_UPDATE_AVAILABILITY = 1424124491;
-const OP_WITHDRAW = 593874976;
+// Message bodies are built with the generated storeX serializers from
+// ./contracts/Reputation_Reputation, never from hand-copied opcodes. A
+// hand-copied OP_RATE had drifted from the contract, so every rating it
+// built reached a receiver that does not exist.
 
 /**
  * Compute the SHA-256 hash of a name, matching Tact's `sha256()` function.
@@ -22,64 +21,9 @@ const OP_WITHDRAW = 593874976;
  *
  * @since 1.0.0
  */
-export function computeNameHash(name: string): bigint {
+function computeNameHash(name: string): bigint {
   const hash = createHash("sha256").update(name).digest("hex");
   return BigInt("0x" + hash);
-}
-
-/**
- * Build a Register message body for the Reputation contract.
- *
- * @param name - Agent name to register.
- * @param capabilities - Comma-separated list of capabilities (e.g. "price_feed,analytics").
- * @param available - Whether the agent is currently available for work.
- * @returns Encoded Cell ready to send as a message body.
- * @since 1.0.0
- */
-export function buildRegisterBody(name: string, capabilities: string, available: boolean): Cell {
-  const b = beginCell();
-  b.storeUint(OP_REGISTER, 32);
-  b.storeStringRefTail(name);
-  b.storeStringRefTail(capabilities);
-  b.storeBit(available);
-  return b.endCell();
-}
-
-/**
- * Build a Rate message body for the Reputation contract.
- * FIX 3: Added dealIndex parameter for deal-based rating authorization.
- *
- * @param agentName - Name of the agent being rated.
- * @param success - Whether the task was successful.
- * @param dealIndex - The deal index from SettleDeal that authorizes this rating.
- */
-export function buildRateBody(agentName: string, success: boolean, dealIndex: number = 0): Cell {
-  const b = beginCell();
-  b.storeUint(OP_RATE, 32);
-  b.storeStringRefTail(agentName);
-  b.storeBit(success);
-  b.storeUint(dealIndex, 32);
-  return b.endCell();
-}
-
-/**
- * Build an UpdateAvailability message body.
- */
-export function buildUpdateAvailabilityBody(name: string, available: boolean): Cell {
-  const b = beginCell();
-  b.storeUint(OP_UPDATE_AVAILABILITY, 32);
-  b.storeStringRefTail(name);
-  b.storeBit(available);
-  return b.endCell();
-}
-
-/**
- * Build a Withdraw message body.
- */
-export function buildWithdrawBody(): Cell {
-  const b = beginCell();
-  b.storeUint(OP_WITHDRAW, 32);
-  return b.endCell();
 }
 
 /**
@@ -192,7 +136,7 @@ export function parseAgentDataFromStack(stack: any[]): any | null {
  * Parse an optional Int from TONAPI getter stack.
  * Tact optional: tuple is present or null type on stack.
  */
-export function parseOptionalNum(stack: any[]): number | null {
+function parseOptionalNum(stack: any[]): number | null {
   if (!stack || stack.length === 0) return null;
   const item = stack[0];
   if (!item || item.type === "null") return null;

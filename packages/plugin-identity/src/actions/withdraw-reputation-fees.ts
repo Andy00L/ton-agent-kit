@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { Address, internal, toNano } from "@ton/core";
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
+import { Address, beginCell, internal, toNano } from "@ton/core";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
 import { resolveContractAddress } from "../reputation-config";
-import { buildWithdrawBody } from "../reputation-helpers";
+import { storeWithdraw } from "../contracts/Reputation_Reputation";
 
 export function createWithdrawReputationFeesAction(contractAddress?: string) {
   return defineAction({
@@ -22,7 +22,9 @@ export function createWithdrawReputationFeesAction(contractAddress?: string) {
       }
 
       try {
-        const body = buildWithdrawBody();
+        const body = beginCell()
+          .store(storeWithdraw({ $$type: "Withdraw" }))
+          .endCell();
 
         await sendTransaction(agent, [
           internal({
@@ -38,11 +40,12 @@ export function createWithdrawReputationFeesAction(contractAddress?: string) {
           contractAddress: addr,
           message: `Withdrawal sent to reputation contract ${addr.slice(0, 16)}...`,
         };
-      } catch (err: any) {
+      } catch (error: unknown) {
+        const reason = describeError(error);
         return {
           withdrawn: false,
-          error: err.message,
-          message: `Failed to withdraw: ${err.message}`,
+          error: reason,
+          message: `Failed to withdraw: ${reason}`,
         };
       }
     },

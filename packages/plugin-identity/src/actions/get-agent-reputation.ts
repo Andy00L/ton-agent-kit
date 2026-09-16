@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { Address, internal, toNano } from "@ton/core";
+import { Address, beginCell, internal, toNano } from "@ton/core";
 import { defineAction, toFriendlyAddress, sendTransaction } from "@ton-agent-kit/core";
 import { loadAgentRegistry, saveAgentRegistry } from "../utils";
 import { resolveContractAddress } from "../reputation-config";
-import { buildRateBody, callContractGetter, lookupAgentIndex, parseAgentDataFromStack } from "../reputation-helpers";
+import { callContractGetter, lookupAgentIndex, parseAgentDataFromStack } from "../reputation-helpers";
+import { storeRate } from "../contracts/Reputation_Reputation";
 
 export function createGetAgentReputationAction(contractAddress?: string) {
   return defineAction({
@@ -49,7 +50,16 @@ export function createGetAgentReputationAction(contractAddress?: string) {
           // If rating, send Rate message
           if (addTask) {
             const dealIdx = typeof params.dealIndex === "string" ? parseInt(params.dealIndex, 10) : (params.dealIndex ?? 0);
-            const body = buildRateBody(agentName, success !== false, dealIdx);
+            const body = beginCell()
+              .store(
+                storeRate({
+                  $$type: "Rate",
+                  agentName,
+                  success: success !== false,
+                  dealIndex: BigInt(dealIdx),
+                }),
+              )
+              .endCell();
 
             await sendTransaction(agent, [
               internal({
