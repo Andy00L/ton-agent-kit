@@ -213,7 +213,7 @@ next time any one of the 21 is released, and it did.
 | Action | What it does |
 |---|---|
 | `swap_dedust` | Swap on DeDust DEX (TON/Jetton, Jetton/Jetton) |
-| `swap_stonfi` | Swap on STON.fi DEX |
+| `swap_stonfi` | Swap on STON.fi DEX, with a caller-stated minimum output |
 | `swap_best_price` | Aggregated swap via Omniston WebSocket (best price across all DEXes) |
 | `get_price` | USD and TON price for a Jetton (TONAPI rates) |
 | `create_dca_order` | DCA order via swap.coffee Strategies API |

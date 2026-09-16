@@ -229,7 +229,7 @@ Two constants are exported: `DEFAULT_GAS = "0.12"` and `CROSS_CONTRACT_GAS = "0.
 | 6 | `get_jetton_info` | token | Fetch metadata for a jetton master | API |
 | 7 | `simulate_transaction` | token | Estimate outcome of a transaction before sending | API |
 | 8 | `swap_dedust` | defi | Execute a swap on DeDust | Live |
-| 9 | `swap_stonfi` | defi | Execute a swap on STON.fi | Live |
+| 9 | `swap_stonfi` | defi | Execute a swap on STON.fi, `minReceived` required | Live |
 | 10 | `swap_best_price` | defi | Aggregated swap via Omniston (best across DEXes) | Live |
 | 11 | `get_price` | defi | Get token price from TONAPI | API |
 | 12 | `create_dca_order` | defi | Schedule a recurring DCA buy via swap.coffee | Live |
