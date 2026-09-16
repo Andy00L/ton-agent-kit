@@ -7,7 +7,7 @@
  * Security features:
  * - Anti-replay: each tx hash can only be used ONCE (pluggable store)
  * - Timestamp check: transaction must be recent (< maxAge)
- * - Amount verification: tight tolerance for cross-transfers, gas tolerance for self-transfers
+ * - Amount verification: waives the forward fee only, capped so the floor stays positive
  * - 2-level verification: blockchain endpoint → events fallback
  *
  * Storage options:
@@ -29,6 +29,8 @@
  */
 
 import type { NextFunction, Request, Response } from "express";
+import { existsSync, readFileSync } from "node:fs";
+import { rename, writeFile } from "node:fs/promises";
 import { Address } from "@ton/core";
 import { z } from "zod";
 
@@ -106,6 +108,35 @@ export interface PaywallConfig {
   tonapiKey?: string;
 }
 
+/**
+ * A TON transfer arrives slightly short of the value that was sent, because the
+ * network deducts a forward fee of roughly 0.0005 to 0.001 TON. The paywall
+ * waives that much rather than rejecting an honest payment.
+ */
+const FORWARD_FEE_ALLOWANCE_NANOTON = 1_000_000; // 0.001 TON
+
+/**
+ * The waiver never exceeds this share of the price. Without the cap, a flat
+ * allowance larger than the price pushes the acceptance floor below zero, and a
+ * transfer of 0 TON clears the paywall.
+ */
+const MAX_ALLOWANCE_FRACTION = 0.1;
+
+/**
+ * The smallest payment that satisfies a price, in nanotons.
+ *
+ * Always strictly positive for any positive price, which is the property that
+ * keeps a zero-value transfer from passing. Both verification paths call this,
+ * so the rule exists once.
+ */
+export function minimumAcceptableNanoton(expectedAmountNano: number): number {
+  const allowance = Math.min(
+    FORWARD_FEE_ALLOWANCE_NANOTON,
+    Math.floor(expectedAmountNano * MAX_ALLOWANCE_FRACTION),
+  );
+  return expectedAmountNano - allowance;
+}
+
 export interface PaymentRequirement {
   /** TON address to pay */
   recipient: string;
@@ -132,8 +163,33 @@ export interface PaymentRequirement {
 export interface ReplayStore {
   /** Check if a tx hash has been used */
   has(hash: string): Promise<boolean>;
-  /** Mark a tx hash as used (must be permanent, this is the anti-replay guarantee) */
+  /**
+   * Mark a tx hash as used. This must be permanent and it must fail loudly:
+   * a caller that is told the hash was recorded will serve the paid resource,
+   * so a swallowed write turns into a replayable payment after a restart.
+   */
   add(hash: string): Promise<void>;
+  /**
+   * Record the hash and report whether this caller is the first to do so, in a
+   * single atomic step. `has` followed by `add` is a check-then-act race: two
+   * requests carrying the same payment can both pass `has` before either
+   * reaches `add`, and both get served. One payment, two deliveries.
+   *
+   * Optional, so existing stores keep working. Implement it for any deployment
+   * running more than one process, where an in-memory guard cannot help.
+   */
+  claim?(hash: string): Promise<boolean>;
+}
+
+/**
+ * Claim a hash through the store's atomic path when it has one, falling back to
+ * check-then-act otherwise.
+ */
+async function claimHash(store: ReplayStore, hash: string): Promise<boolean> {
+  if (store.claim) return store.claim(hash);
+  if (await store.has(hash)) return false;
+  await store.add(hash);
+  return true;
 }
 
 /**
@@ -148,13 +204,20 @@ export class FileReplayStore implements ReplayStore {
   constructor(filePath: string = ".x402-used-hashes.json") {
     this.filePath = filePath;
     this.hashes = new Set();
+
+    // No file yet means a first run, which is the one case where an empty set
+    // is correct.
+    if (!existsSync(this.filePath)) return;
+
     try {
-      const { existsSync, readFileSync } = require("fs");
-      if (existsSync(this.filePath)) {
-        this.hashes = new Set(JSON.parse(readFileSync(this.filePath, "utf-8")));
-      }
+      this.hashes = new Set(JSON.parse(readFileSync(this.filePath, "utf-8")));
     } catch (caught: unknown) {
-      console.error(`Failed to load replay store: ${describeError(caught)}`);
+      // The file exists but could not be read. Starting empty would silently
+      // forget every hash already spent and make every past payment replayable,
+      // so refuse to start instead.
+      throw new Error(
+        `[FileReplayStore] ${this.filePath} exists but could not be read, refusing to start with an empty replay history: ${describeError(caught)}`,
+      );
     }
   }
 
@@ -164,12 +227,29 @@ export class FileReplayStore implements ReplayStore {
 
   async add(hash: string): Promise<void> {
     this.hashes.add(hash);
+    // Write to a sibling file and rename it into place. Renaming is atomic on
+    // the same filesystem, so a crash mid-write leaves the previous file whole
+    // instead of a truncated one, which would drop every recorded hash and make
+    // every past payment replayable.
+    const temporaryPath = `${this.filePath}.tmp`;
     try {
-      const { writeFile } = require("fs/promises");
-      await writeFile(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
+      await writeFile(temporaryPath, JSON.stringify([...this.hashes]), "utf-8");
+      await rename(temporaryPath, this.filePath);
     } catch (caught: unknown) {
-      console.error(`Failed to persist replay store: ${describeError(caught)}`);
+      // Undo the in-memory record so it matches what survived to disk, then
+      // fail: the caller must not serve a resource for a payment it could not
+      // record.
+      this.hashes.delete(hash);
+      throw new Error(
+        `[FileReplayStore] could not record payment ${hash}: ${describeError(caught)}`,
+      );
     }
+  }
+
+  async claim(hash: string): Promise<boolean> {
+    if (this.hashes.has(hash)) return false;
+    await this.add(hash);
+    return true;
   }
 }
 
@@ -201,6 +281,13 @@ export class FileReplayStore implements ReplayStore {
 export interface RedisLikeClient {
   exists(key: string): Promise<number | boolean>;
   set(key: string, value: string): Promise<unknown>;
+  /**
+   * Atomic increment, used to claim a hash. Present under this name and this
+   * signature in ioredis, node-redis and the Upstash HTTP client, which is why
+   * the claim is built on it rather than on the three different spellings of
+   * `SET key value NX`.
+   */
+  incr(key: string): Promise<number>;
 }
 
 export class RedisReplayStore implements ReplayStore {
@@ -220,6 +307,16 @@ export class RedisReplayStore implements ReplayStore {
   async add(hash: string): Promise<void> {
     await this.redis.set(this.prefix + hash, "1");
   }
+
+  /**
+   * INCR returns 1 only for the caller that created the key, so exactly one
+   * request out of any number racing on the same payment hash is served, across
+   * every process pointed at this Redis.
+   */
+  async claim(hash: string): Promise<boolean> {
+    const uses = await this.redis.incr(this.prefix + hash);
+    return uses === 1;
+  }
 }
 
 /**
@@ -235,6 +332,12 @@ export class MemoryReplayStore implements ReplayStore {
 
   async add(hash: string): Promise<void> {
     this.hashes.add(hash);
+  }
+
+  async claim(hash: string): Promise<boolean> {
+    if (this.hashes.has(hash)) return false;
+    this.hashes.add(hash);
+    return true;
   }
 }
 
@@ -278,6 +381,28 @@ export function tonPaywall(config: PaywallConfig) {
     replayStore = new FileReplayStore(),
   } = config;
 
+  // A paywall that cannot name who gets paid, or what a valid payment looks
+  // like, has no way to reject an invalid one. Fail here rather than serve 402s
+  // that point at a placeholder and accept whatever comes back.
+  if (!recipient) {
+    throw new Error(
+      "[tonPaywall] recipient is required: without it no payment can be verified against an address.",
+    );
+  }
+  try {
+    Address.parse(recipient);
+  } catch {
+    throw new Error(
+      `[tonPaywall] recipient is not a TON address: ${recipient}`,
+    );
+  }
+  const priceNanoton = Math.round(parseFloat(amount) * 1e9);
+  if (!Number.isFinite(priceNanoton) || priceNanoton <= 0) {
+    throw new Error(
+      `[tonPaywall] amount must be a positive TON value, received: ${amount}`,
+    );
+  }
+
   // Resolve TONAPI key once: config option > env var > undefined
   const resolvedApiKey = config.tonapiKey ?? process.env.TONAPI_KEY;
 
@@ -287,7 +412,7 @@ export function tonPaywall(config: PaywallConfig) {
     // If no payment proof, return 402
     if (!paymentHash) {
       const requirement: PaymentRequirement = {
-        recipient: recipient || "configure-recipient",
+        recipient,
         amount,
         network,
         protocol: "ton-x402-v1",
@@ -356,7 +481,7 @@ export function tonPaywall(config: PaywallConfig) {
         if (vAttempt > 0) await new Promise((r) => setTimeout(r, 5000));
         verification = await verifyPayment(
           paymentHash,
-          recipient || "",
+          recipient,
           amount,
           network,
           proofTTL,
@@ -425,7 +550,7 @@ async function fetchWithRateLimitRetry(url: string, apiKey?: string): Promise<Fe
  * Verify a payment on-chain with production-grade checks:
  * 1. Anti-replay: tx hash can only be used ONCE, ever
  * 2. Timestamp: transaction must be recent (< maxAge seconds)
- * 3. Amount: tight tolerance for cross-transfers, gas tolerance for self-transfers
+ * 3. Amount: waives the forward fee only, capped at a share of the price
  * 4. Recipient: exact match
  */
 async function verifyPayment(
@@ -506,24 +631,25 @@ async function verifyPayment(
         .toLowerCase()
         .replace(/^0:/, "");
       const value = Number(msg.value || 0);
-      const source = (msg.source?.address || "")
-        .toLowerCase()
-        .replace(/^0:/, "");
 
       if (dest === normalizedExpected) {
-        // TON deducts forward fees from message value (~0.0005-0.001 TON).
-        // Use 0.005 TON tolerance for both self and cross transfers.
-        const tolerance = 5_000_000;
+        const minimumAcceptable = minimumAcceptableNanoton(expectedAmountNano);
 
-        if (value >= expectedAmountNano - tolerance) {
-          // All checks passed, so mark the hash as used permanently (anti-replay)
-          await store.add(txHash);
+        if (value >= minimumAcceptable) {
+          // All checks passed. The claim is what grants access: if another
+          // request already took this payment, this one gets nothing.
+          if (!(await claimHash(store, txHash))) {
+            return {
+              valid: false,
+              reason: "Transaction hash already used (anti-replay)",
+            };
+          }
           return { valid: true };
         }
 
         return {
           valid: false,
-          reason: `Amount too low: received ${value} nanoton, expected ${expectedAmountNano} (tolerance: ${tolerance})`,
+          reason: `Amount too low: received ${value} nanoton, expected at least ${minimumAcceptable} for a price of ${expectedAmountNano}`,
         };
       }
     }
@@ -590,24 +716,24 @@ async function verifyViaEvents(
         const recipientRaw = (action.TonTransfer?.recipient?.address || "")
           .toLowerCase()
           .replace(/^0:/, "");
-        const senderRaw = (action.TonTransfer?.sender?.address || "")
-          .toLowerCase()
-          .replace(/^0:/, "");
         const amount = Number(action.TonTransfer?.amount || 0);
 
         if (recipientRaw === normalizedExpected) {
-          // TON deducts forward fees from message value (~0.0005-0.001 TON).
-          // Use 0.005 TON tolerance for both self and cross transfers.
-          const tolerance = 5_000_000;
+          const minimumAcceptable = minimumAcceptableNanoton(expectedAmountNano);
 
-          if (amount >= expectedAmountNano - tolerance) {
-            await store.add(txHash);
+          if (amount >= minimumAcceptable) {
+            if (!(await claimHash(store, txHash))) {
+              return {
+                valid: false,
+                reason: "Transaction hash already used (anti-replay)",
+              };
+            }
             return { valid: true };
           }
 
           return {
             valid: false,
-            reason: `Amount too low: ${amount} nanoton (expected ${expectedAmountNano}, tolerance ${tolerance})`,
+            reason: `Amount too low: ${amount} nanoton, expected at least ${minimumAcceptable} for a price of ${expectedAmountNano}`,
           };
         }
       }

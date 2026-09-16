@@ -6,6 +6,67 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Packages under the `@ton-agent-kit` npm scope carry their own versions. The
 version numbers below track the repository snapshot, not any single package.
 
+## [1.2.0] - 2026-09-16
+
+Second audit pass, concentrated on the paths that move money. Three defects in
+`@ton-agent-kit/x402-middleware`, one of them a complete paywall bypass. That
+package goes to 2.0.0; nothing else changed.
+
+### Fixed
+
+- **Any endpoint priced under 0.005 TON was free.** The amount check waived a
+  flat 5,000,000 nanoton (0.005 TON) regardless of price, so the acceptance
+  floor went negative and a transfer of 0 TON satisfied it. The middleware's own
+  documented example charges 0.001 TON, and `examples/x402-server` sells
+  `/api/price` at that price, so the shipped example was exploitable. The waiver
+  now covers a forward fee and never exceeds 10% of the price, which keeps the
+  floor strictly positive at every price. The rule lives in one exported
+  function, `minimumAcceptableNanoton`, instead of being copy-pasted into both
+  verification paths.
+- **One payment could be spent many times concurrently.** Verification called
+  `has()` then `add()`, a check-then-act race. Fifty concurrent requests
+  carrying the same hash all cleared `has()` before any reached `add()`, and all
+  fifty were served. `ReplayStore` gains an optional atomic `claim()`,
+  implemented by all three shipped stores, and verification now grants access on
+  the claim rather than on a blind `add()`. `RedisReplayStore.claim()` uses
+  `INCR`, which is atomic and spelled the same in ioredis, node-redis and the
+  Upstash client, so the guarantee holds across processes rather than only
+  inside one.
+- **The default replay store threw on every call in an ESM project, and the
+  failure was silent.** `FileReplayStore` reached for `require()` inside a
+  module that consumers compile themselves. Under ESM `require` is undefined,
+  the constructor swallowed the error and started with an empty set, which
+  forgets every hash already spent and makes every past payment replayable. The
+  module now imports from `node:fs` statically. A constructor that finds an
+  unreadable store file refuses to start instead of starting empty, and `add()`
+  rejects instead of logging when it cannot persist.
+- **`FileReplayStore.add()` could truncate the store.** It wrote the whole set
+  over the live file, so a crash mid-write lost every recorded hash. It now
+  writes a sibling file and renames it into place.
+- **A paywall with no recipient served payment instructions pointing at the
+  string `configure-recipient`** and verified against an empty address.
+  `tonPaywall` now validates the recipient and the amount when it is
+  constructed, and throws rather than starting in a state where it cannot reject
+  an invalid payment.
+
+### Added
+
+- `packages/x402-middleware/test/verification.test.mjs`: four regression checks
+  covering the acceptance floor, an honest payment short by a forward fee, fifty
+  concurrent claims on one hash, and a store that cannot persist. No framework
+  and no network, run by CI on every push.
+
+### Breaking, @ton-agent-kit/x402-middleware 2.0.0
+
+- `tonPaywall` throws when `recipient` is missing or unparseable, or when
+  `amount` is not a positive number. Supply both.
+- Endpoints priced below roughly 0.005 TON were accepting unpaid requests. They
+  now reject them, so real traffic on those routes will start being charged.
+- `RedisLikeClient` requires `incr`. ioredis, node-redis and the Upstash client
+  all have it; a hand-written client needs it added.
+- `FileReplayStore` throws when its file exists but cannot be read, and `add()`
+  throws when it cannot write.
+
 ## [1.1.0] - 2026-09-16
 
 Maintenance release. The repository now installs and typechecks from a clean

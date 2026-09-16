@@ -31,6 +31,8 @@ jobs:
         run: npm ci
       - name: Typecheck and build every workspace
         run: npm run build
+      - name: Paywall regression checks
+        run: npm test -w packages/x402-middleware
 
   manifests:
     name: Package manifests
