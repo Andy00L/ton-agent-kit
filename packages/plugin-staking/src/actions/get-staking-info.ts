@@ -1,5 +1,28 @@
 import { z } from "zod";
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, fetchJson } from "@ton-agent-kit/core";
+
+/** Nanotons in one TON. */
+const NANOTONS_PER_TON = 1e9;
+
+/** The fields this action reads off the TonAPI nominator pools endpoint. */
+const NominatorPoolsResponse = z.object({
+  pools: z
+    .array(
+      z.object({
+        address: z.string().optional(),
+        name: z.string().optional(),
+        amount: z.union([z.string(), z.number()]).optional(),
+        ready_withdraw: z.union([z.string(), z.number()]).optional(),
+        pending_deposit: z.union([z.string(), z.number()]).optional(),
+      }),
+    )
+    .optional(),
+});
+
+/** Render a nanoton amount that may arrive as a string or a number. */
+function formatTon(amount: string | number | undefined): string {
+  return (Number(amount ?? 0) / NANOTONS_PER_TON).toString() + " TON";
+}
 
 export const getStakingInfoAction = defineAction({
   name: "get_staking_info",
@@ -18,20 +41,19 @@ export const getStakingInfoAction = defineAction({
         : "https://tonapi.io/v2";
 
     // Get staking info for this wallet
-    const response = await fetch(
+    const response = await fetchJson(
       `${apiBase}/staking/nominator/${encodeURIComponent(addr)}/pools`,
+      NominatorPoolsResponse,
     );
     if (response.ok) {
-      const data = await response.json();
       return {
         address: addr,
-        pools: (data.pools || []).map((p: any) => ({
-          pool: p.address,
-          name: p.name || "Unknown pool",
-          amount: (Number(p.amount) / 1e9).toString() + " TON",
-          readyWithdraw: (Number(p.ready_withdraw) / 1e9).toString() + " TON",
-          pendingDeposit:
-            (Number(p.pending_deposit) / 1e9).toString() + " TON",
+        pools: (response.value.pools ?? []).map((pool) => ({
+          pool: pool.address,
+          name: pool.name || "Unknown pool",
+          amount: formatTon(pool.amount),
+          readyWithdraw: formatTon(pool.ready_withdraw),
+          pendingDeposit: formatTon(pool.pending_deposit),
         })),
       };
     }

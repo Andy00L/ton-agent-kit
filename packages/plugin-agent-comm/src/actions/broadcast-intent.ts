@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, fromNano, beginCell, internal } from "@ton/core";
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { callContractGetter } from "../../../plugin-identity/src/reputation-helpers";
-import { storeBroadcastIntent } from "../../../plugin-identity/src/contracts/Reputation_Reputation";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import { callContractGetter, resolveContractAddress, storeBroadcastIntent } from "@ton-agent-kit/plugin-identity";
 import { createHash } from "crypto";
 
 function computeServiceHash(service: string): bigint {
@@ -92,10 +90,10 @@ export const broadcastIntentAction = defineAction({
             intentIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
             if (intentIndex >= 0) break; // Success
           } else {
-            onChainError = "Contract getter returned no data — contract may be frozen or nonexistent";
+            onChainError = "Contract getter returned no data: the contract may be frozen or nonexistent";
           }
-        } catch (e: any) {
-          onChainError = `Contract unreachable: ${e.message?.slice(0, 100)}`;
+        } catch (caught: unknown) {
+          onChainError = `Contract unreachable: ${describeError(caught).slice(0, 100)}`;
         }
       }
 
@@ -112,11 +110,11 @@ export const broadcastIntentAction = defineAction({
         onChainError,
         contractAddress: contractAddr,
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         broadcast: false,
-        error: err.message,
-        message: `Failed to broadcast intent: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to broadcast intent: ${describeError(caught)}`,
       };
     }
   },

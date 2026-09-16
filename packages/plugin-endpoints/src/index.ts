@@ -1,5 +1,26 @@
-import { definePlugin, defineAction } from "../../core/src/plugin";
+import { defineAction, definePlugin, type AgentContext } from "@ton-agent-kit/core";
 import { z } from "zod";
+
+interface OpenEndpointParams {
+  path: string;
+  price: string;
+  dataAction: string;
+  dataParams?: string | Record<string, string>;
+  description?: string;
+}
+
+interface CloseEndpointParams {
+  path: string;
+}
+
+/** One row of the list_x402_endpoints result. */
+interface EndpointSummary {
+  path: string;
+  url: string;
+  price: string;
+  dataAction: string;
+  served: number;
+}
 
 export interface EndpointConfig {
   price: string;
@@ -33,7 +54,7 @@ export function createEndpointPlugin(options: EndpointPluginOptions) {
           dataParams: z.string().optional().describe('Default params as JSON string'),
           description: z.string().optional().describe("Description"),
         }),
-        handler: async (_agent: any, params: any) => {
+        handler: async (_agent: AgentContext, params: OpenEndpointParams) => {
           const path = params.path.startsWith("/") ? params.path : "/" + params.path;
           routes.set(path, {
             price: params.price,
@@ -51,7 +72,7 @@ export function createEndpointPlugin(options: EndpointPluginOptions) {
         name: "close_x402_endpoint",
         description: "Close a paid x402 endpoint.",
         schema: z.object({ path: z.string().describe("URL path to close") }),
-        handler: async (_agent: any, params: any) => {
+        handler: async (_agent: AgentContext, params: CloseEndpointParams) => {
           const path = params.path.startsWith("/") ? params.path : "/" + params.path;
           const c = routes.get(path);
           const existed = routes.delete(path);
@@ -63,7 +84,7 @@ export function createEndpointPlugin(options: EndpointPluginOptions) {
         description: "List all open x402 endpoints with prices and request counts.",
         schema: z.object({}),
         handler: async () => {
-          const eps: any[] = [];
+          const eps: EndpointSummary[] = [];
           for (const [p, c] of routes) eps.push({ path: p, url: `${getPublicUrl()}${p}`, price: c.price, dataAction: c.dataAction, served: c.served });
           return { endpoints: eps, count: eps.length, serverPort: port };
         },

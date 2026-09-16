@@ -1,9 +1,31 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
-import { definePlugin, defineAction, type NftInfo, type TransactionResult, sendTransaction, toFriendlyAddress, explorerUrl } from "@ton-agent-kit/core";
+import {
+  defineAction,
+  definePlugin,
+  explorerUrl,
+  fetchJson,
+  sendTransaction,
+  toFriendlyAddress,
+  type NftInfo,
+  type TransactionResult,
+} from "@ton-agent-kit/core";
+
+/** The fields this plugin reads off the TonAPI NFT collection endpoint. */
+const NftCollectionResponse = z.object({
+  address: z.string().optional(),
+  next_item_index: z.number().optional(),
+  metadata: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+    })
+    .optional(),
+  owner: z.object({ address: z.string().optional() }).optional(),
+});
 
 // ============================================================
-// get_nft_info — Get NFT metadata
+// get_nft_info: Get NFT metadata
 // ============================================================
 const getNftInfoAction = defineAction<{ nftAddress: string }, NftInfo>({
   name: "get_nft_info",
@@ -43,7 +65,7 @@ const getNftInfoAction = defineAction<{ nftAddress: string }, NftInfo>({
 });
 
 // ============================================================
-// transfer_nft — Transfer an NFT to another address
+// transfer_nft: Transfer an NFT to another address
 // ============================================================
 const transferNftAction = defineAction<
   { nftAddress: string; to: string },
@@ -91,7 +113,7 @@ const transferNftAction = defineAction<
 });
 
 // ============================================================
-// get_collection — Get NFT collection info
+// get_collection: Get NFT collection info
 // ============================================================
 const getCollectionAction = defineAction<
   { collectionAddress: string },
@@ -114,26 +136,29 @@ const getCollectionAction = defineAction<
       headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
     }
 
-    const response = await fetch(
+    const response = await fetchJson(
       `${apiBase}/nfts/collections/${encodeURIComponent(params.collectionAddress)}`,
+      NftCollectionResponse,
       { headers },
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch collection: ${response.status}`);
+      throw new Error(`Failed to fetch collection: ${response.reason}`);
     }
 
-    const data = await response.json();
-
-    const rawAddress = data.address || params.collectionAddress;
+    const collection = response.value;
+    const rawAddress = collection.address || params.collectionAddress;
+    const ownerAddress = collection.owner?.address;
     return {
       address: rawAddress,
       friendlyAddress: toFriendlyAddress(Address.parse(rawAddress), agent.network),
-      name: data.metadata?.name,
-      description: data.metadata?.description,
-      nextItemIndex: data.next_item_index,
-      ownerAddress: data.owner?.address,
-      friendlyOwnerAddress: data.owner?.address ? toFriendlyAddress(Address.parse(data.owner.address), agent.network) : undefined,
+      name: collection.metadata?.name,
+      description: collection.metadata?.description,
+      nextItemIndex: collection.next_item_index,
+      ownerAddress,
+      friendlyOwnerAddress: ownerAddress
+        ? toFriendlyAddress(Address.parse(ownerAddress), agent.network)
+        : undefined,
     };
   },
 });

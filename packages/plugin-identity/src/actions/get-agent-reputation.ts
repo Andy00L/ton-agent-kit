@@ -92,7 +92,7 @@ export function createGetAgentReputationAction(contractAddress?: string) {
             };
           }
 
-          // Agent not found on-chain — fall through to JSON
+          // Agent not found on-chain, fall through to JSON
         } catch {
           // Fall through to JSON
         }
@@ -103,14 +103,22 @@ export function createGetAgentReputationAction(contractAddress?: string) {
       const agentRecord = registry[params.agentId];
       if (!agentRecord) throw new Error(`Agent not found: ${params.agentId}`);
 
+      // Records written before the counters existed start from zero.
+      const reputation = agentRecord.reputation ?? {
+        score: 0,
+        totalTasks: 0,
+        successfulTasks: 0,
+      };
+
       if (addTask) {
-        agentRecord.reputation.totalTasks += 1;
+        reputation.totalTasks += 1;
         if (success !== false) {
-          agentRecord.reputation.successfulTasks += 1;
+          reputation.successfulTasks += 1;
         }
-        agentRecord.reputation.score = Math.round(
-          (agentRecord.reputation.successfulTasks / agentRecord.reputation.totalTasks) * 100,
+        reputation.score = Math.round(
+          (reputation.successfulTasks / reputation.totalTasks) * 100,
         );
+        agentRecord.reputation = reputation;
         saveAgentRegistry(registry);
       }
 
@@ -119,7 +127,7 @@ export function createGetAgentReputationAction(contractAddress?: string) {
         name: agentRecord.name,
         address: agentRecord.address,
         friendlyAddress: toFriendlyAddress(Address.parse(agentRecord.address), agent.network),
-        reputation: agentRecord.reputation,
+        reputation,
         available: agentRecord.available !== false,
         onChain: false,
         registeredAt: agentRecord.registeredAt,

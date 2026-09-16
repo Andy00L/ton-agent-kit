@@ -1,7 +1,37 @@
 import { z } from "zod";
 import { Address, internal, Cell } from "@ton/core";
 
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import type { Quote, QuoteResponseEvent } from "@ston-fi/omniston-sdk";
+
+/**
+ * Everything `swap_best_price` reports. The optional fields are absent on the
+ * failure paths, which is why the type is declared rather than inferred: the
+ * inferred union of every return shape rejects its own documented example.
+ */
+interface SwapBestPriceInput {
+  fromToken: string;
+  toToken: string;
+  amount: string;
+  slippage?: number;
+  quoteTimeout?: number;
+}
+
+interface SwapBestPriceResult {
+  success: boolean;
+  message: string;
+  fromToken?: string;
+  toToken?: string;
+  amountIn?: string;
+  amountOut?: string;
+  dex?: string;
+  price?: string;
+  gasBudget?: string | null;
+  protocolFee?: string | null;
+  quoteId?: string | null;
+  quotesReceived?: number;
+  error?: string;
+}
 
 /** Well-known token addresses for Omniston */
 const TOKEN_ADDRESSES: Record<string, string> = {
@@ -12,17 +42,17 @@ const TOKEN_ADDRESSES: Record<string, string> = {
   STON: "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO",
 };
 
-export const swapBestPriceAction = defineAction({
+export const swapBestPriceAction = defineAction<SwapBestPriceInput, SwapBestPriceResult>({
   name: "swap_best_price",
   description:
     "Swap tokens at the best price across all TON DEXes (DeDust, STON.fi, etc.) using the Omniston aggregator. Automatically finds the best route and price. Use this instead of swap_dedust or swap_stonfi for optimal execution.",
   schema: z.object({
     fromToken: z
       .string()
-      .describe("Token to sell — symbol (e.g., 'TON', 'USDT') or jetton master address"),
+      .describe("Token to sell: symbol (e.g., 'TON', 'USDT') or jetton master address"),
     toToken: z
       .string()
-      .describe("Token to buy — symbol (e.g., 'USDT', 'NOT') or jetton master address"),
+      .describe("Token to buy: symbol (e.g., 'USDT', 'NOT') or jetton master address"),
     amount: z.string().describe("Amount of fromToken to swap (e.g., '10' for 10 TON)"),
     slippage: z
       .number()
@@ -57,15 +87,17 @@ export const swapBestPriceAction = defineAction({
     const bidUnits = (BigInt(Math.round(parseFloat(params.amount) * 1e9))).toString();
 
     // Create Omniston instance
-    // Always use production — sandbox has limited/no resolvers
+    // Always use production, the sandbox has limited or no resolvers
     const wsUrl = "wss://omni-ws.ston.fi";
 
     const omniston = new Omniston({ apiUrl: wsUrl });
 
+    // Declared outside the try: the catch block reports how many quotes arrived.
+    const quotes: Quote[] = [];
+
     try {
       // Collect quotes for quoteTimeout seconds, pick the best
-      const quotes: any[] = [];
-      let wsError: any = null;
+      let wsError: unknown = null;
 
       await new Promise<void>((resolve) => {
         const sub = omniston
@@ -87,13 +119,13 @@ export const swapBestPriceAction = defineAction({
             },
           })
           .subscribe({
-            next: (event: any) => {
+            next: (event: QuoteResponseEvent) => {
               if (event.type === "quoteUpdated" && event.quote) {
                 quotes.push(event.quote);
               }
             },
-            error: (err: any) => {
-              wsError = err;
+            error: (streamError: unknown) => {
+              wsError = streamError;
               resolve();
             },
           });
@@ -112,7 +144,7 @@ export const swapBestPriceAction = defineAction({
           amountIn: params.amount,
           amountOut: "0",
           quotesReceived: 0,
-          message: `Omniston connection error: ${wsError.message || wsError}`,
+          message: `Omniston connection error: ${describeError(wsError)}`,
         };
       }
 
@@ -183,11 +215,13 @@ export const swapBestPriceAction = defineAction({
       }
 
       // Convert to internal messages
-      const internalMessages = rawMessages.map((msg: any) =>
+      // TonMessage carries targetAddress and sendAmount, not address and amount.
+      // sourceRef: node_modules/@ston-fi/omniston-sdk/dist/index.d.ts (TonMessage)
+      const internalMessages = rawMessages.map((message) =>
         internal({
-          to: Address.parse(msg.address),
-          value: BigInt(msg.amount),
-          body: msg.payload ? Cell.fromBase64(msg.payload) : undefined,
+          to: Address.parse(message.targetAddress),
+          value: BigInt(message.sendAmount),
+          body: message.payload ? Cell.fromBase64(message.payload) : undefined,
           bounce: true,
         }),
       );
@@ -209,16 +243,17 @@ export const swapBestPriceAction = defineAction({
         quotesReceived: quotes.length,
         message: `Swapped ${params.amount} ${params.fromToken} → ${amountOut} ${params.toToken} via ${bestQuote.resolverName || "best route"} (best of ${quotes.length} quote${quotes.length > 1 ? "s" : ""})`,
       };
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const reason = describeError(error);
       return {
         success: false,
         fromToken: params.fromToken,
         toToken: params.toToken,
         amountIn: params.amount,
         amountOut: "0",
-        quotesReceived: quotes?.length ?? 0,
-        error: err.message,
-        message: `Swap failed: ${err.message}`,
+        quotesReceived: quotes.length,
+        error: reason,
+        message: `Swap failed: ${reason}`,
       };
     } finally {
       // Always close the WebSocket connection

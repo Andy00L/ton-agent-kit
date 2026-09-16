@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { storeCancelIntent } from "../../../plugin-identity/src/contracts/Reputation_Reputation";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import { resolveContractAddress, storeCancelIntent } from "@ton-agent-kit/plugin-identity";
 
 export const cancelIntentAction = defineAction({
   name: "cancel_intent",
@@ -42,12 +41,12 @@ export const cancelIntentAction = defineAction({
         onChain: true,
         contractAddress: contractAddr,
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         cancelled: false,
         intentIndex: params.intentIndex,
-        error: err.message,
-        message: `Failed to cancel intent: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to cancel intent: ${describeError(caught)}`,
       };
     }
   },

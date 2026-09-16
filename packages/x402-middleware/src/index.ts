@@ -1,5 +1,5 @@
 /**
- * TON Agent Kit — x402 Payment Middleware (Production-Hardened)
+ * TON Agent Kit x402 Payment Middleware (Production-Hardened)
  *
  * Makes any Express API payable in TON.
  * Agents auto-detect the 402 response, pay, and retry.
@@ -11,10 +11,10 @@
  * - 2-level verification: blockchain endpoint → events fallback
  *
  * Storage options:
- * - FileReplayStore (default) — zero dependencies, JSON file on disk
- * - RedisReplayStore — Upstash, Redis Cloud, or self-hosted Redis
- * - MemoryReplayStore — for testing only
- * - Custom — implement the ReplayStore interface
+ * - FileReplayStore (default): zero dependencies, JSON file on disk
+ * - RedisReplayStore: Upstash, Redis Cloud, or self-hosted Redis
+ * - MemoryReplayStore: for testing only
+ * - Custom: implement the ReplayStore interface
  *
  * Usage:
  *   import { tonPaywall, createPaymentServer } from "@ton-agent-kit/x402-middleware";
@@ -30,6 +30,60 @@
 
 import type { NextFunction, Request, Response } from "express";
 import { Address } from "@ton/core";
+import { z } from "zod";
+
+/**
+ * Turn a caught value into a message without assuming it is an `Error`.
+ *
+ * `@ton-agent-kit/core` exports the same helper, but this middleware stays
+ * installable on its own: an Express app that only wants a paywall should not
+ * have to pull in the whole agent SDK for three lines.
+ */
+function describeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+/**
+ * The fetch Response. Aliased because this module also imports Express's
+ * `Response`, which otherwise shadows the global one inside every signature.
+ */
+type FetchResponse = Awaited<ReturnType<typeof fetch>>;
+
+/** The fields the level-1 check reads off a blockchain transaction. */
+const BlockchainTransaction = z.object({
+  success: z.boolean().optional(),
+  utime: z.number().optional(),
+  out_msgs: z
+    .array(
+      z.object({
+        value: z.union([z.string(), z.number()]).optional(),
+        source: z.object({ address: z.string().optional() }).optional(),
+        destination: z.object({ address: z.string().optional() }).optional(),
+      }),
+    )
+    .optional(),
+});
+
+/** The fields the level-2 fallback reads off an event. */
+const AccountEvent = z.object({
+  timestamp: z.number().optional(),
+  actions: z
+    .array(
+      z.object({
+        type: z.string().optional(),
+        status: z.string().optional(),
+        TonTransfer: z
+          .object({
+            amount: z.union([z.string(), z.number()]).optional(),
+            sender: z.object({ address: z.string().optional() }).optional(),
+            recipient: z.object({ address: z.string().optional() }).optional(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
+});
 
 // ============================================================
 // Types
@@ -48,7 +102,7 @@ export interface PaywallConfig {
   description?: string;
   /** Custom replay store (default: FileReplayStore) */
   replayStore?: ReplayStore;
-  /** TONAPI key for higher rate limits (optional — falls back to TONAPI_KEY env var) */
+  /** TONAPI key for higher rate limits (optional, falls back to the TONAPI_KEY env var) */
   tonapiKey?: string;
 }
 
@@ -68,7 +122,7 @@ export interface PaymentRequirement {
 }
 
 // ============================================================
-// Storage Adapter — pluggable anti-replay backend
+// Storage Adapter: pluggable anti-replay backend
 // ============================================================
 
 /**
@@ -78,12 +132,12 @@ export interface PaymentRequirement {
 export interface ReplayStore {
   /** Check if a tx hash has been used */
   has(hash: string): Promise<boolean>;
-  /** Mark a tx hash as used (must be permanent — anti-replay) */
+  /** Mark a tx hash as used (must be permanent, this is the anti-replay guarantee) */
   add(hash: string): Promise<void>;
 }
 
 /**
- * File-based store (default — zero dependencies)
+ * File-based store (default, zero dependencies)
  * Persists used hashes to a JSON file on disk.
  * Survives server restarts. Good for small-medium deployments.
  */
@@ -99,8 +153,8 @@ export class FileReplayStore implements ReplayStore {
       if (existsSync(this.filePath)) {
         this.hashes = new Set(JSON.parse(readFileSync(this.filePath, "utf-8")));
       }
-    } catch (err: any) {
-      console.error(`Failed to load replay store: ${err.message}`);
+    } catch (caught: unknown) {
+      console.error(`Failed to load replay store: ${describeError(caught)}`);
     }
   }
 
@@ -113,14 +167,14 @@ export class FileReplayStore implements ReplayStore {
     try {
       const { writeFile } = require("fs/promises");
       await writeFile(this.filePath, JSON.stringify([...this.hashes]), "utf-8");
-    } catch (err: any) {
-      console.error(`Failed to persist replay store: ${err.message}`);
+    } catch (caught: unknown) {
+      console.error(`Failed to persist replay store: ${describeError(caught)}`);
     }
   }
 }
 
 /**
- * Redis/Upstash store — for production scale.
+ * Redis/Upstash store, for production scale.
  * Works with @upstash/redis, ioredis, or any Redis client with get/set/exists.
  *
  * @example
@@ -139,11 +193,21 @@ export class FileReplayStore implements ReplayStore {
  * });
  * ```
  */
+/**
+ * The three calls this store needs from a Redis client. Declared structurally
+ * so ioredis, node-redis and the Upstash HTTP client all satisfy it without
+ * this package depending on any of them.
+ */
+export interface RedisLikeClient {
+  exists(key: string): Promise<number | boolean>;
+  set(key: string, value: string): Promise<unknown>;
+}
+
 export class RedisReplayStore implements ReplayStore {
-  private redis: any;
+  private redis: RedisLikeClient;
   private prefix: string;
 
-  constructor(redisClient: any, prefix: string = "x402:used:") {
+  constructor(redisClient: RedisLikeClient, prefix: string = "x402:used:") {
     this.redis = redisClient;
     this.prefix = prefix;
   }
@@ -159,7 +223,7 @@ export class RedisReplayStore implements ReplayStore {
 }
 
 /**
- * In-memory store — for testing only.
+ * In-memory store, for testing only.
  * Data is lost on server restart.
  */
 export class MemoryReplayStore implements ReplayStore {
@@ -200,7 +264,7 @@ export class MemoryReplayStore implements ReplayStore {
  * ```
  */
 export function tonPaywall(config: PaywallConfig) {
-  // Per-instance cache — each middleware instance has its own isolated cache
+  // Per-instance cache: each middleware instance has its own isolated cache
   const verifiedPayments = new Map<string, { timestamp: number; amount: string }>();
   // Prevents TOCTOU race: tracks hashes currently being verified
   const pendingVerifications = new Set<string>();
@@ -244,7 +308,7 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Check cache FIRST — allows retries within proofTTL window
+    // Check cache FIRST, which allows retries within the proofTTL window
     // (e.g. client didn't receive response due to timeout, retries with same hash)
     if (verifiedPayments.has(paymentHash)) {
       const cached = verifiedPayments.get(paymentHash)!;
@@ -284,7 +348,7 @@ export function tonPaywall(config: PaywallConfig) {
     pendingVerifications.add(paymentHash);
     try {
       // Verify payment on-chain (production-hardened)
-      // On testnet, TONAPI indexing can take 30-60s — retry "not found" internally
+      // On testnet, TONAPI indexing can take 30-60s, so retry "not found" internally
       // so the caller doesn't waste 12s between external retries
       const verifyAttempts = network === "testnet" ? 3 : 1;
       let verification: { valid: boolean; reason?: string } = { valid: false };
@@ -300,7 +364,7 @@ export function tonPaywall(config: PaywallConfig) {
           resolvedApiKey,
         );
         if (verification.valid) break;
-        // Only retry on "not found" — definitive failures (wrong amount, too old, replay) stop immediately
+        // Only retry on "not found". Definitive failures (wrong amount, too old, replay) stop immediately.
         if (!verification.reason?.includes("Event not found")) break;
       }
 
@@ -332,13 +396,13 @@ export function tonPaywall(config: PaywallConfig) {
  * Fetch wrapper that retries on TONAPI rate limiting (HTTP 429).
  * Retries up to 3 times with exponential backoff (2s, 4s, 8s).
  */
-async function fetchWithRateLimitRetry(url: string, apiKey?: string): Promise<Response> {
+async function fetchWithRateLimitRetry(url: string, apiKey?: string): Promise<FetchResponse> {
   const maxRetries = 3;
   const headers: Record<string, string> = {};
   if (apiKey) {
     headers["Authorization"] = `Bearer ${apiKey}`;
   }
-  let lastRes!: Response;
+  let lastRes!: FetchResponse;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     lastRes = await fetch(url, { headers });
 
@@ -386,7 +450,7 @@ async function verifyPayment(
       ? "https://testnet.tonapi.io/v2"
       : "https://tonapi.io/v2";
 
-  // Normalize address to raw format — handles both friendly ("UQB918rv...") and raw ("0:7dd7ca...")
+  // Normalize address to raw format: handles both friendly ("UQB918rv...") and raw ("0:7dd7ca...")
   let normalizedExpected: string;
   try {
     normalizedExpected = Address.parse(expectedRecipient).toRawString().toLowerCase().replace(/^0:/, "");
@@ -396,7 +460,7 @@ async function verifyPayment(
   const expectedAmountNano = Math.round(parseFloat(expectedAmount) * 1e9);
 
   try {
-    // Level 1: Blockchain endpoint (raw transaction data — most reliable)
+    // Level 1: Blockchain endpoint (raw transaction data, most reliable)
     const bcRes = await fetchWithRateLimitRetry(
       `${apiBase}/blockchain/transactions/${encodeURIComponent(txHash)}`,
       apiKey,
@@ -415,7 +479,11 @@ async function verifyPayment(
       );
     }
 
-    const bc = await bcRes.json();
+    const parsedTransaction = BlockchainTransaction.safeParse(await bcRes.json());
+    if (!parsedTransaction.success) {
+      return { valid: false, reason: "Unexpected transaction shape from TONAPI" };
+    }
+    const bc = parsedTransaction.data;
 
     // Check 1: Transaction must be successful
     if (!bc.success) {
@@ -433,7 +501,7 @@ async function verifyPayment(
     }
 
     // Check 3: Find matching out_msg with correct recipient and amount
-    for (const msg of bc.out_msgs || []) {
+    for (const msg of bc.out_msgs ?? []) {
       const dest = (msg.destination?.address || "")
         .toLowerCase()
         .replace(/^0:/, "");
@@ -448,7 +516,7 @@ async function verifyPayment(
         const tolerance = 5_000_000;
 
         if (value >= expectedAmountNano - tolerance) {
-          // All checks passed — mark hash as used permanently (anti-replay)
+          // All checks passed, so mark the hash as used permanently (anti-replay)
           await store.add(txHash);
           return { valid: true };
         }
@@ -470,8 +538,8 @@ async function verifyPayment(
       store,
       apiKey,
     );
-  } catch (err: any) {
-    return { valid: false, reason: `Verification error: ${err.message}` };
+  } catch (error: unknown) {
+    return { valid: false, reason: `Verification error: ${describeError(error)}` };
   }
 }
 
@@ -496,12 +564,16 @@ async function verifyViaEvents(
 
     if (!eventRes.ok) {
       if (eventRes.status === 429) {
-        return { valid: false, reason: "TONAPI rate limited (429) — retry later" };
+        return { valid: false, reason: "TONAPI rate limited (429), retry later" };
       }
       return { valid: false, reason: `Event not found: ${eventRes.status}` };
     }
 
-    const event = await eventRes.json();
+    const parsedEvent = AccountEvent.safeParse(await eventRes.json());
+    if (!parsedEvent.success) {
+      return { valid: false, reason: "Unexpected event shape from TONAPI" };
+    }
+    const event = parsedEvent.data;
 
     // Timestamp check
     const txTimestamp = event.timestamp || 0;
@@ -513,7 +585,7 @@ async function verifyViaEvents(
       };
     }
 
-    for (const action of event.actions || []) {
+    for (const action of event.actions ?? []) {
       if (action.type === "TonTransfer" && action.status === "ok") {
         const recipientRaw = (action.TonTransfer?.recipient?.address || "")
           .toLowerCase()
@@ -542,8 +614,8 @@ async function verifyViaEvents(
     }
 
     return { valid: false, reason: "No matching transfer found in event" };
-  } catch (err: any) {
-    return { valid: false, reason: `Event verification error: ${err.message}` };
+  } catch (caught: unknown) {
+    return { valid: false, reason: `Event verification error: ${describeError(caught)}` };
   }
 }
 
@@ -556,7 +628,7 @@ async function verifyViaEvents(
  *
  * @example
  * ```ts
- * // Default — file-based storage, zero config
+ * // Default: file-based storage, zero config
  * const app = createPaymentServer({
  *   recipient: "0:abc...",
  *   routes: [
@@ -589,7 +661,7 @@ async function verifyViaEvents(
 export function createPaymentServer(config: {
   recipient: string;
   network?: "testnet" | "mainnet";
-  /** Custom replay store — FileReplayStore (default), RedisReplayStore, or your own */
+  /** Custom replay store: FileReplayStore (default), RedisReplayStore, or your own */
   replayStore?: ReplayStore;
   routes: Array<{
     path: string;

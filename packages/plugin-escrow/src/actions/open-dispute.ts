@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
+import { defineAction, describeError, toFriendlyAddress } from "@ton-agent-kit/core";
 import { loadEscrows, saveEscrows, openDisputeOnContract, getLatestTxHash } from "../utils";
 
 export const openDisputeAction = defineAction({
@@ -36,7 +36,7 @@ export const openDisputeAction = defineAction({
         contractAddress: escrow.contractAddress,
         friendlyContract: toFriendlyAddress(contractAddress, agent.network),
         arbiterCount: escrow.arbiterCount || 1,
-        arbiters: escrow.arbiters || [escrow.arbiter],
+        arbiters: escrow.arbiters ?? (escrow.arbiter ? [escrow.arbiter] : []),
         disputeTxHash: txHash,
         message: `Dispute opened on escrow ${params.escrowId}. ${
           (escrow.arbiterCount || 1) > 1
@@ -44,12 +44,13 @@ export const openDisputeAction = defineAction({
             : "Single arbiter can now release or refund."
         }`,
       };
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const reason = describeError(error);
       return {
         disputed: false,
         escrowId: params.escrowId,
-        error: err.message,
-        message: `Failed to open dispute: ${err.message}`,
+        error: reason,
+        message: `Failed to open dispute: ${reason}`,
       };
     }
   },

@@ -1,6 +1,39 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
+import { defineAction, describeError, fetchJson, toFriendlyAddress } from "@ton-agent-kit/core";
+import type { AgentContext } from "@ton-agent-kit/core";
+import { NANOTONS_PER_TON } from "../tonapi-schemas";
+
+/** The fields this action reads off an SSE transaction event. */
+const SseTransactionEvent = z.object({
+  tx_hash: z.string().optional(),
+  hash: z.string().optional(),
+  utime: z.number().optional(),
+  now: z.number().optional(),
+  in_msg: z
+    .object({
+      value: z.union([z.string(), z.number()]).optional(),
+      source: z.object({ address: z.string().optional() }).optional(),
+      destination: z.object({ address: z.string().optional() }).optional(),
+    })
+    .optional(),
+});
+
+type SseTransactionEventValue = z.infer<typeof SseTransactionEvent>;
+
+/** The fields this action reads off a blockchain transaction. */
+const TransactionResponse = z.object({
+  utime: z.number().optional(),
+  in_msg: z
+    .object({
+      value: z.union([z.string(), z.number()]).optional(),
+      message: z.string().optional(),
+      source: z.object({ address: z.string().optional() }).optional(),
+      destination: z.object({ address: z.string().optional() }).optional(),
+      decoded_body: z.object({ text: z.string().optional() }).optional(),
+    })
+    .optional(),
+});
 
 export const waitForTransactionAction = defineAction({
   name: "wait_for_transaction",
@@ -77,14 +110,18 @@ export const waitForTransactionAction = defineAction({
           const jsonStr = line.slice(5).trim();
           if (!jsonStr) continue;
 
-          let event: any;
+          let payload: unknown;
           try {
-            event = JSON.parse(jsonStr);
+            payload = JSON.parse(jsonStr);
           } catch {
             continue;
           }
 
-          // Got a transaction event — extract the hash
+          const parsed = SseTransactionEvent.safeParse(payload);
+          if (!parsed.success) continue;
+          const event = parsed.data;
+
+          // Got a transaction event, extract the hash
           txHash = event.tx_hash || event.hash || null;
 
           // Clean up SSE connection
@@ -109,9 +146,9 @@ export const waitForTransactionAction = defineAction({
         timeoutSeconds: timeoutSec,
         message: `No transactions received within ${timeoutSec} seconds.`,
       };
-    } catch (err: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
-      if (err.name === "AbortError") {
+      if (error instanceof Error && error.name === "AbortError") {
         return {
           found: false,
           address: addr,
@@ -119,10 +156,11 @@ export const waitForTransactionAction = defineAction({
           message: `No transactions received within ${timeoutSec} seconds.`,
         };
       }
+      const reason = describeError(error);
       return {
         found: false,
-        error: err.message,
-        message: `Failed to connect to TONAPI SSE: ${err.message}`,
+        error: reason,
+        message: `Failed to connect to TONAPI SSE: ${reason}`,
       };
     }
   },
@@ -135,7 +173,7 @@ async function fetchAndFormatTx(
   apiBase: string,
   txHash: string,
   watchedAddr: string,
-  agent: any,
+  agent: AgentContext,
 ) {
   try {
     const headers: Record<string, string> = {};
@@ -143,12 +181,13 @@ async function fetchAndFormatTx(
       headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
     }
 
-    const res = await fetch(
+    const transaction = await fetchJson(
       `${apiBase}/blockchain/transactions/${encodeURIComponent(txHash)}`,
+      TransactionResponse,
       { headers },
     );
 
-    if (!res.ok) {
+    if (!transaction.ok) {
       // Fallback: return minimal result with just the hash
       return {
         found: true,
@@ -164,15 +203,13 @@ async function fetchAndFormatTx(
       };
     }
 
-    const tx = await res.json();
-
-    const inMsg = tx.in_msg;
+    const inMsg = transaction.value.in_msg;
     const sender = inMsg?.source?.address || null;
     const recipient = inMsg?.destination?.address || null;
     const valueNano = inMsg?.value != null ? Number(inMsg.value) : 0;
-    const amount = valueNano > 0 ? (valueNano / 1e9).toString() : "0";
+    const amount = valueNano > 0 ? (valueNano / NANOTONS_PER_TON).toString() : "0";
     const comment = inMsg?.decoded_body?.text || inMsg?.message || null;
-    const timestamp = tx.utime || Math.floor(Date.now() / 1000);
+    const timestamp = transaction.value.utime || Math.floor(Date.now() / 1000);
 
     const normalizedWatched = normed(watchedAddr);
     const isIncoming = recipient && normed(recipient) === normalizedWatched;
@@ -213,12 +250,16 @@ async function fetchAndFormatTx(
 /**
  * Fallback: format directly from the SSE event payload.
  */
-function formatSseEvent(event: any, watchedAddr: string, agent: any) {
+function formatSseEvent(
+  event: SseTransactionEventValue,
+  watchedAddr: string,
+  agent: AgentContext,
+) {
   const txHash = event.tx_hash || event.hash || "unknown";
   const sender = event.in_msg?.source?.address || null;
   const recipient = event.in_msg?.destination?.address || null;
   const valueNano = event.in_msg?.value != null ? Number(event.in_msg.value) : 0;
-  const amount = valueNano > 0 ? (valueNano / 1e9).toString() : "0";
+  const amount = valueNano > 0 ? (valueNano / NANOTONS_PER_TON).toString() : "0";
   const timestamp = event.utime || event.now || Math.floor(Date.now() / 1000);
 
   const normalizedWatched = normed(watchedAddr);

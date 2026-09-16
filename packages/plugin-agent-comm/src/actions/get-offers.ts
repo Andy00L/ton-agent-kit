@@ -1,62 +1,18 @@
 import { z } from "zod";
-import { Address, Cell } from "@ton/core";
-import { defineAction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { callContractGetter } from "../../../plugin-identity/src/reputation-helpers";
+import { defineAction, describeError } from "@ton-agent-kit/core";
+import { parseAddress, parseBigNum, parseNum, parseString } from "../stack-parsers";
 
-function parseString(item: any): string {
-  if (!item) return "";
-  if (item.type === "cell" && item.cell) {
-    try {
-      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
-      return cell.beginParse().loadStringTail();
-    } catch {
-      try {
-        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
-        return cell.beginParse().loadStringTail();
-      } catch {}
-    }
-  }
-  return "";
+/** One pending offer, as get_offers reports it. */
+interface PendingOffer {
+  offerIndex: number;
+  seller: string;
+  intentIndex: number;
+  price: string;
+  deliveryTime: number;
+  endpoint: string;
+  status: string;
 }
-
-const parseNum = (item: any): number =>
-  item?.type === "num"
-    ? Number(BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num))
-    : 0;
-
-const parseBigNum = (item: any): bigint =>
-  item?.type === "num"
-    ? BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num)
-    : 0n;
-
-function parseAddress(item: any): string {
-  if (!item) return "";
-  if (item.type === "slice" && item.slice) {
-    try {
-      return Address.parse(item.slice).toRawString();
-    } catch {
-      return item.slice;
-    }
-  }
-  if (item.type === "cell" && item.cell) {
-    try {
-      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
-      const slice = cell.beginParse();
-      const addr = slice.loadAddress();
-      return addr ? addr.toRawString() : "";
-    } catch {
-      try {
-        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
-        const slice = cell.beginParse();
-        const addr = slice.loadAddress();
-        return addr ? addr.toRawString() : "";
-      } catch {}
-      return "";
-    }
-  }
-  return "";
-}
+import { callContractGetter, resolveContractAddress } from "@ton-agent-kit/plugin-identity";
 
 export const getOffersAction = defineAction({
   name: "get_offers",
@@ -99,7 +55,7 @@ export const getOffersAction = defineAction({
         return { offers: [], count: 0, onChain: true };
       }
 
-      const offers: any[] = [];
+      const offers: PendingOffer[] = [];
 
       // Iterate through all offers
       for (let i = totalCount - 1; i >= 0 && offers.length < limit; i--) {
@@ -157,12 +113,12 @@ export const getOffersAction = defineAction({
         onChain: true,
         contractAddress: contractAddr,
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         offers: [],
         count: 0,
-        error: err.message,
-        message: `Failed to get offers: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to get offers: ${describeError(caught)}`,
       };
     }
   },

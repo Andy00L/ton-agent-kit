@@ -8,7 +8,28 @@ import {
   registerEscrowOnReputation,
   type EscrowRecord,
 } from "../utils";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
+import { resolveContractAddress } from "@ton-agent-kit/plugin-identity";
+
+/** Everything `create_escrow` reports after the contract is deployed. */
+interface CreateEscrowResult {
+  escrowId: string;
+  status: string;
+  contractAddress: string;
+  friendlyContract: string;
+  beneficiary: string;
+  friendlyBeneficiary: string;
+  minArbiters: number;
+  minStake: string;
+  amount: string;
+  deadline: string;
+  requireRepCollateral: boolean;
+  /** The score when collateral is required, the string "disabled" otherwise. */
+  minRepScore: number | string;
+  /** The stake when collateral is required, the string "not required" otherwise. */
+  baseSellerStake: string;
+  description: string;
+  nextStep: string;
+}
 
 export const createEscrowAction = defineAction<
   {
@@ -16,18 +37,21 @@ export const createEscrowAction = defineAction<
     amount: string;
     minArbiters?: number;
     minStake?: string;
+    requireRepCollateral?: boolean;
+    minRepScore?: number;
+    baseSellerStake?: string;
     description?: string;
     deadlineTimestamp?: number;
     deadlineDays?: number;
     deadlineHours?: number;
     deadlineMinutes?: number;
   },
-  any
+  CreateEscrowResult
 >({
   name: "create_escrow",
   description:
     "Create a new on-chain escrow deal. Deploys a Tact Escrow contract to TON. " +
-    "No arbiters needed upfront — they self-select by staking during disputes. " +
+    "No arbiters needed upfront: they self-select by staking during disputes. " +
     "minArbiters sets the minimum arbiters needed for voting (default 3). " +
     "minStake sets the minimum stake per arbiter in TON (default 0.5).",
   schema: z.object({
@@ -45,7 +69,7 @@ export const createEscrowAction = defineAction<
     deadlineDays: z.coerce.number().optional().describe("Deadline in days from now"),
     deadlineHours: z.coerce.number().optional().describe("Deadline in hours from now"),
     deadlineMinutes: z.coerce.number().optional().describe("Deadline in minutes from now. Default 60."),
-  }) as any,
+  }),
   handler: async (agent, params) => {
     const escrowId = `escrow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const now = Math.floor(Date.now() / 1000);

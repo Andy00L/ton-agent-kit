@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
+import { defineAction, fetchJson, toFriendlyAddress } from "@ton-agent-kit/core";
+
+/** The fields this action reads off the TonAPI account endpoint. */
+const AccountResponse = z.object({
+  address: z.string(),
+  balance: z.union([z.string(), z.number()]).optional(),
+  status: z.string().optional(),
+  interfaces: z.array(z.string()).optional(),
+  name: z.string().optional(),
+  last_activity: z.number().optional(),
+  is_wallet: z.boolean().optional(),
+});
+
+/** Nanotons in one TON. */
+const NANOTONS_PER_TON = 1e9;
 
 export const getWalletInfoAction = defineAction({
   name: "get_wallet_info",
@@ -18,17 +32,21 @@ export const getWalletInfoAction = defineAction({
       agent.network === "testnet"
         ? "https://testnet.tonapi.io/v2"
         : "https://tonapi.io/v2";
-    const response = await fetch(
+
+    const account = await fetchJson(
       `${apiBase}/accounts/${encodeURIComponent(addr)}`,
+      AccountResponse,
     );
-    if (!response.ok)
-      throw new Error(`Failed to fetch wallet info: ${response.status}`);
-    const data = await response.json();
+    if (!account.ok) {
+      throw new Error(`Failed to fetch wallet info: ${account.reason}`);
+    }
+
+    const data = account.value;
     const parsedAddr = Address.parse(data.address);
     return {
       address: data.address,
       friendlyAddress: toFriendlyAddress(parsedAddr, agent.network),
-      balance: (Number(data.balance) / 1e9).toString() + " TON",
+      balance: (Number(data.balance ?? 0) / NANOTONS_PER_TON).toString() + " TON",
       status: data.status,
       interfaces: data.interfaces || [],
       name: data.name || null,

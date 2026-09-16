@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, fetchJson } from "@ton-agent-kit/core";
+
+/** TonAPI answers a webhook registration with an id under either key. */
+const WebhookResponse = z.object({
+  webhook_id: z.union([z.string(), z.number()]).optional(),
+  id: z.union([z.string(), z.number()]).optional(),
+});
 
 export const subscribeWebhookAction = defineAction({
   name: "subscribe_webhook",
@@ -40,49 +46,32 @@ export const subscribeWebhookAction = defineAction({
         ? "https://testnet.tonapi.io/v2"
         : "https://tonapi.io/v2";
 
-    try {
-      const response = await fetch(`${apiBase}/webhook`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${agent.config.TONAPI_KEY}`,
-        },
-        body: JSON.stringify({
-          endpoint: params.callbackUrl,
-          accounts: [{ account_id: addr }],
-        }),
-      });
+    const response = await fetchJson(`${apiBase}/webhook`, WebhookResponse, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${agent.config.TONAPI_KEY}`,
+      },
+      body: JSON.stringify({
+        endpoint: params.callbackUrl,
+        accounts: [{ account_id: addr }],
+      }),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMsg = `TONAPI returned ${response.status}`;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.error || errorJson.message || errorMsg;
-        } catch {}
-
-        return {
-          subscribed: false,
-          error: errorMsg,
-          message: `Failed to register webhook: ${errorMsg}`,
-        };
-      }
-
-      const data = await response.json();
-
-      return {
-        subscribed: true,
-        address: addr,
-        callbackUrl: params.callbackUrl,
-        webhookId: data.webhook_id || data.id || null,
-        message: `Webhook registered. TONAPI will POST to ${params.callbackUrl} when transactions occur on ${addr.slice(0, 12)}...`,
-      };
-    } catch (err: any) {
+    if (!response.ok) {
       return {
         subscribed: false,
-        error: err.message,
-        message: `Failed to register webhook: ${err.message}`,
+        error: response.reason,
+        message: `Failed to register webhook: ${response.reason}`,
       };
     }
+
+    return {
+      subscribed: true,
+      address: addr,
+      callbackUrl: params.callbackUrl,
+      webhookId: response.value.webhook_id ?? response.value.id ?? null,
+      message: `Webhook registered. TONAPI will POST to ${params.callbackUrl} when transactions occur on ${addr.slice(0, 12)}...`,
+    };
   },
 });

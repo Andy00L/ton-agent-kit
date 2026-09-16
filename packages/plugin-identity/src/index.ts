@@ -71,3 +71,17 @@ export {
   triggerCleanupAction,
   getAgentCleanupInfoAction,
 };
+
+// Reputation-contract helpers shared with @ton-agent-kit/plugin-agent-comm and
+// @ton-agent-kit/plugin-escrow. They are exported here so sibling packages
+// import through the package name instead of reaching into src, which only
+// resolves under a flat node_modules layout.
+export { resolveContractAddress } from "./reputation-config";
+export { callContractGetter, parseIndexCell } from "./reputation-helpers";
+export {
+  storeAcceptOffer,
+  storeBroadcastIntent,
+  storeCancelIntent,
+  storeSendOffer,
+  storeSettleDeal,
+} from "./contracts/Reputation_Reputation";

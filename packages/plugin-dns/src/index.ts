@@ -1,9 +1,28 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { definePlugin, defineAction, type DnsInfo, toFriendlyAddress } from "@ton-agent-kit/core";
+import {
+  defineAction,
+  definePlugin,
+  describeError,
+  fetchJson,
+  toFriendlyAddress,
+  type DnsInfo,
+} from "@ton-agent-kit/core";
+
+/** The fields the DNS actions read off the TonAPI DNS endpoints. */
+const DnsResolveResponse = z.object({
+  wallet: z.object({ address: z.string().optional() }).optional(),
+  expiring_at: z.number().optional(),
+});
+
+/** The reverse-resolution endpoint answers with the domain name. */
+const DnsBackResolveResponse = z.object({
+  name: z.string().optional(),
+});
+
 
 // ============================================================
-// resolve_domain — Resolve .ton domain to address
+// resolve_domain: Resolve .ton domain to address
 // ============================================================
 const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolved: boolean }>({
   name: "resolve_domain",
@@ -28,8 +47,9 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolve
     }
 
     try {
-      const response = await fetch(
+      const response = await fetchJson(
         `${apiBase}/dns/${encodeURIComponent(fullDomain)}/resolve`,
+        DnsResolveResponse,
         { headers },
       );
 
@@ -37,8 +57,7 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolve
         return { domain: fullDomain, address: undefined, resolved: false };
       }
 
-      const data = await response.json();
-      const walletAddress = data.wallet?.address;
+      const walletAddress = response.value.wallet?.address;
 
       return {
         domain: fullDomain,
@@ -53,7 +72,7 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolve
 });
 
 // ============================================================
-// lookup_address — Reverse lookup: address to domain
+// lookup_address: Reverse lookup from address to domain
 // ============================================================
 const lookupAddressAction = defineAction<
   { address: string },
@@ -73,17 +92,17 @@ const lookupAddressAction = defineAction<
     try {
       const tonApiKey = agent.config.TONAPI_KEY;
       if (tonApiKey) {
-        const response = await fetch(
+        const response = await fetchJson(
           `https://tonapi.io/v2/accounts/${addr.toRawString()}/dns/backresolve`,
+          DnsBackResolveResponse,
           { headers: { Authorization: `Bearer ${tonApiKey}` } }
         );
         if (response.ok) {
-          const data = await response.json();
-          return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: data.name };
+          return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: response.value.name };
         }
       }
-    } catch (err: any) {
-      console.error(`lookup_address TONAPI error: ${err.message}`);
+    } catch (error: unknown) {
+      console.error(`[lookupAddressAction] TONAPI error: ${describeError(error)}`);
     }
 
     return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: undefined };
@@ -91,7 +110,7 @@ const lookupAddressAction = defineAction<
 });
 
 // ============================================================
-// get_domain_info — Get detailed domain registration info
+// get_domain_info: Get detailed domain registration info
 // ============================================================
 const getDomainInfoAction = defineAction<
   { domain: string },
@@ -108,23 +127,23 @@ const getDomainInfoAction = defineAction<
     try {
       const tonApiKey = agent.config.TONAPI_KEY;
       if (tonApiKey) {
-        const response = await fetch(
+        const response = await fetchJson(
           `https://tonapi.io/v2/dns/${encodeURIComponent(domain + ".ton")}/resolve`,
+          DnsResolveResponse,
           { headers: { Authorization: `Bearer ${tonApiKey}` } }
         );
         if (response.ok) {
-          const data = await response.json();
-          const resolvedAddr = data.wallet?.address;
+          const resolvedAddr = response.value.wallet?.address;
           return {
             domain: `${domain}.ton`,
             address: resolvedAddr,
             friendlyAddress: resolvedAddr ? toFriendlyAddress(Address.parse(resolvedAddr), agent.network) : undefined,
-            expiresAt: data.expiring_at,
+            expiresAt: response.value.expiring_at,
           };
         }
       }
-    } catch (err: any) {
-      console.error(`get_domain_info TONAPI error: ${err.message}`);
+    } catch (error: unknown) {
+      console.error(`[getDomainInfoAction] TONAPI error: ${describeError(error)}`);
     }
 
     // Fallback: resolve on-chain

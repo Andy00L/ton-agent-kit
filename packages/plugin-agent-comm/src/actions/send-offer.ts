@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, fromNano, beginCell, internal } from "@ton/core";
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { callContractGetter } from "../../../plugin-identity/src/reputation-helpers";
-import { storeSendOffer } from "../../../plugin-identity/src/contracts/Reputation_Reputation";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import { callContractGetter, resolveContractAddress, storeSendOffer } from "@ton-agent-kit/plugin-identity";
 
 export const sendOfferAction = defineAction({
   name: "send_offer",
@@ -85,11 +83,11 @@ export const sendOfferAction = defineAction({
         onChain: true,
         contractAddress: contractAddr,
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         sent: false,
-        error: err.message,
-        message: `Failed to send offer: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to send offer: ${describeError(caught)}`,
       };
     }
   },

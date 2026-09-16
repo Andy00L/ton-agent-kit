@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import { z } from "zod";
 import { Address, internal, toNano, beginCell } from "@ton/core";
 import { TonClient4 } from "@ton/ton";
 import type { AgentContext } from "@ton-agent-kit/core";
@@ -18,7 +19,7 @@ import {
   storeFallbackSettle,
   storeSellerStake,
 } from "./contracts/Escrow_Escrow";
-import { sendTransaction } from "@ton-agent-kit/core";
+import { describeError, fetchJson, sendTransaction } from "@ton-agent-kit/core";
 
 const ESCROW_FILE = ".escrow-store.json";
 
@@ -35,6 +36,14 @@ export interface EscrowRecord {
   description: string;
   status: string;
   createdAt: string;
+  /**
+   * Arbiter fields written by records created before arbiters self-selected by
+   * staking. Newer records leave them unset; open_dispute still reads them so
+   * an old store keeps working.
+   */
+  arbiter?: string;
+  arbiters?: string[];
+  arbiterCount?: number;
 }
 
 export function loadEscrows(): Record<string, EscrowRecord> {
@@ -42,8 +51,8 @@ export function loadEscrows(): Record<string, EscrowRecord> {
     if (existsSync(ESCROW_FILE)) {
       return JSON.parse(readFileSync(ESCROW_FILE, "utf-8"));
     }
-  } catch (err: any) {
-    console.error(`Failed to load escrow store: ${err.message}`);
+  } catch (error: unknown) {
+    console.error(`[loadEscrows] Failed to load escrow store: ${describeError(error)}`);
   }
   return {};
 }
@@ -51,8 +60,8 @@ export function loadEscrows(): Record<string, EscrowRecord> {
 export function saveEscrows(escrows: Record<string, EscrowRecord>): void {
   try {
     writeFileSync(ESCROW_FILE, JSON.stringify(escrows, null, 2), "utf-8");
-  } catch (err: any) {
-    console.error(`Failed to save escrow store: ${err.message}`);
+  } catch (caught: unknown) {
+    console.error(`Failed to save escrow store: ${describeError(caught)}`);
   }
 }
 
@@ -170,13 +179,17 @@ export async function getContractState(agent: AgentContext, contractAddress: Add
   return { ...data, balance };
 }
 
+/** The only field this module reads off the account events endpoint. */
+const LatestEventResponse = z.object({
+  events: z.array(z.object({ event_id: z.string().optional() })).optional(),
+});
+
 export async function getLatestTxHash(address: string, network: "testnet" | "mainnet"): Promise<string> {
   const apiBase = network === "testnet" ? "https://testnet.tonapi.io/v2" : "https://tonapi.io/v2";
-  try {
-    const res = await fetch(`${apiBase}/accounts/${encodeURIComponent(address)}/events?limit=1`);
-    const data = await res.json();
-    return data.events?.[0]?.event_id || "pending";
-  } catch {
-    return "pending";
-  }
+  const latest = await fetchJson(
+    `${apiBase}/accounts/${encodeURIComponent(address)}/events?limit=1`,
+    LatestEventResponse,
+  );
+  if (!latest.ok) return "pending";
+  return latest.value.events?.[0]?.event_id || "pending";
 }

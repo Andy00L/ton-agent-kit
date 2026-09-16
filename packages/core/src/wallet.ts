@@ -1,4 +1,4 @@
-import { Address, type MessageRelaxed } from "@ton/core";
+import { Address, SendMode, type MessageRelaxed } from "@ton/core";
 import { KeyPair, mnemonicNew, mnemonicToPrivateKey } from "@ton/crypto";
 import {
   TonClient4,
@@ -40,7 +40,27 @@ const NETWORK_IDS = {
   mainnet: -239,
 } as const;
 
-function createWalletContract(publicKey: Buffer, config: WalletConfig = {}) {
+/**
+ * Send mode applied to every outgoing transfer: gas is paid from the message
+ * value separately and action-phase errors are ignored. This is the same value
+ * @ton/ton applies in its own sender helper, and it has no default inside
+ * `createTransfer`, so every call site has to pass it.
+ *
+ * sourceRef: node_modules/@ton/ton/dist/wallets/v5r1/WalletContractV5R1.js
+ */
+export const DEFAULT_SEND_MODE =
+  SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS;
+
+/**
+ * Build the wallet contract for a public key and configuration.
+ *
+ * Every send path in the kit goes through this function so that the wallet id,
+ * the workchain and the subwallet number are derived in exactly one place. A
+ * second copy of this logic derives a second address.
+ *
+ * @since 1.3.0
+ */
+export function createWalletContract(publicKey: Buffer, config: WalletConfig = {}) {
   const version = config.version || "V5R1";
   const workchain = config.workchain || 0;
   const network = config.network || "mainnet";
@@ -51,18 +71,107 @@ function createWalletContract(publicKey: Buffer, config: WalletConfig = {}) {
     case "V4":
       return WalletContractV4.create({ workchain, publicKey });
     case "V5R1":
+      // V5R1 carries the workchain and the subwallet number inside a client
+      // context rather than next to networkGlobalId, and it takes no top-level
+      // workchain when a client context is supplied. Flattening them drops both
+      // from the wallet id, which derives a different address.
+      // sourceRef: node_modules/@ton/ton/dist/wallets/v5r1/WalletV5R1WalletId.d.ts
       return WalletContractV5R1.create({
-        workchain,
         publicKey,
         walletId: {
           networkGlobalId: NETWORK_IDS[network],
-          workchain,
-          subwalletNumber: config.subwalletNumber ?? 0,
+          context: {
+            walletVersion: "v5r1",
+            workchain,
+            subwalletNumber: config.subwalletNumber ?? 0,
+          },
         },
       });
     default:
       throw new Error(`Unsupported wallet version: ${version}`);
   }
+}
+
+/**
+ * Open the wallet contract for a public key against a client, ready for
+ * `getSeqno` and other get-methods.
+ *
+ * @since 1.3.0
+ */
+export function openWalletContract(
+  client: TonClient4,
+  publicKey: Buffer,
+  config: WalletConfig = {},
+) {
+  return client.open(createWalletContract(publicKey, config));
+}
+
+/**
+ * Sign and send messages from the wallet a public key and configuration derive.
+ *
+ * V5R1 declares a different `sendTransfer` signature from V3R2 and V4, so the
+ * contract is narrowed before the call. Opening the union first would make
+ * TypeScript intersect all three signatures and demand an extension authType
+ * that a keypair wallet never uses.
+ *
+ * @since 1.3.0
+ */
+export async function sendFromWalletContract(params: {
+  client: TonClient4;
+  publicKey: Buffer;
+  secretKey: Buffer;
+  config: WalletConfig;
+  messages: MessageRelaxed[];
+}): Promise<void> {
+  const { client, publicKey, secretKey, config, messages } = params;
+  const walletContract = createWalletContract(publicKey, config);
+
+  if (walletContract instanceof WalletContractV5R1) {
+    const contract = client.open(walletContract);
+    await contract.sendTransfer({
+      seqno: await contract.getSeqno(),
+      secretKey,
+      messages,
+      sendMode: DEFAULT_SEND_MODE,
+    });
+    return;
+  }
+
+  const contract = client.open(walletContract);
+  await contract.sendTransfer({
+    seqno: await contract.getSeqno(),
+    secretKey,
+    messages,
+    sendMode: DEFAULT_SEND_MODE,
+  });
+}
+
+/**
+ * The credentials a signing wallet exposes. `WalletProvider` itself only
+ * promises an address and `sendTransfer`, so anything that needs to build and
+ * sign a cell has to check for this first.
+ *
+ * @since 1.3.0
+ */
+export interface SigningWallet extends WalletProvider {
+  getCredentials(): {
+    secretKey: Buffer;
+    publicKey: Buffer;
+    walletConfig: WalletConfig;
+  };
+}
+
+/**
+ * Narrow a wallet to one that can sign. A `ReadOnlyWallet` fails this check.
+ *
+ * @since 1.3.0
+ */
+export function isSigningWallet(
+  wallet: WalletProvider,
+): wallet is SigningWallet {
+  return (
+    "getCredentials" in wallet && typeof wallet.getCredentials === "function"
+  );
 }
 
 /**
@@ -187,7 +296,8 @@ export class KeypairWallet implements WalletProvider {
           lastBlock.last.seqno,
           contract.address,
         );
-        if (state.account.balance.coins > 0n) {
+        // TonClient4 returns the balance as a decimal string, not a bigint.
+        if (BigInt(state.account.balance.coins) > 0n) {
           console.error(
             `Auto-detected wallet: ${version} (${contract.address.toString({ testOnly: network === "testnet", bounceable: false })})`,
           );
@@ -233,18 +343,11 @@ export class KeypairWallet implements WalletProvider {
       );
     }
 
-    const freshClient = new TonClient4({ endpoint: this.rpcUrl });
-    const freshContract = createWalletContract(
-      this.keyPair.publicKey,
-      this.walletConfig,
-    );
-    const contract = freshClient.open(freshContract);
-
-    const seqno = await contract.getSeqno();
-
-    await contract.sendTransfer({
-      seqno,
+    await sendFromWalletContract({
+      client: new TonClient4({ endpoint: this.rpcUrl }),
+      publicKey: this.keyPair.publicKey,
       secretKey: this.keyPair.secretKey,
+      config: this.walletConfig,
       messages,
     });
   }
@@ -324,7 +427,7 @@ export class KeypairWallet implements WalletProvider {
     }
 
     console.warn(
-      `Generated ${count} wallets. Save the mnemonics securely — they cannot be recovered.`,
+      `Generated ${count} wallets. Save the mnemonics securely. They cannot be recovered.`,
     );
     return results;
   }

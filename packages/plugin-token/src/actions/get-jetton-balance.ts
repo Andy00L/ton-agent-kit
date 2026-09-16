@@ -1,5 +1,24 @@
 import { z } from "zod";
-import { defineAction, type JettonBalanceResult } from "@ton-agent-kit/core";
+import {
+  defineAction,
+  fetchJson,
+  type JettonBalanceResult,
+} from "@ton-agent-kit/core";
+
+/** Decimals assumed when a jetton master does not declare them. */
+const DEFAULT_JETTON_DECIMALS = 9;
+
+/** The fields this action reads off the TonAPI jetton balance endpoint. */
+const JettonBalanceResponse = z.object({
+  balance: z.union([z.string(), z.number()]).optional(),
+  jetton: z
+    .object({
+      symbol: z.string().optional(),
+      name: z.string().optional(),
+      decimals: z.number().optional(),
+    })
+    .optional(),
+});
 
 export const getJettonBalanceAction = defineAction<
   { jettonAddress: string; ownerAddress?: string },
@@ -29,8 +48,9 @@ export const getJettonBalanceAction = defineAction<
 
     try {
       // Use TONAPI which handles all address formats (raw, user-friendly, etc.)
-      const response = await fetch(
+      const response = await fetchJson(
         `${apiBase}/accounts/${encodeURIComponent(ownerAddr)}/jettons/${encodeURIComponent(params.jettonAddress)}`,
+        JettonBalanceResponse,
         { headers },
       );
 
@@ -40,13 +60,13 @@ export const getJettonBalanceAction = defineAction<
           balanceRaw: "0",
           symbol: "JETTON",
           name: "Jetton",
-          decimals: 9,
+          decimals: DEFAULT_JETTON_DECIMALS,
         };
       }
 
-      const data = await response.json();
-      const decimals = data.jetton?.decimals ?? 9;
-      const balanceRaw = data.balance || "0";
+      const data = response.value;
+      const decimals = data.jetton?.decimals ?? DEFAULT_JETTON_DECIMALS;
+      const balanceRaw = String(data.balance ?? "0");
       const balance = (Number(balanceRaw) / Math.pow(10, decimals)).toString();
 
       return {

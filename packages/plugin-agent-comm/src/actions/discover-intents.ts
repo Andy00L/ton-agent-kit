@@ -1,71 +1,24 @@
 import { z } from "zod";
-import { Address, Cell } from "@ton/core";
-import { defineAction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { callContractGetter, parseIndexCell } from "../../../plugin-identity/src/reputation-helpers";
+import { defineAction, describeError } from "@ton-agent-kit/core";
+import { parseAddress, parseBigNum, parseBool, parseNum, parseString } from "../stack-parsers";
+
+/** One open intent, as discover_intents reports it. */
+interface DiscoveredIntent {
+  intentIndex: number;
+  buyer: string;
+  serviceHash: string;
+  serviceName: string;
+  budget: string;
+  deadline: string;
+  status: string;
+  acceptedOffer: number;
+  description: string;
+}
+import { callContractGetter, parseIndexCell, resolveContractAddress } from "@ton-agent-kit/plugin-identity";
 import { createHash } from "crypto";
 
 function computeServiceHash(service: string): bigint {
   return BigInt("0x" + createHash("sha256").update(service).digest("hex"));
-}
-
-const parseNum = (item: any): number =>
-  item?.type === "num"
-    ? Number(BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num))
-    : 0;
-
-const parseBigNum = (item: any): bigint =>
-  item?.type === "num"
-    ? BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num)
-    : 0n;
-
-const parseBool = (item: any): boolean =>
-  item?.type === "num"
-    ? BigInt(item.num.startsWith("-0x") ? "-" + item.num.slice(1) : item.num) !== 0n
-    : false;
-
-function parseString(item: any): string {
-  if (!item) return "";
-  if (item.type === "cell" && item.cell) {
-    try {
-      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
-      return cell.beginParse().loadStringTail();
-    } catch {
-      try {
-        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
-        return cell.beginParse().loadStringTail();
-      } catch {}
-    }
-  }
-  return "";
-}
-
-function parseAddress(item: any): string {
-  if (!item) return "";
-  if (item.type === "slice" && item.slice) {
-    try {
-      return Address.parse(item.slice).toRawString();
-    } catch {
-      return item.slice;
-    }
-  }
-  if (item.type === "cell" && item.cell) {
-    try {
-      const cell = Cell.fromBoc(Buffer.from(item.cell, "hex"))[0];
-      const slice = cell.beginParse();
-      const addr = slice.loadAddress();
-      return addr ? addr.toRawString() : "";
-    } catch {
-      try {
-        const cell = Cell.fromBoc(Buffer.from(item.cell, "base64"))[0];
-        const slice = cell.beginParse();
-        const addr = slice.loadAddress();
-        return addr ? addr.toRawString() : "";
-      } catch {}
-      return "";
-    }
-  }
-  return "";
 }
 
 export const discoverIntentsAction = defineAction({
@@ -102,7 +55,7 @@ export const discoverIntentsAction = defineAction({
         );
         if (indexRes?.stack?.[0]?.cell) {
           const indexes = parseIndexCell(indexRes.stack[0].cell);
-          const intents: any[] = [];
+          const intents: DiscoveredIntent[] = [];
           let expiredCount = 0;
           let closedCount = 0;
           for (const idx of indexes) {
@@ -171,7 +124,7 @@ export const discoverIntentsAction = defineAction({
         };
       }
 
-      const intents: any[] = [];
+      const intents: DiscoveredIntent[] = [];
       let expiredCount = 0;
       let closedCount = 0;
       let serviceFilteredCount = 0;
@@ -258,12 +211,12 @@ export const discoverIntentsAction = defineAction({
         message,
         diagnostic: { totalCount, expiredCount, closedCount, serviceFilteredCount, openCount: intents.length },
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         intents: [],
         count: 0,
-        error: err.message,
-        message: `Failed to discover intents: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to discover intents: ${describeError(caught)}`,
       };
     }
   },

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, internal, external, beginCell, storeMessage } from "@ton/core";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
-import { defineAction } from "@ton-agent-kit/core";
+import { createWalletContract, DEFAULT_SEND_MODE, defineAction, describeError, isSigningWallet } from "@ton-agent-kit/core";
 import { emulateTransaction, type EmulationResult } from "../utils/emulate";
 
 export const simulateTransactionAction = defineAction<
@@ -22,20 +22,27 @@ export const simulateTransactionAction = defineAction<
 
     try {
       // Build the transfer BOC (same pattern as sendTransaction in core/utils)
-      const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
-      const networkId = agent.network === "testnet" ? -3 : -239;
+      if (!isSigningWallet(agent.wallet)) {
+        throw new Error(
+          "[simulateTransactionAction] This wallet cannot sign. Attach a KeypairWallet to the agent.",
+        );
+      }
+      const { secretKey, publicKey, walletConfig } =
+        agent.wallet.getCredentials();
+
+      // The signed cell built below is V5R1-specific.
+      const contract = createWalletContract(publicKey, {
+        ...walletConfig,
+        network: agent.network,
+      });
+      if (!(contract instanceof WalletContractV5R1)) {
+        throw new Error(
+          `[simulateTransactionAction] Simulation requires a V5R1 wallet, this agent uses ${walletConfig.version ?? "V5R1"}.`,
+        );
+      }
+
       const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-      const walletContract = freshClient.open(
-        WalletContractV5R1.create({
-          workchain: 0,
-          publicKey,
-          walletId: {
-            networkGlobalId: networkId,
-            workchain: 0,
-            subwalletNumber: 0,
-          },
-        }),
-      );
+      const walletContract = freshClient.open(contract);
 
       const seqno = await walletContract.getSeqno();
 
@@ -51,6 +58,7 @@ export const simulateTransactionAction = defineAction<
         seqno,
         secretKey,
         messages: [internalMessage],
+        sendMode: DEFAULT_SEND_MODE,
       });
 
       // Wrap in external message and serialize to BOC
@@ -71,16 +79,16 @@ export const simulateTransactionAction = defineAction<
         toAddress.toRawString(),
         agent.config.TONAPI_KEY,
       );
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         success: false,
-        error: err.message,
+        error: describeError(caught),
         gasUsed: "0",
         estimatedFee: "0",
         balanceChange: "0",
         destinationBalanceChange: "0",
         risk: "error",
-        message: `Simulation failed: ${err.message}`,
+        message: `Simulation failed: ${describeError(caught)}`,
       };
     }
   },

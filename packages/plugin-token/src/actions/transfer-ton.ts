@@ -1,10 +1,50 @@
 import { z } from "zod";
 import { Address, toNano, fromNano, internal, external, beginCell, storeMessage } from "@ton/core";
 import { TonClient4, WalletContractV5R1 } from "@ton/ton";
-import { defineAction, toFriendlyAddress, sendTransaction } from "@ton-agent-kit/core";
+import {
+  createWalletContract,
+  DEFAULT_SEND_MODE,
+  defineAction,
+  isSigningWallet,
+  sendTransaction,
+  toFriendlyAddress,
+} from "@ton-agent-kit/core";
 import { emulateTransaction } from "../utils/emulate";
 
-export const transferTonAction = defineAction({
+interface TransferTonInput {
+  to: string;
+  amount: string;
+  comment?: string;
+  simulate?: boolean;
+  simulateFirst?: boolean;
+}
+
+/**
+ * Everything `transfer_ton` reports. The three modes (dry run, aborted
+ * simulate-first, sent) each fill a different subset, so the type is declared
+ * rather than inferred from the return statements.
+ */
+interface TransferTonResult {
+  simulated?: boolean;
+  sent?: boolean;
+  success?: boolean;
+  gasUsed?: string;
+  estimatedFee?: string;
+  balanceChange?: string;
+  destinationBalanceChange?: string;
+  risk?: string;
+  reason?: string;
+  simulation?: Awaited<ReturnType<typeof emulateTransaction>>;
+  txHash?: string;
+  status?: string;
+  to?: string;
+  friendlyTo?: string;
+  explorerUrl?: string;
+  fee?: string;
+  message?: string;
+}
+
+export const transferTonAction = defineAction<TransferTonInput, TransferTonResult>({
   name: "transfer_ton",
   description:
     "Transfer TON to another wallet address. Specify the destination address and amount in TON (e.g., '1.5'). Set simulate=true to dry-run without sending, or simulateFirst=true to simulate and only send if it succeeds.",
@@ -25,33 +65,42 @@ export const transferTonAction = defineAction({
     }
 
     // Check balance before building BOC (fast-fail for obvious insufficient balance)
-    const lastBlock = await (agent.connection as any).getLastBlock();
-    const accountState = await (agent.connection as any).getAccount(
+    const balanceClient = new TonClient4({ endpoint: agent.rpcUrl });
+    const lastBlock = await balanceClient.getLastBlock();
+    const accountState = await balanceClient.getAccount(
       lastBlock.last.seqno,
       agent.wallet.address,
     );
-    const balanceNano = accountState.account.balance.coins;
+    // TonClient4 reports the balance as a decimal string.
+    const balanceNano = BigInt(accountState.account.balance.coins);
     if (amountNano > balanceNano) {
       throw new Error(
         `Insufficient balance: have ${fromNano(balanceNano)} TON, need ${params.amount} TON`,
       );
     }
 
-    // ── Step 1: Build the transfer BOC (ONCE) ──
-    const { secretKey, publicKey } = (agent.wallet as any).getCredentials();
-    const networkId = agent.network === "testnet" ? -3 : -239;
+    // Step 1: Build the transfer BOC (ONCE)
+    if (!isSigningWallet(agent.wallet)) {
+      throw new Error(
+        "[transferTonAction] This wallet cannot sign. Attach a KeypairWallet to the agent.",
+      );
+    }
+    const { secretKey, publicKey, walletConfig } = agent.wallet.getCredentials();
+
+    // The signed cell this action emulates is V5R1-specific, so the transfer
+    // path requires a V5R1 wallet. Other versions go through sendTransaction.
+    const contract = createWalletContract(publicKey, {
+      ...walletConfig,
+      network: agent.network,
+    });
+    if (!(contract instanceof WalletContractV5R1)) {
+      throw new Error(
+        `[transferTonAction] Simulation requires a V5R1 wallet, this agent uses ${walletConfig.version ?? "V5R1"}.`,
+      );
+    }
+
     const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-    const walletContract = freshClient.open(
-      WalletContractV5R1.create({
-        workchain: 0,
-        publicKey,
-        walletId: {
-          networkGlobalId: networkId,
-          workchain: 0,
-          subwalletNumber: 0,
-        },
-      }),
-    );
+    const walletContract = freshClient.open(contract);
 
     const seqno = await walletContract.getSeqno();
 
@@ -62,14 +111,15 @@ export const transferTonAction = defineAction({
       body: params.comment ? buildCommentBody(params.comment) : undefined,
     });
 
-    // createTransfer returns a signed Cell — used for both emulation and sending
+    // createTransfer returns a signed Cell, used for both emulation and sending
     const transferCell = walletContract.createTransfer({
       seqno,
       secretKey,
       messages: [internalMessage],
+      sendMode: DEFAULT_SEND_MODE,
     });
 
-    // ── Step 2: If simulate or simulateFirst → emulate ──
+    // Step 2: If simulate or simulateFirst, emulate
     let simResult: Awaited<ReturnType<typeof emulateTransaction>> | undefined;
 
     if (params.simulate || params.simulateFirst) {
@@ -92,7 +142,7 @@ export const transferTonAction = defineAction({
         agent.config.TONAPI_KEY,
       );
 
-      // Mode 2: dry-run only — simulate wins if both flags are set
+      // Mode 2: dry-run only. Simulate wins if both flags are set.
       if (params.simulate) {
         return {
           simulated: true,
@@ -107,7 +157,7 @@ export const transferTonAction = defineAction({
         };
       }
 
-      // Mode 3: simulateFirst — abort if simulation failed
+      // Mode 3: simulateFirst, abort if simulation failed
       if (!simResult.success) {
         return {
           simulated: true,
@@ -118,10 +168,10 @@ export const transferTonAction = defineAction({
           message: `Transfer aborted: ${simResult.message}`,
         };
       }
-      // Simulation passed → fall through to send
+      // Simulation passed, fall through to send
     }
 
-    // ── Step 3: Broadcast on-chain (with retry + seqno wait) ──
+    // Step 3: Broadcast on-chain (with retry and seqno wait)
     await sendTransaction(agent, [internalMessage]);
 
     const friendlyAddress = toFriendlyAddress(agent.wallet.address, agent.network);

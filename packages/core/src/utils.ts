@@ -1,6 +1,13 @@
 import { Address, fromNano, toNano, type MessageRelaxed } from "@ton/core";
-import { TonClient4, WalletContractV3R2, WalletContractV4, WalletContractV5R1 } from "@ton/ton";
+import { TonClient4 } from "@ton/ton";
+import { describeError } from "./errors";
 import type { AgentContext } from "./types";
+import {
+  isSigningWallet,
+  openWalletContract,
+  sendFromWalletContract,
+  type WalletConfig,
+} from "./wallet";
 
 /**
  * Convert a human-readable TON amount string to its nanoton bigint representation.
@@ -165,18 +172,20 @@ export async function retry<T>(
   maxRetries: number = 3,
   baseDelay: number = 1000
 ): Promise<T> {
-  let lastError: Error | undefined;
+  let lastError: unknown;
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
-    } catch (err) {
-      lastError = err as Error;
+    } catch (error: unknown) {
+      lastError = error;
       if (i < maxRetries - 1) {
         await sleep(baseDelay * Math.pow(2, i));
       }
     }
   }
-  throw lastError;
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(describeError(lastError));
 }
 
 /**
@@ -214,85 +223,103 @@ export async function sendTransaction(
 ): Promise<void> {
   const maxRetries = options?.maxRetries ?? 3;
   const waitForSeqno = options?.waitForSeqno ?? true;
-  const { secretKey, publicKey, walletConfig } = (agent.wallet as any).getCredentials();
-  const networkId = agent.network === "testnet" ? -3 : -239;
+
+  if (!isSigningWallet(agent.wallet)) {
+    throw new Error(
+      "[sendTransaction] This wallet cannot sign. Attach a KeypairWallet to the agent.",
+    );
+  }
+
+  const { secretKey, publicKey, walletConfig } = agent.wallet.getCredentials();
+  // The network on the agent wins: it is the one the RPC endpoint points at.
+  const config: WalletConfig = { ...walletConfig, network: agent.network };
   let lastError = "";
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      // Fresh client every attempt — no stale state
-      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-
-      // Use walletConfig if available, fallback to V5R1
-      let walletContract: any;
-      if (walletConfig?.version === "V4") {
-        walletContract = freshClient.open(
-          WalletContractV4.create({ workchain: 0, publicKey }),
-        );
-      } else if (walletConfig?.version === "V3R2") {
-        walletContract = freshClient.open(
-          WalletContractV3R2.create({ workchain: 0, publicKey }),
-        );
-      } else {
-        walletContract = freshClient.open(
-          WalletContractV5R1.create({
-            workchain: 0,
+      // Read the seqno before sending: confirmation means it moved past this
+      // value. Reading it afterwards would compare against the new one and
+      // always time out.
+      const seqnoBeforeSend = waitForSeqno
+        ? await openWalletContract(
+            new TonClient4({ endpoint: agent.rpcUrl }),
             publicKey,
-            walletId: {
-              networkGlobalId: networkId,
-              workchain: 0,
-              subwalletNumber: walletConfig?.subwalletNumber ?? 0,
-            },
-          }),
-        );
-      }
+            config,
+          ).getSeqno()
+        : 0;
 
-      const seqno = await walletContract.getSeqno();
-      await walletContract.sendTransfer({ seqno, secretKey, messages });
+      // Fresh client every attempt, so no stale connection state is reused.
+      await sendFromWalletContract({
+        client: new TonClient4({ endpoint: agent.rpcUrl }),
+        publicKey,
+        secretKey,
+        config,
+        messages,
+      });
 
-      // Wait for seqno to increment (TX accepted)
-      if (waitForSeqno) {
-        const deadline = Date.now() + 30000;
-        while (Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 2000));
-          try {
-            const checkClient = new TonClient4({ endpoint: agent.rpcUrl });
-            let checkContract: any;
-            if (walletConfig?.version === "V4") {
-              checkContract = checkClient.open(WalletContractV4.create({ workchain: 0, publicKey }));
-            } else if (walletConfig?.version === "V3R2") {
-              checkContract = checkClient.open(WalletContractV3R2.create({ workchain: 0, publicKey }));
-            } else {
-              checkContract = checkClient.open(WalletContractV5R1.create({
-                workchain: 0, publicKey,
-                walletId: { networkGlobalId: networkId, workchain: 0, subwalletNumber: walletConfig?.subwalletNumber ?? 0 },
-              }));
-            }
-            const newSeqno = await checkContract.getSeqno();
-            if (newSeqno > seqno) return; // TX confirmed
-          } catch { /* ignore polling errors */ }
+      if (!waitForSeqno) return;
+
+      const deadline = Date.now() + SEQNO_CONFIRMATION_TIMEOUT_MS;
+      while (Date.now() < deadline) {
+        await delay(SEQNO_POLL_INTERVAL_MS);
+        try {
+          const currentSeqno = await openWalletContract(
+            new TonClient4({ endpoint: agent.rpcUrl }),
+            publicKey,
+            config,
+          ).getSeqno();
+          if (currentSeqno > seqnoBeforeSend) return;
+        } catch {
+          // A failed poll says nothing about the transaction. Keep polling.
         }
-        // Seqno didn't increment in 30s — TX may still be processing, proceed
-        return;
       }
 
-      return; // Success (no seqno wait)
-    } catch (err: any) {
-      lastError = err.message || String(err);
-      const isRetryable =
-        lastError.includes("500") || lastError.includes("timeout") ||
-        lastError.includes("TIMEOUT") || lastError.includes("seqno") ||
-        lastError.includes("not ready") || lastError.includes("ECONNRESET") ||
-        lastError.includes("fetch failed");
+      // The seqno did not move inside the window. The transaction may still be
+      // in flight, so report success rather than sending it a second time.
+      return;
+    } catch (error: unknown) {
+      lastError = describeError(error);
+      const isRetryable = RETRYABLE_ERROR_FRAGMENTS.some((fragment) =>
+        lastError.includes(fragment),
+      );
 
       if (isRetryable && attempt < maxRetries - 1) {
-        await new Promise((r) => setTimeout(r, 3000 * Math.pow(2, attempt)));
+        await delay(RETRY_BASE_DELAY_MS * Math.pow(2, attempt));
         continue;
       }
       break;
     }
   }
   throw new Error(`Transaction failed after ${maxRetries} attempts: ${lastError}`);
+}
+
+/** How long to wait for the wallet seqno to move after a send, in milliseconds. */
+const SEQNO_CONFIRMATION_TIMEOUT_MS = 30000;
+
+/** Delay between two seqno polls, in milliseconds. */
+const SEQNO_POLL_INTERVAL_MS = 2000;
+
+/** First retry delay, doubled on each further attempt, in milliseconds. */
+const RETRY_BASE_DELAY_MS = 3000;
+
+/**
+ * Error fragments that mean the network or the RPC node was the problem, not
+ * the transaction. Anything else fails immediately instead of being resent.
+ */
+const RETRYABLE_ERROR_FRAGMENTS = [
+  "500",
+  "timeout",
+  "TIMEOUT",
+  "seqno",
+  "not ready",
+  "ECONNRESET",
+  "fetch failed",
+] as const;
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolveAfterDelay) =>
+    setTimeout(resolveAfterDelay, milliseconds),
+  );
 }
 
 /**

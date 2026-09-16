@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { Address, toNano, beginCell, internal } from "@ton/core";
-import { defineAction, sendTransaction } from "@ton-agent-kit/core";
-import { resolveContractAddress } from "../../../plugin-identity/src/reputation-config";
-import { storeSettleDeal } from "../../../plugin-identity/src/contracts/Reputation_Reputation";
+import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
+import { resolveContractAddress, storeSettleDeal } from "@ton-agent-kit/plugin-identity";
 
 export const settleDealAction = defineAction({
   name: "settle_deal",
@@ -47,12 +46,12 @@ export const settleDealAction = defineAction({
         onChain: true,
         contractAddress: contractAddr,
       };
-    } catch (err: any) {
+    } catch (caught: unknown) {
       return {
         settled: false,
         intentIndex: params.intentIndex,
-        error: err.message,
-        message: `Failed to settle deal: ${err.message}`,
+        error: describeError(caught),
+        message: `Failed to settle deal: ${describeError(caught)}`,
       };
     }
   },

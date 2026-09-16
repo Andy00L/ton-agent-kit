@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
 import { defineAction, toFriendlyAddress } from "@ton-agent-kit/core";
-import { loadAgentRegistry } from "../utils";
+import {
+  loadAgentRegistry,
+  type AgentReputation,
+  type RegisteredAgent,
+} from "../utils";
 import { resolveContractAddress } from "../reputation-config";
 import {
   callContractGetter,
@@ -11,11 +15,30 @@ import {
   parseIndexCell,
 } from "../reputation-helpers";
 
+/** One agent as discover_agent reports it after on-chain enrichment. */
+interface DiscoveredAgent {
+  agentIndex?: number;
+  id?: string;
+  name?: string;
+  address: string;
+  friendlyAddress: string;
+  capabilities: string[];
+  available: boolean;
+  description?: string;
+  endpoint?: string;
+  reputation: AgentReputation;
+  registeredAt?: string;
+  onChain: boolean;
+}
+
 const SCAN_ALL_THRESHOLD = 5000;
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
-function safeFriendly(raw: string, network: string): string {
+function safeFriendly(
+  raw: string,
+  network: "mainnet" | "testnet",
+): string {
   if (!raw) return "";
   try { return toFriendlyAddress(Address.parse(raw), network); }
   catch { return raw; }
@@ -66,8 +89,8 @@ export function createDiscoverAgentAction(contractAddress?: string) {
                 : 0;
               // Merge with JSON registry for local metadata
               const registry = loadAgentRegistry();
-              const jsonAgent: any = Object.values(registry).find(
-                (a: any) => a.name === params.name,
+              const jsonAgent = Object.values(registry).find(
+                (candidate) => candidate.name === params.name,
               );
               return {
                 query: { name: params.name, includeOffline: params.includeOffline },
@@ -92,7 +115,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
             }
           }
         } catch {
-          // On-chain lookup failed — fall through to JSON
+          // On-chain lookup failed, fall through to JSON
         }
       }
 
@@ -106,7 +129,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
           );
           if (indexRes?.stack?.[0]?.cell) {
             const indexes = parseIndexCell(indexRes.stack[0].cell);
-            const agents: any[] = [];
+            const agents: DiscoveredAgent[] = [];
             let skipped = 0;
             let offlineCount = 0;
             let unreachableCount = 0;
@@ -163,7 +186,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
             };
           }
         } catch {
-          // On-chain lookup failed — fall through to JSON
+          // On-chain lookup failed, fall through to JSON
         }
       }
 
@@ -184,14 +207,14 @@ export function createDiscoverAgentAction(contractAddress?: string) {
                 message: `The registry contains ${agentCount} agents. Please narrow your search by specifying a capability (e.g., "image_generation", "price_feed") or an agent name for instant lookup.`,
                 suggestion: "Use 'capability' or 'name' filter. Example: discover_agent({ capability: 'price_feed' })",
                 availableFilters: {
-                  name: "Exact name lookup — O(1), instant",
-                  capability: "By service — reads only matching agents",
+                  name: "Exact name lookup: O(1), instant",
+                  capability: "By service: reads only matching agents",
                 },
               };
             }
           }
         } catch {
-          // Contract unreachable — continue with JSON only
+          // Contract unreachable, continue with JSON only
         }
       }
 
@@ -200,17 +223,21 @@ export function createDiscoverAgentAction(contractAddress?: string) {
       let results = Object.values(registry);
 
       if (!params.includeOffline) {
-        results = results.filter((a: any) => a.available !== false);
+        results = results.filter((candidate) => candidate.available !== false);
       }
       if (params.capability) {
         const cap = params.capability.toLowerCase();
-        results = results.filter((a: any) =>
-          a.capabilities.some((c: string) => c.toLowerCase().includes(cap)),
+        results = results.filter((candidate) =>
+          (candidate.capabilities ?? []).some((capability) =>
+            capability.toLowerCase().includes(cap),
+          ),
         );
       }
       if (params.name) {
         const name = params.name.toLowerCase();
-        results = results.filter((a: any) => a.name.toLowerCase().includes(name));
+        results = results.filter((candidate) =>
+          (candidate.name ?? "").toLowerCase().includes(name),
+        );
       }
 
       // ── SCAN FALLBACK: If JSON registry is empty and on-chain index failed,
@@ -224,7 +251,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
             const raw = countRes.stack[0].num;
             const agentCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
             if (agentCount > 0 && agentCount <= SCAN_ALL_THRESHOLD) {
-              const scanned: any[] = [];
+              const scanned: RegisteredAgent[] = [];
               for (let i = agentCount - 1; i >= 0 && scanned.length < limit; i--) {
                 try {
                   const dataRes = await callContractGetter(apiBase, addr, "agentData", [i.toString()], agent.config.TONAPI_KEY);
@@ -285,7 +312,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
               }
             }
           } catch {
-            // On-chain lookup failed for this agent — keep JSON data
+            // On-chain lookup failed for this agent, keep JSON data
           }
         }
       }
@@ -307,18 +334,20 @@ export function createDiscoverAgentAction(contractAddress?: string) {
         total,
         hasMore: offset + results.length < total,
         nextOffset: offset + results.length,
-        agents: results.map((a: any) => ({
-          id: a.id,
-          name: a.name,
-          address: a.address,
-          friendlyAddress: a.address ? safeFriendly(a.address, agent.network) : "",
-          capabilities: a.capabilities,
-          available: a.available !== false,
-          description: a.description,
-          endpoint: a.endpoint,
-          reputation: a.reputation,
-          registeredAt: a.registeredAt,
-          onChain: a.onChain || false,
+        agents: results.map((candidate) => ({
+          id: candidate.id,
+          name: candidate.name,
+          address: candidate.address,
+          friendlyAddress: candidate.address
+            ? safeFriendly(candidate.address, agent.network)
+            : "",
+          capabilities: candidate.capabilities ?? [],
+          available: candidate.available !== false,
+          description: candidate.description,
+          endpoint: candidate.endpoint,
+          reputation: candidate.reputation,
+          registeredAt: candidate.registeredAt,
+          onChain: candidate.onChain || false,
         })),
         onChain: !!addr,
         contractAddress: addr || undefined,

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, fetchJson } from "@ton-agent-kit/core";
+import {
+  AccountBalanceResponse,
+  AccountEventsResponse,
+  nanotonsToTonNumber,
+} from "../tonapi-schemas";
 
 export const getEquityCurveAction = defineAction({
   name: "get_equity_curve",
@@ -31,20 +36,25 @@ export const getEquityCurveAction = defineAction({
         : "https://tonapi.io/v2";
 
     // Fetch transaction events
-    const eventsRes = await fetch(
+    const eventsResult = await fetchJson(
       `${apiBase}/accounts/${encodeURIComponent(addr)}/events?limit=${limit}`,
+      AccountEventsResponse,
     );
-    if (!eventsRes.ok) {
-      return emptyCurve(days, "0", `Failed to fetch transaction history (${eventsRes.status})`);
+    if (!eventsResult.ok) {
+      return emptyCurve(
+        days,
+        "0",
+        `Failed to fetch transaction history: ${eventsResult.reason}`,
+      );
     }
-    const eventsData = await eventsRes.json();
 
     // Fetch current balance
-    const accountRes = await fetch(
+    const accountResult = await fetchJson(
       `${apiBase}/accounts/${encodeURIComponent(addr)}`,
+      AccountBalanceResponse,
     );
-    const currentBalanceNum = accountRes.ok
-      ? Number((await accountRes.json()).balance) / 1e9
+    const currentBalanceNum = accountResult.ok
+      ? nanotonsToTonNumber(accountResult.value.balance)
       : 0;
     const currentBalance = currentBalanceNum.toFixed(4);
 
@@ -53,12 +63,12 @@ export const getEquityCurveAction = defineAction({
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
     const transfers: { timestamp: number; delta: number }[] = [];
 
-    for (const event of eventsData.events || []) {
-      const ts = event.timestamp * 1000;
+    for (const event of eventsResult.value.events ?? []) {
+      const ts = (event.timestamp ?? 0) * 1000;
       if (ts < cutoff) continue;
-      for (const action of event.actions || []) {
+      for (const action of event.actions ?? []) {
         if (action.type !== "TonTransfer" || !action.TonTransfer) continue;
-        const amount = Number(action.TonTransfer.amount) / 1e9;
+        const amount = nanotonsToTonNumber(action.TonTransfer.amount);
         if (amount <= 0) continue;
         const sender = action.TonTransfer.sender?.address;
         const recipient = action.TonTransfer.recipient?.address;

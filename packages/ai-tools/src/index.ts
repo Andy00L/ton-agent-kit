@@ -1,5 +1,6 @@
-import { tool } from "ai";
-import { TonAgentKit, type Action } from "@ton-agent-kit/core";
+import { tool, type CoreTool } from "ai";
+import { toJSONSchema } from "zod";
+import { TonAgentKit } from "@ton-agent-kit/core";
 
 /**
  * Create Vercel AI SDK tools from a TonAgentKit instance.
@@ -19,18 +20,18 @@ import { TonAgentKit, type Action } from "@ton-agent-kit/core";
  * ```
  */
 export function createVercelAITools(
-  agent: TonAgentKit
-): Record<string, ReturnType<typeof tool>> {
+  agent: TonAgentKit,
+): Record<string, CoreTool> {
   const actions = agent.getAvailableActions();
-  const tools: Record<string, ReturnType<typeof tool>> = {};
+  const tools: Record<string, CoreTool> = {};
 
   for (const action of actions) {
     tools[action.name] = tool({
       description: action.description,
       parameters: action.schema,
-      execute: async (params: any) => {
-        return agent.runAction(action.name, params);
-      },
+      // The SDK hands back whatever the schema validated. runAction re-validates
+      // it against the same schema, so the action still owns its own contract.
+      execute: async (params: unknown) => agent.runAction(action.name, params),
     });
   }
 
@@ -41,8 +42,6 @@ export function createVercelAITools(
  * Create OpenAI-compatible function definitions for manual integration
  */
 export function createOpenAITools(agent: TonAgentKit) {
-  const { toJSONSchema } = require("zod");
-
   return agent.getAvailableActions().map((action) => ({
     type: "function" as const,
     function: {

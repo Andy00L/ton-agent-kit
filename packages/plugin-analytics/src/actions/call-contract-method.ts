@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address } from "@ton/core";
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, describeError, fetchJson } from "@ton-agent-kit/core";
 
 const EXIT_CODE_MESSAGES: Record<number, string> = {
   0: "success",
@@ -8,6 +8,41 @@ const EXIT_CODE_MESSAGES: Record<number, string> = {
   [-13]: "out of gas",
   [-14]: "out of stack",
 };
+
+/** One entry of a TVM stack as TonAPI serializes it. Tuples nest. */
+interface TvmStackItem {
+  type?: string;
+  num?: string;
+  cell?: string;
+  slice?: string;
+  tuple?: TvmStackItem[];
+}
+
+const TvmStackItemSchema: z.ZodType<TvmStackItem> = z.lazy(() =>
+  z.object({
+    type: z.string().optional(),
+    num: z.string().optional(),
+    cell: z.string().optional(),
+    slice: z.string().optional(),
+    tuple: z.array(TvmStackItemSchema).optional(),
+  }),
+);
+
+const MethodResponse = z.object({
+  success: z.boolean().optional(),
+  exit_code: z.number().optional(),
+  stack: z.array(TvmStackItemSchema).optional(),
+  decoded: z.unknown().optional(),
+});
+
+/** A stack entry after it has been turned into something readable. */
+type ReadableStackValue =
+  | string
+  | null
+  | { type: "cell"; boc: string | undefined }
+  | { type: "slice"; raw: string | undefined }
+  | { type: "tuple"; items: ReadableStackValue[] }
+  | TvmStackItem;
 
 export const callContractMethodAction = defineAction({
   name: "call_contract_method",
@@ -30,14 +65,15 @@ export const callContractMethodAction = defineAction({
     let addressRaw: string;
     try {
       addressRaw = Address.parse(params.address).toRawString();
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const reason = describeError(error);
       return {
         success: false,
         address: params.address,
         method: params.method,
         exitCode: null,
-        error: `Invalid address: ${err.message}`,
-        message: `Invalid address "${params.address}": ${err.message}`,
+        error: `Invalid address: ${reason}`,
+        message: `Invalid address "${params.address}": ${reason}`,
       };
     }
 
@@ -54,82 +90,66 @@ export const callContractMethodAction = defineAction({
     // Build URL with optional args
     let url = `${apiBase}/blockchain/accounts/${encodeURIComponent(addressRaw)}/methods/${encodeURIComponent(params.method)}`;
     if (params.args && params.args.length > 0) {
-      const argsQuery = params.args.map((a) => `args=${encodeURIComponent(a)}`).join("&");
+      const argsQuery = params.args
+        .map((argument) => `args=${encodeURIComponent(argument)}`)
+        .join("&");
       url += `?${argsQuery}`;
     }
 
-    try {
-      const response = await fetch(url, { headers });
+    const response = await fetchJson(url, MethodResponse, { headers });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMsg = `TONAPI returned ${response.status}`;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.error || errorJson.message || errorMsg;
-        } catch {}
-
-        return {
-          success: false,
-          address: addressRaw,
-          method: params.method,
-          exitCode: null,
-          error: errorMsg,
-          message: `Method ${params.method} on ${params.address.slice(0, 16)}... failed: ${errorMsg}`,
-        };
-      }
-
-      const data = await response.json();
-      const exitCode = data.exit_code ?? 0;
-
-      if (exitCode !== 0 && data.success === false) {
-        const codeDesc = EXIT_CODE_MESSAGES[exitCode] || "method execution failed";
-        return {
-          success: false,
-          address: addressRaw,
-          method: params.method,
-          exitCode,
-          error: codeDesc,
-          message: `Method ${params.method} on ${params.address.slice(0, 16)}... failed: exit code ${exitCode} (${codeDesc})`,
-        };
-      }
-
-      const rawStack = data.stack || [];
-      const stack = rawStack.map(processStackItem);
-
-      return {
-        success: true,
-        address: addressRaw,
-        method: params.method,
-        exitCode,
-        stack,
-        rawStack,
-        decoded: data.decoded || null,
-        resultCount: stack.length,
-        message: `Called ${params.method} on ${params.address.slice(0, 16)}...: ${stack.length} value${stack.length !== 1 ? "s" : ""} returned (exit code ${exitCode})`,
-      };
-    } catch (err: any) {
+    if (!response.ok) {
       return {
         success: false,
         address: addressRaw,
         method: params.method,
         exitCode: null,
-        error: err.message,
-        message: `Failed to call ${params.method}: ${err.message}`,
+        error: response.reason,
+        message: `Method ${params.method} on ${params.address.slice(0, 16)}... failed: ${response.reason}`,
       };
     }
+
+    const data = response.value;
+    const exitCode = data.exit_code ?? 0;
+
+    if (exitCode !== 0 && data.success === false) {
+      const codeDesc = EXIT_CODE_MESSAGES[exitCode] || "method execution failed";
+      return {
+        success: false,
+        address: addressRaw,
+        method: params.method,
+        exitCode,
+        error: codeDesc,
+        message: `Method ${params.method} on ${params.address.slice(0, 16)}... failed: exit code ${exitCode} (${codeDesc})`,
+      };
+    }
+
+    const rawStack = data.stack ?? [];
+    const stack = rawStack.map(processStackItem);
+
+    return {
+      success: true,
+      address: addressRaw,
+      method: params.method,
+      exitCode,
+      stack,
+      rawStack,
+      decoded: data.decoded ?? null,
+      resultCount: stack.length,
+      message: `Called ${params.method} on ${params.address.slice(0, 16)}...: ${stack.length} value${stack.length !== 1 ? "s" : ""} returned (exit code ${exitCode})`,
+    };
   },
 });
 
 /**
  * Process a single TVM stack item into a human-readable value.
  */
-function processStackItem(item: any): any {
+function processStackItem(item: TvmStackItem): ReadableStackValue {
   if (!item || !item.type) return item;
 
   switch (item.type) {
     case "num": {
-      const hex = item.num as string;
+      const hex = item.num;
       if (!hex) return "0";
       try {
         if (hex.startsWith("-")) {
@@ -150,7 +170,7 @@ function processStackItem(item: any): any {
     case "tuple":
       return {
         type: "tuple",
-        items: (item.tuple || []).map(processStackItem),
+        items: (item.tuple ?? []).map(processStackItem),
       };
 
     case "null":

@@ -1,5 +1,27 @@
 import { z } from "zod";
-import { defineAction } from "@ton-agent-kit/core";
+import { defineAction, fetchJson } from "@ton-agent-kit/core";
+import { nanotonsToTonNumber } from "../tonapi-schemas";
+
+/** The fields this action reads off each account in a bulk response. */
+const BulkAccount = z.object({
+  address: z.string().optional(),
+  raw_address: z.string().optional(),
+  balance: z.union([z.string(), z.number()]).optional(),
+  status: z.string().optional(),
+  last_activity: z.number().optional(),
+  interfaces: z.array(z.string()).optional(),
+  name: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+/**
+ * TonAPI answers the bulk endpoint with `{ accounts: [...] }`, but some
+ * deployments return the bare array, so both shapes are accepted.
+ */
+const BulkResponse = z.union([
+  z.object({ accounts: z.array(BulkAccount) }),
+  z.array(BulkAccount),
+]);
 
 export const getAccountsBulkAction = defineAction({
   name: "get_accounts_bulk",
@@ -18,7 +40,7 @@ export const getAccountsBulkAction = defineAction({
         ? "https://testnet.tonapi.io/v2"
         : "https://tonapi.io/v2";
 
-    const addresses = params.addresses.map((a: string) => a.trim());
+    const addresses = params.addresses.map((address) => address.trim());
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -27,43 +49,47 @@ export const getAccountsBulkAction = defineAction({
       headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
     }
 
-    const response = await fetch(`${apiBase}/accounts/_bulk`, {
+    const response = await fetchJson(`${apiBase}/accounts/_bulk`, BulkResponse, {
       method: "POST",
       headers,
       body: JSON.stringify({ account_ids: addresses }),
     });
 
     if (!response.ok) {
-      throw new Error(`Bulk request failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Bulk request failed: ${response.reason}`);
     }
 
-    const data = await response.json();
-    const rawAccounts = data.accounts || data || [];
+    const rawAccounts = Array.isArray(response.value)
+      ? response.value
+      : response.value.accounts;
 
-    const accounts = rawAccounts.map((acc: any) => {
-      const balanceTON = acc.balance !== undefined
-        ? (Number(acc.balance) / 1e9).toFixed(9)
-        : "0";
+    const accounts = rawAccounts.map((account) => {
+      const balanceTON =
+        account.balance !== undefined
+          ? nanotonsToTonNumber(account.balance).toFixed(9)
+          : "0";
+      const isWallet =
+        account.interfaces?.some((name) => name.includes("wallet")) ?? false;
 
       return {
-        address: acc.address || acc.raw_address || "",
-        rawAddress: acc.raw_address || acc.address || "",
+        address: account.address || account.raw_address || "",
+        rawAddress: account.raw_address || account.address || "",
         balance: balanceTON + " TON",
-        balanceNano: acc.balance?.toString() || "0",
-        status: acc.status || "unknown",
-        lastActivity: acc.last_activity
-          ? new Date(acc.last_activity * 1000).toISOString()
+        balanceNano: account.balance?.toString() || "0",
+        status: account.status || "unknown",
+        lastActivity: account.last_activity
+          ? new Date(account.last_activity * 1000).toISOString()
           : null,
-        interfaces: acc.interfaces || [],
-        name: acc.name || null,
-        icon: acc.icon || null,
-        isWallet: acc.interfaces?.some((i: string) => i.includes("wallet")) || false,
-        isContract: acc.status === "active" && !acc.interfaces?.some((i: string) => i.includes("wallet")),
+        interfaces: account.interfaces || [],
+        name: account.name || null,
+        icon: account.icon || null,
+        isWallet,
+        isContract: account.status === "active" && !isWallet,
       };
     });
 
     const totalBalance = accounts.reduce(
-      (sum: number, acc: any) => sum + parseFloat(acc.balance),
+      (sum, account) => sum + parseFloat(account.balance),
       0,
     );
 
@@ -71,9 +97,9 @@ export const getAccountsBulkAction = defineAction({
       accounts,
       count: accounts.length,
       totalBalance: totalBalance.toFixed(4) + " TON",
-      activeAccounts: accounts.filter((a: any) => a.status === "active").length,
-      wallets: accounts.filter((a: any) => a.isWallet).length,
-      contracts: accounts.filter((a: any) => a.isContract).length,
+      activeAccounts: accounts.filter((account) => account.status === "active").length,
+      wallets: accounts.filter((account) => account.isWallet).length,
+      contracts: accounts.filter((account) => account.isContract).length,
       bulkQuery: true,
       message: `Fetched ${accounts.length} account(s) in 1 API call. Total: ${totalBalance.toFixed(4)} TON.`,
     };
