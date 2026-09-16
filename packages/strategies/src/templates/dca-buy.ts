@@ -1,5 +1,6 @@
 import { defineStrategy } from "../strategy";
 import type { Strategy, StrategyContext } from "../types";
+import { readNumber } from "../step-results";
 
 /**
  * Configuration options for the dollar-cost averaging (DCA) strategy.
@@ -55,21 +56,18 @@ export function createDcaStrategy(options: DcaStrategyOptions = {}): Strategy {
         id: "execute_swap",
         action: "swap_best_price",
         params: (context: StrategyContext) => {
-          const price = context.getResult("get_price");
           return {
             fromToken: "TON",
             toToken: token,
             amount,
             dex,
-            currentPrice: price?.price,
+            currentPrice: readNumber(context.getResult("get_price"), "price"),
           };
         },
         condition: (context: StrategyContext) => {
-          const price = context.getResult("get_price");
-          const balance = context.getResult("check_balance");
-
-          const currentPrice = price?.price ?? 0;
-          const currentBalance = balance?.balance ?? balance ?? 0;
+          const currentPrice = readNumber(context.getResult("get_price"), "price") ?? 0;
+          const currentBalance =
+            readNumber(context.getResult("check_balance"), "balance") ?? 0;
 
           // Skip if price exceeds maxPrice or balance is insufficient
           if (currentPrice > maxPrice) {

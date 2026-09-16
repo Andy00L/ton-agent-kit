@@ -8,7 +8,8 @@
     "src"
   ],
   "scripts": {
-    "test": "node --experimental-strip-types test/verification.test.mjs"
+    
+    "build": "tsc","test": "node --experimental-strip-types test/verification.test.mjs"
   },
   "peerDependencies": {
     "express": ">=4.0.0",

@@ -11,10 +11,19 @@
  * parseSchedule("once");       // null
  * parseSchedule("every 30s");  // 30000
  * parseSchedule("every 1h");   // 3600000
+ * parseSchedule("every 30d");  // throws: past the delay Node timers accept
  * ```
  *
  * @since 1.0.0
  */
+/**
+ * Longest delay Node's timers accept, 2^31-1 milliseconds, about 24.8 days.
+ * Anything larger overflows the 32-bit field and Node substitutes 1 ms, so a
+ * monthly schedule fired roughly a hundred times a second.
+ * sourceRef: TimeoutOverflowWarning in node:internal/timers
+ */
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
 export function parseSchedule(schedule: string): number | null {
   if (schedule === "once") {
     return null;
@@ -28,20 +37,28 @@ export function parseSchedule(schedule: string): number | null {
   const value = parseInt(match[1], 10);
   const unit = match[2].toLowerCase();
 
-  switch (unit) {
-    case "ms":
-      return value;
-    case "s":
-      return value * 1000;
-    case "m":
-      return value * 60 * 1000;
-    case "h":
-      return value * 60 * 60 * 1000;
-    case "d":
-      return value * 24 * 60 * 60 * 1000;
-    default:
-      return null;
+  const MILLISECONDS_PER_UNIT: Record<string, number> = {
+    ms: 1,
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+  // The regex admits these five units and nothing else, so the lookup always
+  // hits and the unreachable default arm that stood here is gone.
+  const intervalMs = value * MILLISECONDS_PER_UNIT[unit];
+
+  if (intervalMs <= 0) {
+    throw new Error(
+      `Invalid schedule: "${schedule}". An interval of zero would run the strategy on every turn of the event loop.`,
+    );
   }
+  if (intervalMs > MAX_TIMER_DELAY_MS) {
+    throw new Error(
+      `Invalid schedule: "${schedule}" is ${intervalMs} ms, past the ${MAX_TIMER_DELAY_MS} ms Node timers accept. Node would silently run it every millisecond instead. Use "every 24d" or less and check the date inside the strategy.`,
+    );
+  }
+  return intervalMs;
 }
 
 /**
@@ -67,11 +84,20 @@ export class StrategyScheduler {
       this.stop(name);
     }
 
+    // setInterval does not wait for an async callback, so a tick that outlives
+    // its interval used to start again on top of itself. Two runs of the same
+    // strategy share one context, and the second one's reset() clears the
+    // results the first is still reading.
+    let tickRunning = false;
     const interval = setInterval(async () => {
+      if (tickRunning) return;
+      tickRunning = true;
       try {
         await callback();
       } catch (_error) {
         // Scheduler silently catches errors; error handling is done in the runner
+      } finally {
+        tickRunning = false;
       }
     }, intervalMs);
 

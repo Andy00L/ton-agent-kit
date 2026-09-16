@@ -1,6 +1,10 @@
 {
   "name": "@ton-agent-kit/strategies",
   "version": "1.0.2",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --experimental-strip-types test/scheduler.test.mjs"
+  },
   "description": "Deterministic workflow engine for TON Agent Kit",
   "main": "src/index.ts",
   "types": "src/index.ts",

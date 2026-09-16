@@ -54,7 +54,7 @@ export class StrategyContext implements IStrategyContext {
    * @returns The stored result, or `undefined` if the step has not been executed
    * @since 1.0.0
    */
-  getResult(stepId: string): any {
+  getResult(stepId: string): unknown {
     return this.results.get(stepId);
   }
 
@@ -65,7 +65,7 @@ export class StrategyContext implements IStrategyContext {
    * @param value - Variable value
    * @since 1.0.0
    */
-  setVariable(key: string, value: any): void {
+  setVariable(key: string, value: unknown): void {
     this.variables[key] = value;
   }
 
@@ -76,7 +76,7 @@ export class StrategyContext implements IStrategyContext {
    * @returns The stored value, or `undefined` if the variable has not been set
    * @since 1.0.0
    */
-  getVariable(key: string): any {
+  getVariable(key: string): unknown {
     return this.variables[key];
   }
 

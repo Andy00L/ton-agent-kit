@@ -28,6 +28,7 @@
  *   app.get("/api/data", tonPaywall({ amount: "0.001", recipient: "0:abc...", replayStore: store }), handler);
  */
 
+import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import { existsSync, readFileSync } from "node:fs";
 import { rename, writeFile } from "node:fs/promises";
@@ -197,11 +198,39 @@ async function claimHash(store: ReplayStore, hash: string): Promise<boolean> {
  * Persists used hashes to a JSON file on disk.
  * Survives server restarts. Good for small-medium deployments.
  */
+/** Where FileReplayStore records spent hashes when the caller names no path. */
+const DEFAULT_STORE_PATH = ".x402-used-hashes.json";
+
+/**
+ * One store instance per file path, shared by every paywall that does not name
+ * its own.
+ *
+ * `replayStore = new FileReplayStore()` as a default parameter is evaluated on
+ * every `tonPaywall()` call, so a server with four paid routes built four
+ * stores over one file, each holding a different in-memory set. Every `add()`
+ * wrote its own set over the file and erased the other three, which made every
+ * payment on every other route replayable after a restart.
+ */
+const sharedFileStores = new Map<string, FileReplayStore>();
+
+/**
+ * The shared default store for a file path. Exported so a caller wiring their
+ * own routes can hand the same instance to each of them, and so the sharing
+ * itself can be asserted.
+ */
+export function defaultReplayStore(filePath: string = DEFAULT_STORE_PATH): FileReplayStore {
+  const existing = sharedFileStores.get(filePath);
+  if (existing) return existing;
+  const created = new FileReplayStore(filePath);
+  sharedFileStores.set(filePath, created);
+  return created;
+}
+
 export class FileReplayStore implements ReplayStore {
   private hashes: Set<string>;
   private filePath: string;
 
-  constructor(filePath: string = ".x402-used-hashes.json") {
+  constructor(filePath: string = DEFAULT_STORE_PATH) {
     this.filePath = filePath;
     this.hashes = new Set();
 
@@ -366,9 +395,17 @@ export class MemoryReplayStore implements ReplayStore {
  * });
  * ```
  */
+/**
+ * How many responses one verified payment may serve.
+ *
+ * The cache exists so a client that paid and then timed out can retry with the
+ * same hash. Three covers a retry and a reload; past that the payment is spent.
+ */
+const MAX_CACHED_PROOF_USES = 3;
+
 export function tonPaywall(config: PaywallConfig) {
   // Per-instance cache: each middleware instance has its own isolated cache
-  const verifiedPayments = new Map<string, { timestamp: number; amount: string }>();
+  const verifiedPayments = new Map<string, { timestamp: number; usesLeft: number }>();
   // Prevents TOCTOU race: tracks hashes currently being verified
   const pendingVerifications = new Set<string>();
 
@@ -378,7 +415,7 @@ export function tonPaywall(config: PaywallConfig) {
     network = "testnet",
     proofTTL = 300,
     description = "API access",
-    replayStore = new FileReplayStore(),
+    replayStore = defaultReplayStore(),
   } = config;
 
   // A paywall that cannot name who gets paid, or what a valid payment looks
@@ -433,15 +470,30 @@ export function tonPaywall(config: PaywallConfig) {
       return;
     }
 
-    // Check cache FIRST, which allows retries within the proofTTL window
-    // (e.g. client didn't receive response due to timeout, retries with same hash)
-    if (verifiedPayments.has(paymentHash)) {
-      const cached = verifiedPayments.get(paymentHash)!;
-      if (Date.now() / 1000 - cached.timestamp < proofTTL) {
+    // Checked first, so a client that paid and then lost the response can
+    // retry with the same hash inside the proofTTL window. The budget is what
+    // keeps that from being a free pass: without it one payment served every
+    // request carrying its hash until the entry expired, which at 300 seconds
+    // and a thousand requests a second is 300,000 free responses per payment.
+    const cached = verifiedPayments.get(paymentHash);
+    if (cached) {
+      const stillFresh = Date.now() / 1000 - cached.timestamp < proofTTL;
+      if (stillFresh && cached.usesLeft > 0) {
+        cached.usesLeft -= 1;
+        if (cached.usesLeft === 0) verifiedPayments.delete(paymentHash);
         next();
         return;
       }
       verifiedPayments.delete(paymentHash);
+      if (stillFresh) {
+        // The budget is spent but the payment is real, so say why rather than
+        // letting it fall through to the anti-replay rejection.
+        res.status(402).json({
+          error: "Payment Already Used",
+          message: `This payment was already served ${MAX_CACHED_PROOF_USES} times. Send a new payment.`,
+        });
+        return;
+      }
     }
 
     // Lazy cleanup of expired cache entries to prevent memory leak
@@ -494,9 +546,10 @@ export function tonPaywall(config: PaywallConfig) {
       }
 
       if (verification.valid) {
+        // This request consumes the first use of the budget.
         verifiedPayments.set(paymentHash, {
           timestamp: Math.floor(Date.now() / 1000),
-          amount,
+          usesLeft: MAX_CACHED_PROOF_USES - 1,
         });
         next();
         return;
@@ -796,7 +849,6 @@ export function createPaymentServer(config: {
     handler: (req: Request, res: Response) => void;
   }>;
 }) {
-  const express = require("express");
   const app = express();
 
   // Health check (free)

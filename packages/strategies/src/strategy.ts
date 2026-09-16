@@ -167,7 +167,7 @@ export class StrategyRunner {
             stepResults.push(stepResult);
 
             if (this.hooks.onStepSkipped) {
-              await this.hooks.onStepSkipped(name, step, "condition false");
+              await this.hooks.onStepSkipped(step, context);
             }
 
             continue;
@@ -203,7 +203,7 @@ export class StrategyRunner {
 
       // Notify step start
       if (this.hooks.onStepStart) {
-        await this.hooks.onStepStart(name, step);
+        await this.hooks.onStepStart(step, context);
       }
 
       // Apply delay before execution if specified
@@ -234,18 +234,21 @@ export class StrategyRunner {
 
           succeeded = true;
           break;
-        } catch (e: any) {
-          error = e.message || String(e);
+        } catch (caught: unknown) {
+          // The hooks and the strategy-level handler both take an Error, so a
+          // thrown string is wrapped rather than passed through.
+          const failure = caught instanceof Error ? caught : new Error(String(caught));
+          error = failure.message;
 
           // If this is the last attempt, handle the error
           if (attempt === maxAttempts - 1) {
             if (this.hooks.onStepError) {
-              await this.hooks.onStepError(name, step, e);
+              await this.hooks.onStepError(failure, step, context);
             }
 
             // Call strategy-level onError handler
             if (strategy.onError) {
-              const directive = strategy.onError(e, step);
+              const directive = strategy.onError(failure, step, context);
             if (directive === "stop") {
                 failedSteps++;
                 const stepResult: StepResult = {
@@ -313,7 +316,7 @@ export class StrategyRunner {
       if (succeeded) {
         completedSteps++;
         if (this.hooks.onStepComplete) {
-          await this.hooks.onStepComplete(name, step, result);
+          await this.hooks.onStepComplete(stepResult, context);
         }
       } else {
         failedSteps++;
@@ -337,7 +340,7 @@ export class StrategyRunner {
       await this.hooks.onRunComplete(strategyResult);
     }
     if (strategy.onComplete) {
-      await strategy.onComplete(stepResults);
+      await strategy.onComplete(strategyResult);
     }
 
     return strategyResult;
@@ -368,7 +371,11 @@ export class StrategyRunner {
       return;
     }
 
-    this.scheduler.start(name, intervalMs, () => this.run(name, variables));
+    // run() resolves with a StrategyResult the scheduler has no use for, and
+    // an unawaited rejection here would take the process down.
+    this.scheduler.start(name, intervalMs, async () => {
+      await this.run(name, variables);
+    });
   }
 
   /**

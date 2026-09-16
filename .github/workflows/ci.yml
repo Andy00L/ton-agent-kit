@@ -37,6 +37,9 @@ jobs:
       - name: Action cache and token amount regression checks
         if: matrix.node == '22'
         run: npm test -w packages/core
+      - name: Strategy scheduling regression checks
+        if: matrix.node == '22'
+        run: npm test -w packages/strategies
 
   bun-checks:
     name: Regression checks that need Bun

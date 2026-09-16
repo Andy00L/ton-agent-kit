@@ -8,9 +8,12 @@
 import assert from "node:assert/strict";
 import { rm } from "node:fs/promises";
 import {
+  createPaymentServer,
+  defaultReplayStore,
   FileReplayStore,
   MemoryReplayStore,
   minimumAcceptableNanoton,
+  tonPaywall,
 } from "../src/index.ts";
 
 const NANOTONS_PER_TON = 1e9;
@@ -61,6 +64,111 @@ check("concurrent claims on one hash produce exactly one winner", async () => {
 check("add() rejects when it cannot persist", async () => {
   const store = new FileReplayStore("./no/such/directory/store.json");
   await assert.rejects(() => store.add("0xfeed"));
+});
+
+// A payment whose hash cleared verification was cached for proofTTL seconds so
+// a client that lost the response could retry. Nothing counted the uses, so one
+// 0.001 TON payment served every request carrying its hash for five minutes.
+check("one verified payment serves a bounded number of responses", async () => {
+  const RECIPIENT = "0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9";
+  const PAYMENT_HASH = "a".repeat(64);
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      success: true,
+      utime: Math.floor(Date.now() / 1000),
+      out_msgs: [
+        {
+          value: String(Math.round(0.001 * NANOTONS_PER_TON)),
+          destination: { address: RECIPIENT },
+        },
+      ],
+    }),
+  });
+
+  try {
+    const paywall = tonPaywall({
+      amount: "0.001",
+      recipient: RECIPIENT,
+      replayStore: new MemoryReplayStore(),
+    });
+
+    let served = 0;
+    const statuses = [];
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await new Promise((resolve) => {
+        const request = { headers: { "x-payment-hash": PAYMENT_HASH } };
+        const response = {
+          status(code) {
+            statuses.push(code);
+            return this;
+          },
+          json() {
+            resolve();
+          },
+          setHeader() {},
+        };
+        paywall(request, response, () => {
+          served++;
+          resolve();
+        });
+      });
+    }
+
+    assert.equal(served, 3, `one payment served ${served} responses`);
+    assert.deepEqual(statuses, [402, 402, 402]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// The default store was `new FileReplayStore()` as a destructuring default, so
+// it was built once per tonPaywall() call. A server with four paid routes had
+// four stores over one file, each with its own in-memory set, and every write
+// erased the other three.
+check("the default replay store is one instance per file path", async () => {
+  assert.equal(defaultReplayStore(), defaultReplayStore());
+  assert.notEqual(defaultReplayStore(".a.json"), defaultReplayStore(".b.json"));
+});
+
+check("two independent stores over one file erase each other", async () => {
+  const path = ".x402-erase-check.json";
+  await rm(path, { force: true });
+  try {
+    const routeA = new FileReplayStore(path);
+    const routeB = new FileReplayStore(path);
+    await routeA.add("hash-paid-on-route-a");
+    await routeB.add("hash-paid-on-route-b");
+
+    // routeB wrote its own set over the file, so a restart forgets route A's
+    // payment and it becomes replayable. This is the mechanism the shared
+    // default store above exists to prevent.
+    const afterRestart = new FileReplayStore(path);
+    assert.equal(await afterRestart.has("hash-paid-on-route-a"), false);
+    assert.equal(await afterRestart.has("hash-paid-on-route-b"), true);
+  } finally {
+    await rm(path, { force: true });
+  }
+});
+
+// createPaymentServer reached for require() inside a module Node parses as ESM,
+// where require is undefined, so every call threw ReferenceError.
+check("createPaymentServer builds an app instead of throwing on require", async () => {
+  const app = createPaymentServer({
+    recipient: "0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9",
+    replayStore: new MemoryReplayStore(),
+    routes: [
+      {
+        path: "/api/price",
+        amount: "0.001",
+        handler: (_request, response) => response.json({ price: 1 }),
+      },
+    ],
+  });
+  assert.equal(typeof app.listen, "function");
 });
 
 let failed = 0;

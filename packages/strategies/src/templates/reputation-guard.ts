@@ -1,5 +1,6 @@
 import { defineStrategy } from "../strategy";
 import type { Strategy, StrategyContext } from "../types";
+import { readNumber } from "../step-results";
 
 /**
  * Configuration options for the reputation guard strategy.
@@ -48,8 +49,7 @@ export function createReputationGuardStrategy(options: ReputationGuardOptions): 
         action: "get_balance",
         params: {},
         onResult: async (_result: any, context: StrategyContext) => {
-          const reputation = context.getResult("get_reputation");
-          const score = reputation?.score ?? reputation ?? 0;
+          const score = readNumber(context.getResult("get_reputation"), "score") ?? 0;
 
           if (score < minScore && onAlert) {
             onAlert(score, agentId, context);

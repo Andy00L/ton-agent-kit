@@ -63,6 +63,17 @@ export interface StrategyContext {
   lastRunAt: Date | null;
   /** Name of the strategy this context belongs to */
   strategyName: string;
+  /**
+   * The value a previous step left behind, or undefined when it has not run.
+   *
+   * Every template and every user condition calls this, but the interface did
+   * not declare it, so nothing outside the concrete class could typecheck.
+   */
+  getResult(stepId: string): unknown;
+  /** A user-defined variable, or undefined when it was never set. */
+  getVariable(key: string): unknown;
+  /** Set a user-defined variable for the steps that follow. */
+  setVariable(key: string, value: unknown): void;
 }
 
 /**

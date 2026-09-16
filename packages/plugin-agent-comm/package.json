@@ -1,6 +1,7 @@
 {
   "name": "@ton-agent-kit/plugin-agent-comm",
   "version": "1.4.0",
+  "scripts": { "build": "tsc" },
   "description": "Agent communication plugin for TON Agent Kit: on-chain intent broadcasting, offer negotiation, and deal settlement",
   "main": "src/index.ts",
   "types": "src/index.ts",
