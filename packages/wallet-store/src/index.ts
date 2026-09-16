@@ -317,9 +317,18 @@ export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export const MAX_USER_STORAGE = 50 * 1024 * 1024;
 export const FILE_TTL = 48 * 60 * 60;
 
+/** The columns of user_files needed to locate a stored blob on disk. */
+interface StoredFileRow {
+  id: string;
+  uid: number;
+  filename: string;
+  content_type: string;
+}
+
 export class FileStore {
   private db: Database;
   private basePath: string;
+
 
   constructor(db: Database, basePath: string) {
     this.db = db;
@@ -423,31 +432,76 @@ export class FileStore {
     return row?.total || 0;
   }
 
-  deleteFile(id: string): boolean {
-    const file = this.getFile(id);
-    if (!file) return false;
-    try { unlinkSync(file.path); } catch {}
-    this.db.prepare("DELETE FROM user_files WHERE id = ?").run(id);
+  /** The columns needed to locate a stored blob on disk. */
+  private selectRows(sql: string, parameter: number | string): StoredFileRow[] {
+    return this.db.prepare(sql).all(parameter) as StoredFileRow[];
+  }
+
+  /** Where a stored file lives on disk. */
+  private pathOf(row: StoredFileRow): string {
+    return join(this.basePath, String(row.uid), `${row.id}.${this.getExtension(row.content_type, row.filename)}`);
+  }
+
+  /** Remove a user's directory once nothing is left in it. */
+  private pruneUserDirectory(uid: number): void {
     try {
-      const userDir = join(this.basePath, file.uid.toString());
-      const remaining = readdirSync(userDir);
-      if (remaining.length === 0) rmdirSync(userDir);
-    } catch {}
+      const userDir = join(this.basePath, String(uid));
+      if (readdirSync(userDir).length === 0) rmdirSync(userDir);
+    } catch {
+      // The directory is already gone, or another process is writing into it.
+    }
+  }
+
+  deleteFile(id: string): boolean {
+    const [row] = this.selectRows(
+      "SELECT id, uid, filename, content_type FROM user_files WHERE id = ?",
+      id,
+    );
+    if (!row) return false;
+
+    // The row goes first. It used to go last, behind a getFile() that answered
+    // null whenever the blob was missing from disk, so a row whose file had
+    // vanished could never be deleted: it held part of the user's 50 MB quota
+    // forever and cleanupExpired re-selected it on every sweep and returned 0.
+    this.db.prepare("DELETE FROM user_files WHERE id = ?").run(id);
+    try { unlinkSync(this.pathOf(row)); } catch {}
+    this.pruneUserDirectory(row.uid);
     return true;
   }
 
   deleteAllFiles(uid: number): number {
-    const files = this.db.prepare("SELECT id FROM user_files WHERE uid = ?").all(uid) as any[];
-    let count = 0;
-    for (const f of files || []) { if (this.deleteFile(f.id)) count++; }
-    return count;
+    const rows = this.selectRows(
+      "SELECT id, uid, filename, content_type FROM user_files WHERE uid = ?",
+      uid,
+    );
+    if (rows.length === 0) return 0;
+
+    // One DELETE and one directory scan, not one of each per file. The previous
+    // loop called deleteFile per id, and deleteFile reads the whole user
+    // directory, so removing n files read n directories of shrinking size.
+    this.db.prepare("DELETE FROM user_files WHERE uid = ?").run(uid);
+    for (const row of rows) {
+      try { unlinkSync(this.pathOf(row)); } catch {}
+    }
+    this.pruneUserDirectory(uid);
+    return rows.length;
   }
 
   cleanupExpired(): number {
     const now = Math.floor(Date.now() / 1000);
-    const expired = this.db.prepare("SELECT id FROM user_files WHERE expires_at < ?").all(now) as any[];
-    let count = 0;
-    for (const f of expired || []) { if (this.deleteFile(f.id)) count++; }
-    return count;
+    const rows = this.selectRows(
+      "SELECT id, uid, filename, content_type FROM user_files WHERE expires_at < ?",
+      now,
+    );
+    if (rows.length === 0) return 0;
+
+    this.db.prepare("DELETE FROM user_files WHERE expires_at < ?").run(now);
+    const touchedUsers = new Set<number>();
+    for (const row of rows) {
+      try { unlinkSync(this.pathOf(row)); } catch {}
+      touchedUsers.add(row.uid);
+    }
+    for (const uid of touchedUsers) this.pruneUserDirectory(uid);
+    return rows.length;
   }
 }

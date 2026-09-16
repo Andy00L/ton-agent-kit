@@ -60,6 +60,8 @@ jobs:
         run: npm ci
       - name: Master key and wallet write path
         run: bun packages/wallet-store/test/secret.test.mjs
+      - name: Encrypted file store delete paths
+        run: bun packages/wallet-store/test/file-store.test.mjs
       - name: Reputation message bodies match the contract
         run: bun packages/plugin-identity/test/message-bodies.test.mjs
       - name: The agent.methods proxy is not a thenable

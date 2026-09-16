@@ -4,6 +4,8 @@ import {
   defineAction,
   definePlugin,
   describeError,
+  tonapiBase,
+  tonapiHeaders,
   fetchJson,
   toFriendlyAddress,
   type DnsInfo,
@@ -36,15 +38,8 @@ const resolveDomainAction = defineAction<{ domain: string }, DnsInfo & { resolve
     const fullDomain = `${domain}.ton`;
 
     // Use TONAPI for reliable DNS resolution
-    const apiBase =
-      agent.network === "testnet"
-        ? "https://testnet.tonapi.io/v2"
-        : "https://tonapi.io/v2";
-
-    const headers: Record<string, string> = {};
-    if (agent.config.TONAPI_KEY) {
-      headers["Authorization"] = `Bearer ${agent.config.TONAPI_KEY}`;
-    }
+    const apiBase = tonapiBase(agent.network);
+    const headers = tonapiHeaders(agent.config.TONAPI_KEY);
 
     try {
       const response = await fetchJson(
@@ -90,12 +85,15 @@ const lookupAddressAction = defineAction<
     const addr = Address.parse(params.address);
 
     try {
+      // The endpoint answers without a key, so the lookup is not gated on one,
+      // and it follows agent.network like resolve_domain does. Both were
+      // pinned to mainnet, so a testnet agent got the mainnet registration.
       const tonApiKey = agent.config.TONAPI_KEY;
-      if (tonApiKey) {
+      {
         const response = await fetchJson(
-          `https://tonapi.io/v2/accounts/${addr.toRawString()}/dns/backresolve`,
+          `${tonapiBase(agent.network)}/accounts/${addr.toRawString()}/dns/backresolve`,
           DnsBackResolveResponse,
-          { headers: { Authorization: `Bearer ${tonApiKey}` } }
+          { headers: tonapiHeaders(tonApiKey) }
         );
         if (response.ok) {
           return { address: params.address, friendlyAddress: toFriendlyAddress(addr, agent.network), domain: response.value.name };
@@ -125,12 +123,13 @@ const getDomainInfoAction = defineAction<
     const domain = params.domain.replace(/\.ton$/i, "");
 
     try {
+      // Same two corrections as lookup_address above.
       const tonApiKey = agent.config.TONAPI_KEY;
-      if (tonApiKey) {
+      {
         const response = await fetchJson(
-          `https://tonapi.io/v2/dns/${encodeURIComponent(domain + ".ton")}/resolve`,
+          `${tonapiBase(agent.network)}/dns/${encodeURIComponent(domain + ".ton")}/resolve`,
           DnsResolveResponse,
-          { headers: { Authorization: `Bearer ${tonApiKey}` } }
+          { headers: tonapiHeaders(tonApiKey) }
         );
         if (response.ok) {
           const resolvedAddr = response.value.wallet?.address;

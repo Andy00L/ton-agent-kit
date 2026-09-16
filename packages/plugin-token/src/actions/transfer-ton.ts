@@ -87,23 +87,6 @@ export const transferTonAction = defineAction<TransferTonInput, TransferTonResul
     }
     const { secretKey, publicKey, walletConfig } = agent.wallet.getCredentials();
 
-    // The signed cell this action emulates is V5R1-specific, so the transfer
-    // path requires a V5R1 wallet. Other versions go through sendTransaction.
-    const contract = createWalletContract(publicKey, {
-      ...walletConfig,
-      network: agent.network,
-    });
-    if (!(contract instanceof WalletContractV5R1)) {
-      throw new Error(
-        `[transferTonAction] Simulation requires a V5R1 wallet, this agent uses ${walletConfig.version ?? "V5R1"}.`,
-      );
-    }
-
-    const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
-    const walletContract = freshClient.open(contract);
-
-    const seqno = await walletContract.getSeqno();
-
     const internalMessage = internal({
       to: toAddress,
       value: amountNano,
@@ -111,19 +94,44 @@ export const transferTonAction = defineAction<TransferTonInput, TransferTonResul
       body: params.comment ? buildCommentBody(params.comment) : undefined,
     });
 
-    // createTransfer returns a signed Cell, used for both emulation and sending
-    const transferCell = walletContract.createTransfer({
-      seqno,
-      secretKey,
-      messages: [internalMessage],
-      sendMode: DEFAULT_SEND_MODE,
-    });
-
-    // Step 2: If simulate or simulateFirst, emulate
+    // Step 2: If simulate or simulateFirst, emulate.
+    //
+    // Everything below is for emulation only: a plain send goes through
+    // sendTransaction, which handles every wallet version. The V5R1 guard, the
+    // extra client, the seqno read and the Ed25519 signature used to run
+    // unconditionally, so transfer_ton on a V4 wallet failed with a simulation
+    // error and never reached the send path the comment promised it, and a
+    // plain transfer paid for a signed cell nothing used.
     let simResult: Awaited<ReturnType<typeof emulateTransaction>> | undefined;
 
     if (params.simulate || params.simulateFirst) {
-      // Serialize the signed cell into the full external message BOC
+      const contract = createWalletContract(publicKey, {
+        ...walletConfig,
+        network: agent.network,
+      });
+      if (!(contract instanceof WalletContractV5R1)) {
+        return {
+          simulated: false,
+          sent: false,
+          success: false,
+          reason: `Simulation builds a V5R1 external message, and this agent uses ${walletConfig.version ?? "an older version"}. Call transfer_ton without simulate to send it.`,
+          message: "Simulation is only available on a V5R1 wallet.",
+        };
+      }
+
+      const freshClient = new TonClient4({ endpoint: agent.rpcUrl });
+      const walletContract = freshClient.open(contract);
+      const seqno = await walletContract.getSeqno();
+
+      // createTransfer returns a signed Cell, serialized into the external
+      // message the emulator needs. The send path does not use it.
+      const transferCell = walletContract.createTransfer({
+        seqno,
+        secretKey,
+        messages: [internalMessage],
+        sendMode: DEFAULT_SEND_MODE,
+      });
+
       const ext = external({
         to: walletContract.address,
         body: transferCell,

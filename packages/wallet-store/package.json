@@ -6,7 +6,7 @@
   "types": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "test": "bun test/secret.test.mjs"
+    "test": "bun test/secret.test.mjs && bun test/file-store.test.mjs"
   },
   "engines": {
     "bun": ">=1.0.0"
