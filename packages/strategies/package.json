@@ -1,9 +1,12 @@
 {
   "name": "@ton-agent-kit/strategies",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Deterministic workflow engine for TON Agent Kit",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "files": [
+    "src"
+  ],
   "dependencies": {
     "@ton-agent-kit/core": "^1.0.0"
   },

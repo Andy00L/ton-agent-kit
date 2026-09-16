@@ -1,6 +1,7 @@
 {
   "name": "ton-agent-kit-x402-server",
   "version": "1.0.0",
+  "private": true,
   "description": "Example x402 payment server powered by TON Agent Kit",
   "main": "dist/index.js",
   "scripts": {

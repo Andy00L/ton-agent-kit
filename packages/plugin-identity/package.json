@@ -1,14 +1,17 @@
 {
   "name": "@ton-agent-kit/plugin-identity",
-  "version": "1.6.8",
+  "version": "1.7.0",
   "description": "Identity plugin for TON Agent Kit: agent registry, discovery, and reputation",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.0.0"
+    "@ton-agent-kit/core": "^1.3.0"
   },
   "peerDependencies": {
     "zod": ">=4.0.0",

@@ -1,14 +1,17 @@
 {
   "name": "@ton-agent-kit/plugin-nft",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "NFT plugin for TON Agent Kit: mint, transfer, and manage NFT collections",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
-    "@ton-agent-kit/core": "^1.0.0"
+    "@ton-agent-kit/core": "^1.3.0"
   },
   "peerDependencies": {
     "zod": ">=4.0.0",
