@@ -70,7 +70,7 @@ export class ActionCache {
     this.maxEntries = config?.maxEntries || 500;
 
     this.actionTTLs = {
-      get_price: 30000, get_token_price: 30000,
+      get_price: 30000,
       get_balance: 10000, get_jetton_balance: 10000,
       get_wallet_info: 15000,
       get_staking_info: 60000, get_staking_pools: 60000, get_yield_pools: 60000,

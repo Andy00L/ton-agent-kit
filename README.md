@@ -162,31 +162,33 @@ Full architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 21 npm packages. 12 plugins with actions, 9 infrastructure modules.
 
-| Package | Version | What it does |
-|---|---|---|
-| `@ton-agent-kit/core` | 1.2.4 | Agent, plugin system, wallet, gas estimation, cache, verify |
-| `@ton-agent-kit/plugin-token` | 1.1.2 | TON and Jetton transfers, balances, deploy, simulate |
-| `@ton-agent-kit/plugin-defi` | 1.2.3 | DeDust, STON.fi, Omniston swaps, DCA, limits, yield, staking pools, trust |
-| `@ton-agent-kit/plugin-dns` | 1.0.4 | .ton domain resolution, reverse lookup, domain info |
-| `@ton-agent-kit/plugin-nft` | 1.0.4 | NFT info, transfer, collection data |
-| `@ton-agent-kit/plugin-staking` | 1.0.4 | Stake/unstake TON in validator pools |
-| `@ton-agent-kit/plugin-analytics` | 1.1.2 | TX history, wallet info, portfolio, equity curve, webhooks, contract calls |
-| `@ton-agent-kit/plugin-escrow` | 1.5.3 | On-chain Tact escrow with dispute resolution |
-| `@ton-agent-kit/plugin-identity` | 1.6.8 | Agent registry, reputation, discovery, on-chain scan fallback, cleanup |
-| `@ton-agent-kit/plugin-payments` | 1.0.18 | x402 payment flow, delivery proofs, binary content detection, JSON-unwrap |
-| `@ton-agent-kit/plugin-agent-comm` | 1.3.6 | Intent/offer marketplace protocol, testnet retry for indexing delays |
-| `@ton-agent-kit/plugin-memory` | 1.0.2 | Key-value store (file, in-memory) with TTL and namespaces |
-| `@ton-agent-kit/plugin-endpoints` | 1.0.1 | Dynamic x402 endpoint management (open, close, list) |
-| `@ton-agent-kit/orchestrator` | 1.1.1 | Multi-agent planner, dispatcher, parallel execution |
-| `@ton-agent-kit/strategies` | 1.0.1 | Deterministic workflow engine, scheduling, templates |
-| `@ton-agent-kit/x402-middleware` | 1.1.10 | Express paywall middleware, address normalization, forward fee tolerance, anti-replay |
-| `@ton-agent-kit/mcp-server` | 1.1.1 | Model Context Protocol server (stdio + SSE) |
-| `@ton-agent-kit/langchain` | 1.0.2 | LangChain DynamicStructuredTool adapter |
-| `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
-| `@ton-agent-kit/wallet-store` | 1.0.1 | AES-256-GCM encrypted wallet/key storage, file store with 48h TTL |
-| `@ton-agent-kit/network-mode` | 1.0.1 | CLI network mode selector (local, public IP, tunnel) |
+| Package | What it does |
+|---|---|
+| `@ton-agent-kit/core` | Agent, plugin system, wallet, gas estimation, cache, verify |
+| `@ton-agent-kit/plugin-token` | TON and Jetton transfers, balances, deploy, simulate |
+| `@ton-agent-kit/plugin-defi` | DeDust, STON.fi, Omniston swaps, DCA, limits, yield, staking pools, trust |
+| `@ton-agent-kit/plugin-dns` | .ton domain resolution, reverse lookup, domain info |
+| `@ton-agent-kit/plugin-nft` | NFT info, transfer, collection data |
+| `@ton-agent-kit/plugin-staking` | Stake/unstake TON in validator pools |
+| `@ton-agent-kit/plugin-analytics` | TX history, wallet info, portfolio, equity curve, webhooks, contract calls |
+| `@ton-agent-kit/plugin-escrow` | On-chain Tact escrow with dispute resolution |
+| `@ton-agent-kit/plugin-identity` | Agent registry, reputation, discovery, on-chain scan fallback, cleanup |
+| `@ton-agent-kit/plugin-payments` | x402 payment flow, delivery proofs, binary content detection, JSON-unwrap |
+| `@ton-agent-kit/plugin-agent-comm` | Intent/offer marketplace protocol, testnet retry for indexing delays |
+| `@ton-agent-kit/plugin-memory` | Key-value store (file, in-memory) with TTL and namespaces |
+| `@ton-agent-kit/plugin-endpoints` | Dynamic x402 endpoint management (open, close, list) |
+| `@ton-agent-kit/orchestrator` | Multi-agent planner, dispatcher, parallel execution |
+| `@ton-agent-kit/strategies` | Deterministic workflow engine, scheduling, templates |
+| `@ton-agent-kit/x402-middleware` | Express paywall middleware, address normalization, atomic anti-replay claims |
+| `@ton-agent-kit/mcp-server` | Model Context Protocol server (stdio + SSE) |
+| `@ton-agent-kit/langchain` | LangChain DynamicStructuredTool adapter |
+| `@ton-agent-kit/ai-tools` | Vercel AI SDK and OpenAI tools adapter |
+| `@ton-agent-kit/wallet-store` | AES-256-GCM encrypted wallet/key storage, file store with 48h TTL |
+| `@ton-agent-kit/network-mode` | CLI network mode selector (local, public IP, tunnel) |
 
-All packages are `@ton-agent-kit/*` scoped on npm. Versions above are from the current `package.json` files.
+All packages are `@ton-agent-kit/*` scoped on npm. Published versions live on
+[npm](https://www.npmjs.com/org/ton-agent-kit); a table here would go stale the
+next time any one of the 21 is released, and it did.
 
 ---
 
@@ -430,10 +432,10 @@ Full docs: [docs/agent-comm.md](docs/agent-comm.md)
 import { Orchestrator } from "@ton-agent-kit/orchestrator";
 
 const orchestrator = new Orchestrator();
-orchestrator.addAgent(traderAgent);
-orchestrator.addAgent(researchAgent);
+orchestrator.agent("trader", "executes swaps and transfers", traderAgent);
+orchestrator.agent("researcher", "reads prices and pool data", researchAgent);
 
-const result = await orchestrator.runSwarm(
+const result = await orchestrator.swarm(
   "Research TON DeFi pools and execute the best swap",
   { parallel: true, maxRetries: 2 }
 );
@@ -532,17 +534,29 @@ The bot imports all 12 plugins from this SDK via npm. See [docs/telegram-bot.md]
 ### runLoop (built into core)
 
 ```typescript
-const result = await agent.runLoop({
-  goal: "Check balance, find DeFi pools with >10% APR, monitor prices",
-  maxIterations: 10,
-  model: "gpt-4o",
-  onActionStart: (action, params) => console.log(`Running ${action}...`),
-  onActionResult: (action, result) => console.log(`${action} done`),
-  onComplete: (result) => console.log(`Completed: ${result.actions.length} actions`),
-});
+const result = await agent.runLoop(
+  "Check balance, find DeFi pools with >10% APR, monitor prices",
+  {
+    maxIterations: 10,
+    model: "gpt-4o",
+    onActionStart: (action) => console.log(`Running ${action}...`),
+    onActionResult: (action, params, result) => console.log(`${action} done`),
+    onComplete: () => console.log("done"),
+  },
+);
+
+console.log(result.summary);
+console.log(`${result.steps.length} actions ran`);
 ```
 
-`runLoop` is built into `TonAgentKit`. It takes a natural language goal, converts all registered actions to OpenAI tools, and runs a multi-step LLM loop. The LLM chooses which actions to call. Supports callbacks, max iterations, and parameter remapping.
+`runLoop` is built into `TonAgentKit`. The goal is the first argument, options
+are the second. It converts every registered action to an OpenAI tool and runs a
+multi-step loop in which the model chooses what to call. It returns
+`{ goal, steps, summary }`. Arguments the model sends go to the action's Zod
+schema unchanged: an argument that does not validate comes back to the model as
+a tool error for it to correct, and is never renamed on its behalf.
+
+The model defaults to `gpt-4.1-nano` and `maxIterations` to 5.
 
 ### Strategy Engine
 
@@ -576,9 +590,45 @@ Full docs: [docs/strategies.md](docs/strategies.md)
 
 ---
 
+## Build It From Source
+
+Everything below the Quick Start needs the repository, not just the published
+packages. Requirements: Node 20 or 22 with npm 9 or later for the build, and
+[Bun](https://bun.sh) to run the test runner and `@ton-agent-kit/wallet-store`,
+which imports `bun:sqlite`.
+
+```bash
+git clone https://github.com/Andy00L/ton-agent-kit.git
+cd ton-agent-kit
+npm install
+npm run build
+```
+
+`npm run build` typechecks and compiles all 21 packages. Success is exit 0 with
+no TypeScript diagnostics; it takes about 90 seconds from cold. CI runs it on
+Node 20 and Node 22 on every push, along with the regression suites below.
+
+```bash
+npm test -w packages/core             # token amounts, action cache
+npm test -w packages/x402-middleware  # paywall floor, replay claims
+npm test -w packages/strategies       # scheduling, template action names
+bun packages/wallet-store/test/secret.test.mjs
+bun packages/plugin-identity/test/message-bodies.test.mjs
+```
+
+These run offline, with no wallet and no API key. Each prints `n/n passed` and
+exits 0 only when every check holds.
+
+---
+
 ## Test Suite
 
 28 test suites + shared setup. Interactive CLI runner.
+
+Unlike the regression suites above, these run against live testnet: 27 of the
+28 need `TON_MNEMONIC` set to a funded testnet wallet, three of those also need
+`OPENAI_API_KEY`, and the remaining one opens a production websocket. None of
+them run in CI.
 
 ```bash
 bun run tests.ts          # Interactive menu
@@ -651,7 +701,7 @@ TON Agent Kit has more on-chain primitives. The tradeoff: it only works with TON
 
 | Layer | Technology |
 |---|---|
-| Runtime | Bun 1.3+ |
+| Runtime | Node 20 or 22 to build, Bun to run the test runner and wallet-store |
 | Language | TypeScript (strict) |
 | Blockchain | @ton/ton, @ton/core, @ton/crypto |
 | DeFi | @dedust/sdk, @ston-fi/sdk, swap.coffee API, Omniston WebSocket |
@@ -670,7 +720,6 @@ TON Agent Kit has more on-chain primitives. The tradeoff: it only works with TON
 | Example | What it shows |
 |---|---|
 | [examples/simple-agent](examples/simple-agent) | 20 lines, 3 plugins, `agent.methods` proxy |
-| [examples/telegram-bot](examples/telegram-bot) | Telegram bot setup from npm packages |
 | [examples/mcp-server](examples/mcp-server) | MCP server for Claude Desktop |
 | [examples/x402-server](examples/x402-server) | Express server with TON paywall endpoints |
 
@@ -701,6 +750,43 @@ export default definePlugin({
 ```
 
 Then `agent.use(MyPlugin)` and the action is available everywhere: `runAction`, `toAITools`, MCP, orchestrator.
+
+---
+
+## Known Limitations
+
+Stated here rather than found later.
+
+- **The two Tact contracts have no test harness.** `contracts/escrow.tact` and
+  `contracts/reputation.tact` hold funds, and their only coverage is scripts
+  that run against live testnet with a funded wallet. There is no
+  `@ton/sandbox` or Blueprint setup, although `@ton/sandbox` is already a dev
+  dependency of `@ton-agent-kit/core`. This is the largest open gap in the
+  repository.
+- **`npm audit` reports advisories that cannot be cleared today**, one of them
+  critical (`protobufjs`, reached through `@ston-fi/omniston-sdk`). Clearing
+  the tree means moving `ai` from 3 to 7 and `@ston-fi/sdk` from 1 to 2, both
+  breaking changes.
+- **Every package publishes TypeScript source**, not compiled JavaScript:
+  `main` and `types` both point at `src/index.ts`. A consumer therefore needs a
+  bundler, a loader, or Node 23.6 or later, and compiles this SDK under their
+  own compiler settings.
+- **Escrow actions do not confirm the on-chain outcome.** They send the message
+  and write a local terminal status without reading back what the contract did.
+  `verifyContractExecution` is exported from core for this and no action calls
+  it yet.
+- **Delivery is self-reported in escrow**, and the x402 payment proof hash is
+  stored but never checked on chain. The reputation-score gate on escrow
+  creation is enforced off chain and can be bypassed by calling the contract
+  directly.
+- **`@ton/ton` 16.3.0 is deliberately not adopted.** The range stays `^16.2.2`:
+  the release changes the wallet v5 types and the shape of
+  `account.balance.coins`, so it needs a pass with on-chain tests.
+- **`any` remains outside the audited files**, mostly in
+  `packages/core/src/agent.ts` and the generated Tact bindings.
+
+The full list, with the release each item relates to, is under Known issues in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ---
 

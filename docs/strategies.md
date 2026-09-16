@@ -30,7 +30,7 @@ const myStrategy = defineStrategy({
   context: { threshold: 5.0 },
   steps: [
     {
-      action: "get_token_price",
+      action: "get_price",
       params: { token: "TON" },
     },
     {

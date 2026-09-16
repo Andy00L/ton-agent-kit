@@ -43,7 +43,7 @@ export function createPriceMonitorStrategy(options: PriceMonitorOptions = {}): S
     steps: [
       {
         id: "get_price",
-        action: "get_token_price",
+        action: "get_price",
         params: { token },
         onResult: async (result: any, context: StrategyContext) => {
           const price = result?.price ?? result ?? 0;

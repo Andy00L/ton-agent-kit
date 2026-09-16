@@ -110,5 +110,49 @@ await check("readNumber answers null rather than guessing", () => {
   }
 });
 
+console.log("\nshipped templates");
+
+await check("every action a template calls is registered by a plugin", async () => {
+  // createDcaStrategy and createPriceMonitorStrategy both named
+  // "get_token_price", which no plugin registers. The real DeFi action is
+  // "get_price". Both templates failed on their first step, on every run.
+  const { readdirSync, readFileSync, statSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const collectNames = (directory, pattern, into) => {
+    for (const entry of readdirSync(directory)) {
+      const full = join(directory, entry);
+      if (statSync(full).isDirectory()) {
+        collectNames(full, pattern, into);
+      } else if (entry.endsWith(".ts")) {
+        for (const match of readFileSync(full, "utf8").matchAll(pattern)) {
+          into.add(match[1]);
+        }
+      }
+    }
+  };
+
+  const packagesDir = fileURLToPath(new URL("../../", import.meta.url));
+  const registered = new Set();
+  for (const entry of readdirSync(packagesDir)) {
+    if (entry.startsWith("plugin-")) {
+      collectNames(join(packagesDir, entry, "src"), /^\s*name:\s*"([a-z0-9_]+)"/gm, registered);
+    }
+  }
+  assert.ok(registered.size > 50, `only found ${registered.size} registered action names`);
+
+  const used = new Set();
+  collectNames(
+    fileURLToPath(new URL("../src/templates/", import.meta.url)),
+    /action:\s*"([a-z0-9_]+)"/g,
+    used,
+  );
+  assert.ok(used.size > 0, "no template action names found");
+
+  const unregistered = [...used].filter((name) => !registered.has(name));
+  assert.deepEqual(unregistered, [], `templates call actions no plugin registers: ${unregistered}`);
+});
+
 console.log(`\n${total - failures}/${total} passed`);
 process.exit(failures === 0 ? 0 : 1);

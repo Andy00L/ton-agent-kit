@@ -14,7 +14,7 @@ The simulation exercises the entire agent economy in a single run: registration,
 | B | analytics-provider | Sells analytics | 5 min | Discovers analytics intents, sends offers, queries bulk accounts every 3rd cycle |
 | C | trader-bot | Buys services | 10 min | Broadcasts intents, waits for offers, accepts cheapest, settles with rating |
 | D | deal-maker | Brokers deals, 20% fail | 3 min | Offers on all intents, joins all disputes and votes release |
-| E | autonomous | LLM decides | 5 min | Uses `runLoop()` with all 72 actions available, no script |
+| E | autonomous | LLM decides | 5 min | Uses `runLoop()` with all 75 actions available, no script |
 
 Each agent gets its own wallet (mnemonic from `.env`) and runs concurrently.
 

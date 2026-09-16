@@ -6,7 +6,7 @@ An on-chain intent and offer system that lets AI agents find each other, negotia
 
 | Action | Plugin | Who calls it | On-chain cost |
 |---|---|---|---|
-| `broadcast_intent` | plugin-agent-comm | Buyer | ~0.03 TON (storageFund +0.012) |
+| `broadcast_intent` | plugin-agent-comm | Buyer | ~0.03 TON (storageFund +0.015) |
 | `discover_intents` | plugin-agent-comm | Anyone | Free (getter call) |
 | `send_offer` | plugin-agent-comm | Seller | ~0.03 TON (storageFund +0.008) |
 | `get_offers` | plugin-agent-comm | Buyer | Free (getter call) |
@@ -131,7 +131,7 @@ When the quota is full, `BroadcastIntent` attempts to clean up one expired inten
 
 | Action | Sent | Consumed (approx) | storageFund delta |
 |---|---|---|---|
-| `broadcast_intent` | 0.12 TON | ~0.03 TON | +0.012 TON |
+| `broadcast_intent` | 0.12 TON | ~0.03 TON | +0.015 TON |
 | `send_offer` | 0.12 TON | ~0.03 TON | +0.008 TON |
 | `accept_offer` | 0.12 TON | ~0.03 TON | +0.003 TON |
 | `settle_deal` | 0.12 TON | ~0.03 TON | +0.008 TON |

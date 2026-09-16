@@ -94,12 +94,19 @@ The transaction must be within `maxAge` of the current time. Default: 300 second
 
 ### Amount Tolerance
 
-| Transfer type | Tolerance |
-|---|---|
-| Self-transfer (sender == recipient) | 5,000,000 nanoTON |
-| Cross-transfer | 500,000 nanoTON |
+The waiver covers one forward fee and never exceeds a tenth of the price:
 
-Tolerance accounts for gas fees and rounding.
+```
+minimumAcceptable = price - min(1,000,000 nanoTON, price / 10)
+```
+
+So the acceptance floor stays strictly positive at every price. A 0.001 TON
+endpoint accepts 0.0009 TON and rejects anything below it.
+
+The flat 5,000,000 nanoTON waiver documented here until version 2.0.0 was the
+paywall bypass: at any price under 0.005 TON the floor went negative and a
+transfer of 0 TON satisfied it. The middleware's own example charges 0.001 TON.
+See [CHANGELOG.md](../CHANGELOG.md) under 1.2.0.
 
 ---
 
@@ -113,7 +120,16 @@ Each transaction hash can be used only once. Three built-in store implementation
 | `RedisReplayStore` | Redis with TTL | For multi-instance deployments. Supports Upstash, Redis Cloud, self-hosted. |
 | `MemoryReplayStore` | In-memory Set | Lost on restart. For testing or short-lived processes. |
 
-Custom stores are supported. Implement `has(hash: string): boolean` and `add(hash: string): void`.
+Custom stores implement `has(hash): Promise<boolean>` and
+`add(hash): Promise<void>`, and should implement the optional
+`claim(hash): Promise<boolean>`, which records the hash and answers whether
+this caller was the one that recorded it. Verification grants access on the
+claim. Without it the middleware falls back to `has` then `add`, which is a
+check-then-act race: fifty concurrent requests carrying one hash all clear
+`has` before any reaches `add`, and all fifty are served.
+
+`FileReplayStore` instances are shared per file path. A server with several
+paid routes and no explicit store gets one store, not one per route.
 
 ---
 

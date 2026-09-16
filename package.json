@@ -12,7 +12,6 @@
     "build:core": "npm run build -w packages/core",
     "build:plugins": "npm run build -w packages/plugin-token -w packages/plugin-defi -w packages/plugin-nft -w packages/plugin-dns -w packages/plugin-payments",
     "build:mcp": "npm run build -w packages/mcp-server",
-    "dev:bot": "npm run dev -w examples/telegram-bot",
     "test": "npm test --workspaces --if-present",
     "clean": "rm -rf packages/*/dist examples/*/dist node_modules"
   },

@@ -95,7 +95,6 @@ Note: The Telegram bot has been moved to https://github.com/Andy00L/ton-agent-bo
 │
 ├── examples/
 │   ├── simple-agent/
-│   ├── telegram-bot/
 │   ├── mcp-server/
 │   └── x402-server/
 │
@@ -131,29 +130,29 @@ Note: The Telegram bot has been moved to https://github.com/Andy00L/ton-agent-bo
 
 21 npm packages. 12 plugins with actions, 9 infrastructure modules.
 
-| Package | Version | Description |
-|---|---|---|
-| `@ton-agent-kit/core` | 1.2.4 | Base classes, wallet providers, plugin registry, cache, gas estimation |
-| `@ton-agent-kit/plugin-token` | 1.1.2 | TON and jetton balances, transfers, jetton deployment |
-| `@ton-agent-kit/plugin-defi` | 1.2.3 | DEX swaps (DeDust, STON.fi, Omniston), DCA, limit orders, yield, staking pools |
-| `@ton-agent-kit/plugin-dns` | 1.0.4 | TON DNS resolution and lookup |
-| `@ton-agent-kit/plugin-nft` | 1.0.4 | NFT info, transfer, collection queries |
-| `@ton-agent-kit/plugin-staking` | 1.0.4 | Liquid staking info, stake, unstake |
-| `@ton-agent-kit/plugin-analytics` | 1.1.2 | Transaction history, portfolio metrics, webhooks, bulk accounts |
-| `@ton-agent-kit/plugin-escrow` | 1.5.3 | Escrow lifecycle: create, deposit, release, dispute, arbitration |
-| `@ton-agent-kit/plugin-identity` | 1.6.8 | Agent registration, reputation scoring, discovery with scan fallback |
-| `@ton-agent-kit/plugin-payments` | 1.0.18 | x402 resource payments, delivery proofs, binary content detection, JSON-unwrap |
-| `@ton-agent-kit/plugin-agent-comm` | 1.3.6 | Intent broadcast, offer negotiation, deal settlement, testnet retry |
-| `@ton-agent-kit/plugin-memory` | 1.0.2 | Local key-value context storage with TTL and namespaces |
-| `@ton-agent-kit/plugin-endpoints` | 1.0.1 | Dynamic x402 endpoint management (open, close, list) |
-| `@ton-agent-kit/orchestrator` | 1.1.1 | Multi-agent task planning, dispatch, retry |
-| `@ton-agent-kit/strategies` | 1.0.1 | Scheduled strategy templates |
-| `@ton-agent-kit/x402-middleware` | 1.1.10 | Express middleware for x402 payment gating, address normalization, forward fee tolerance |
-| `@ton-agent-kit/mcp-server` | 1.1.1 | MCP server exposing actions as tools (stdio + SSE) |
-| `@ton-agent-kit/langchain` | 1.0.2 | LangChain tool adapters |
-| `@ton-agent-kit/ai-tools` | 1.0.2 | Vercel AI SDK and OpenAI tools adapter |
-| `@ton-agent-kit/wallet-store` | 1.0.1 | AES-256-GCM encrypted wallet and API key storage, file store with 48h TTL |
-| `@ton-agent-kit/network-mode` | 1.0.1 | CLI utility for choosing network mode (local, public IP, tunnel) |
+| Package | Description |
+|---|---|
+| `@ton-agent-kit/core` | Base classes, wallet providers, plugin registry, cache, gas estimation |
+| `@ton-agent-kit/plugin-token` | TON and jetton balances, transfers, jetton deployment |
+| `@ton-agent-kit/plugin-defi` | DEX swaps (DeDust, STON.fi, Omniston), DCA, limit orders, yield, staking pools |
+| `@ton-agent-kit/plugin-dns` | TON DNS resolution and lookup |
+| `@ton-agent-kit/plugin-nft` | NFT info, transfer, collection queries |
+| `@ton-agent-kit/plugin-staking` | Liquid staking info, stake, unstake |
+| `@ton-agent-kit/plugin-analytics` | Transaction history, portfolio metrics, webhooks, bulk accounts |
+| `@ton-agent-kit/plugin-escrow` | Escrow lifecycle: create, deposit, release, dispute, arbitration |
+| `@ton-agent-kit/plugin-identity` | Agent registration, reputation scoring, discovery with scan fallback |
+| `@ton-agent-kit/plugin-payments` | x402 resource payments, delivery proofs, binary content detection, JSON-unwrap |
+| `@ton-agent-kit/plugin-agent-comm` | Intent broadcast, offer negotiation, deal settlement, testnet retry |
+| `@ton-agent-kit/plugin-memory` | Local key-value context storage with TTL and namespaces |
+| `@ton-agent-kit/plugin-endpoints` | Dynamic x402 endpoint management (open, close, list) |
+| `@ton-agent-kit/orchestrator` | Multi-agent task planning, dispatch, retry |
+| `@ton-agent-kit/strategies` | Scheduled strategy templates |
+| `@ton-agent-kit/x402-middleware` | Express middleware for x402 payment gating, address normalization, forward fee tolerance |
+| `@ton-agent-kit/mcp-server` | MCP server exposing actions as tools (stdio + SSE) |
+| `@ton-agent-kit/langchain` | LangChain tool adapters |
+| `@ton-agent-kit/ai-tools` | Vercel AI SDK and OpenAI tools adapter |
+| `@ton-agent-kit/wallet-store` | AES-256-GCM encrypted wallet and API key storage, file store with 48h TTL |
+| `@ton-agent-kit/network-mode` | CLI utility for choosing network mode (local, public IP, tunnel) |
 
 ---
 
@@ -214,7 +213,7 @@ Two constants are exported: `DEFAULT_GAS = "0.12"` and `CROSS_CONTRACT_GAS = "0.
 
 ### Contract Execution Verification
 
-`verifyContractExecution` polls the chain after sending a transaction and confirms the desired state change occurred. This is separate from transaction confirmation. It is used by escrow and identity actions to assert the contract state updated as expected.
+`verifyContractExecution` polls the chain after sending a transaction and reports the compute-phase exit code and the bounce flag. That is not the same as confirming a state change, and it is not the same as transaction confirmation. It is exported from core for callers who want it; no action in this repository calls it yet, which is why escrow actions write a terminal local status without reading back what the contract did.
 
 ---
 
@@ -308,7 +307,7 @@ Both contracts are written in Tact. Source is in `contracts/`. Compiled output i
 
 Deployed on testnet at `0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef9639942385e9`.
 
-**Purpose.** Stores agent registry, reputation scores, intents, offers, and deal records. Serves as the coordination layer for agent commerce.
+**Purpose.** Stores agent registry, reputation scores, intents, offers, and deal records. It is the coordination layer for agent commerce.
 
 **State.** 39 maps. Key types include agent data by address, agent index by name hash, capabilities, disputes, intents, offers, and deals.
 
@@ -333,7 +332,7 @@ Deployed on testnet at `0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef96
 | SendOffer | 0.008 TON |
 | AcceptOffer | 0.003 TON |
 | SettleDeal | 0.008 TON |
-| CancelIntent | none |
+| CancelIntent | +0.003 TON |
 
 **Getters (19).**
 `agentData`, `agentIndexByNameHash`, `agentReputation`, `agentCount`, `contractBalance`, `agentsByCapability`, `disputeCount`, `disputeData`, `agentCleanupInfo`, `intentsByServiceHash`, `intentCount`, `offerCount`, `agentIntentQuota`, `intentData`, `offerData`, `storageInfo`, `dealCount`, `storageFundBalance`, `accumulatedFeesBalance`.
@@ -371,11 +370,11 @@ Deployed on testnet at `0:6e78355a901729e4218ce6632a6a98df81e7a6740613defc99ef96
 
 Deployed per deal. Each `create_escrow` action deploys a fresh instance.
 
-**Purpose.** Holds funds, manages delivery confirmation, handles disputes with a 3-of-N arbiter vote.
+**Purpose.** Holds funds, manages delivery confirmation, handles disputes with a majority arbiter vote, `floor(n/2) + 1`, with a default quorum of 3 arbiters.
 
 **State.** 5 maps: `arbiters`, `arbiterIndex`, `stakes`, `voted`, `votes`.
 
-**Structs.** 1: `EscrowData` (25 fields).
+**Structs.** 1: `EscrowData` (24 fields).
 
 **Messages.** 14 defined message types.
 
@@ -619,7 +618,7 @@ Results are saved to `tests/results/<timestamp>.log`.
 
 | Category | Libraries / Tools |
 |---|---|
-| Runtime | Bun 1.3+ |
+| Runtime | Node 20 or 22 to build, Bun to run the test runner and wallet-store |
 | Language | TypeScript (strict mode) |
 | TON SDK | @ton/ton, @ton/core, @ton/crypto |
 | DEX SDKs | @dedust/sdk, @ston-fi/sdk |
@@ -640,7 +639,7 @@ Results are saved to `tests/results/<timestamp>.log`.
 | On-chain agent identity | Reputation contract on testnet | None |
 | On-chain commerce protocol | Intent/offer/deal on Reputation contract | None |
 | Reputation-gated escrow | Seller stake scaled by score | None |
-| Arbiter network | 3-of-N vote, 72h window, staking rewards | None |
+| Arbiter network | majority vote, 72h window, staking rewards | None |
 | x402 payment gating | Native middleware + on-chain proof | Rare |
 | Dynamic endpoints | LLM opens/closes x402 endpoints at runtime | None |
 | MCP integration | 10 plugins, stdio + SSE transport | Uncommon |

@@ -194,7 +194,7 @@ The `Rate` handler requires `context().value >= 0.01 TON` (same as Register). Th
 
 **Handler:** `TriggerCleanup(maxClean)`
 
-Maximum 50 agents per call (`maxClean` is a uint8, max value 50). The handler scans agents using a rolling `cleanupCursor`, which advances across the agent index on each call.
+Each call examines at most 10 agents (`while (checked < 10 ...)` in `contracts/reputation.tact`) and erases at most `maxClean` of them, so a larger `maxClean` does not widen the sweep. The handler advances a rolling `cleanupCursor` across the agent index on each call.
 
 Three conditions, checked in order:
 

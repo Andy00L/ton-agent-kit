@@ -19,7 +19,7 @@ An x402 payment proof hash is stored on-chain at delivery confirmation, giving a
 
 ### State
 
-The contract has 25 fields exposed through the `EscrowData` struct (returned by `escrowData()`):
+The contract has 24 fields exposed through the `EscrowData` struct (returned by `escrowData()`):
 
 | Field | Type | Description |
 |---|---|---|

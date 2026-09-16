@@ -57,4 +57,4 @@ Per-user agent instances are created on demand. Each user gets their own `TonAge
 
 ## Example
 
-A simpler single-user bot example is available in `examples/telegram-bot/` of the SDK repo. It demonstrates bot setup using npm packages without the multi-user wallet store.
+The bot lives in its own repository, [Andy00L/ton-agent-bot](https://github.com/Andy00L/ton-agent-bot). It is not part of this monorepo.

@@ -44,7 +44,7 @@ export function createDcaStrategy(options: DcaStrategyOptions = {}): Strategy {
     steps: [
       {
         id: "get_price",
-        action: "get_token_price",
+        action: "get_price",
         params: { token },
       },
       {

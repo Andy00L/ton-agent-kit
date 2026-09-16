@@ -25,7 +25,7 @@ SSE mode binds to `MCP_PORT` (default 3001) and serves:
 
 ## Plugins Loaded
 
-The MCP server loads 10 plugins. 75 actions are exposed as MCP tools.
+The MCP server loads 10 of the 12 plugins, so 65 of the 75 actions are exposed as MCP tools. AgentComm (7) and Endpoints (3) are not loaded.
 
 | # | Plugin | Actions |
 |---|---|---|
