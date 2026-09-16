@@ -116,7 +116,7 @@ export class ActionCache {
    * @since 1.0.0
    */
   get(actionName: string, params: any): any | null {
-    if (!this.enabled || this.noCacheActions.has(actionName)) return null;
+    if (!this.isCacheable(actionName)) return null;
     const key = this.makeKey(actionName, params);
     const entry = this.cache.get(key);
     if (!entry) { this._misses++; return null; }
@@ -132,8 +132,8 @@ export class ActionCache {
   /**
    * Store an action result in the cache.
    *
-   * If the cache is at capacity, the oldest entry is evicted. Write actions
-   * listed in `noCacheActions` are silently ignored.
+   * If the cache is at capacity, the oldest entry is evicted. An action with
+   * no declared TTL is not cacheable and is silently ignored.
    *
    * @param actionName - The action name to cache under (e.g. `"get_balance"`).
    * @param params - The action parameters used to build the cache key.
@@ -142,7 +142,7 @@ export class ActionCache {
    * @since 1.0.0
    */
   set(actionName: string, params: any, result: any): void {
-    if (!this.enabled || this.noCacheActions.has(actionName)) return;
+    if (!this.isCacheable(actionName)) return;
     const key = this.makeKey(actionName, params);
     const ttl = this.actionTTLs[actionName] || this.defaultTTL;
     if (this.cache.size >= this.maxEntries) {
@@ -248,7 +248,10 @@ export class ActionCache {
     // success without running, and a third-party action that moves funds would
     // have had its second call answered from the first call's result. An action
     // is cacheable only once someone gives it a TTL.
-    return actionName in this.actionTTLs;
+    // Object.hasOwn, not `in`: `in` walks the prototype chain, so
+    // isCacheable("toString") answered true and getTTL returned a function,
+    // which made every comparison against it NaN and the entry immortal.
+    return Object.hasOwn(this.actionTTLs, actionName);
   }
 
   /**

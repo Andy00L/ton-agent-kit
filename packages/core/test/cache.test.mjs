@@ -66,5 +66,41 @@ check("fund-moving actions stay uncacheable", () => {
   }
 });
 
+// isCacheable was added as an allowlist but never wired into get() or set(),
+// which both kept consulting the denylist. Its own doc comment asserted the fix
+// while the gate still let any unlisted action through, and the checks below it
+// only ever called isCacheable directly, so they passed. These go through the
+// real path.
+check("an action with no declared TTL is never stored", () => {
+  const cache = new ActionCache();
+  for (const actionName of ["delete_context", "save_context", "close_x402_endpoint", "open_x402_endpoint"]) {
+    assert.equal(cache.isCacheable(actionName), false, actionName);
+    cache.set(actionName, { key: "k" }, { ok: true });
+    assert.equal(
+      cache.get(actionName, { key: "k" }),
+      null,
+      `${actionName} was served from the cache without running`,
+    );
+  }
+});
+
+check("a read action with a declared TTL is still stored", () => {
+  const cache = new ActionCache();
+  cache.set("get_balance", { address: "EQabc" }, { balance: "5" });
+  assert.deepEqual(cache.get("get_balance", { address: "EQabc" }), { balance: "5" });
+});
+
+check("an inherited Object property is not an action name", () => {
+  const cache = new ActionCache();
+  // `actionName in this.actionTTLs` walked the prototype chain, so "toString"
+  // was cacheable and its TTL came back as a function. Every comparison
+  // against it was NaN, which made the entry immortal.
+  for (const inherited of ["toString", "constructor", "hasOwnProperty", "valueOf"]) {
+    assert.equal(cache.isCacheable(inherited), false, inherited);
+    cache.set(inherited, {}, { ok: true });
+    assert.equal(cache.get(inherited, {}), null, inherited);
+  }
+});
+
 console.log(`\n${total - failures}/${total} passed`);
 process.exit(failures === 0 ? 0 : 1);

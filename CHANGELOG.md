@@ -66,10 +66,23 @@ three packages had never been typechecked at all.
 - **`register_agent` threw out of its handler** on a JSON `capabilities` string
   that did not decode to an array, because `JSON.parse` returns `any` and
   `{"a":1}` reached `capabilities.join`.
+- **The action cache served mutating actions, and the third pass only half
+  fixed it.** That pass replaced the denylist with an allowlist, `isCacheable`,
+  and wrote a comment on it claiming the hole was closed. `get` and `set` were
+  never moved onto it: both kept consulting the denylist, so any action neither
+  list had been taught was still cached. `delete_context`, `save_context`,
+  `open_x402_endpoint` and `close_x402_endpoint` all returned a cached success
+  without running. The existing checks passed because they called `isCacheable`
+  directly and never went through the cache. Both guards now call it, and the
+  new checks go through `set` and `get`.
+- **`isCacheable` answered true for inherited Object properties.**
+  `actionName in this.actionTTLs` walks the prototype chain, so `"toString"`
+  was cacheable and `getTTL("toString")` returned a function. Every expiry
+  comparison against it was NaN, which made such an entry immortal. It uses
+  `Object.hasOwn` now.
 - Third-pass fixes, previously unrecorded here: a key-loss path in
-  `ensureServerSecret`, an argument remapper in `runLoop` that could rename a
-  jetton master address into the `to` field of a transfer, and an action cache
-  whose denylist let unlisted write actions return cached successes.
+  `ensureServerSecret`, and an argument remapper in `runLoop` that could rename
+  a jetton master address into the `to` field of a transfer.
 
 ### Changed
 
