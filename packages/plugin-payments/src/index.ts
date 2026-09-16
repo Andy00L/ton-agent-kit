@@ -4,6 +4,22 @@ import { TonClient4, WalletContractV5R1 } from "@ton/ton";
 import { definePlugin, defineAction, sendTransaction } from "@ton-agent-kit/core";
 import { createHash } from "crypto";
 
+/**
+ * What this action reads off the memory plugin's results. Another plugin's
+ * output is external to this package, so it is validated rather than trusted.
+ * sourceRef: packages/plugin-memory/src/actions/list-context.ts
+ */
+const ListContextResult = z.object({
+  entries: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+});
+
+/** sourceRef: packages/plugin-memory/src/actions/get-context.ts */
+const GetContextResult = z.object({
+  found: z.boolean().optional(),
+  value: z.string().optional(),
+});
+
+
 // ============================================================
 // pay_for_resource — x402 payment gateway with delivery proof
 // ============================================================
@@ -265,7 +281,7 @@ const payForResourceAction = defineAction({
         amount: requirement.amount,
         escrowId: params.escrowId || null,
       };
-      await (agent as any).runAction("save_context", {
+      await agent.runAction?.("save_context", {
         key: `delivery_proof_${txHash}`,
         namespace: "delivery_proofs",
         value: JSON.stringify(proofData),
@@ -278,7 +294,7 @@ const payForResourceAction = defineAction({
     let escrowConfirmed = false;
     if (params.escrowId) {
       try {
-        await (agent as any).runAction("confirm_delivery", {
+        await agent.runAction?.("confirm_delivery", {
           escrowId: params.escrowId,
           x402TxHash: txHash,
         });
@@ -329,12 +345,14 @@ const getDeliveryProofAction = defineAction({
     // Try to load from memory plugin
     try {
       if (params.txHash) {
-        const r = await (agent as any).runAction("get_context", {
-          key: `delivery_proof_${params.txHash}`,
-          namespace: "delivery_proofs",
-        });
-        if (r.found) {
-          const proof = JSON.parse(r.value);
+        const stored = GetContextResult.safeParse(
+          await agent.runAction?.("get_context", {
+            key: `delivery_proof_${params.txHash}`,
+            namespace: "delivery_proofs",
+          }),
+        );
+        if (stored.success && stored.data.found && stored.data.value) {
+          const proof = JSON.parse(stored.data.value);
           return {
             found: true,
             proof,
@@ -344,15 +362,16 @@ const getDeliveryProofAction = defineAction({
       }
 
       if (params.escrowId) {
-        const r = await (agent as any).runAction("list_context", {
-          namespace: "delivery_proofs",
-        });
-        if (r.entries && r.entries.length > 0) {
-          const proofs = r.entries
-            .map((e: any) => {
-              try { return JSON.parse(e.value); } catch { return null; }
+        const listed = ListContextResult.safeParse(
+          await agent.runAction?.("list_context", { namespace: "delivery_proofs" }),
+        );
+        const storedEntries = listed.success ? (listed.data.entries ?? []) : [];
+        if (storedEntries.length > 0) {
+          const proofs = storedEntries
+            .map((entry) => {
+              try { return JSON.parse(entry.value); } catch { return null; }
             })
-            .filter((p: any) => p && (!params.escrowId || p.escrowId === params.escrowId));
+            .filter((proof) => proof && (!params.escrowId || proof.escrowId === params.escrowId));
           return {
             found: proofs.length > 0,
             proofs,

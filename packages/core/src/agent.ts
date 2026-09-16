@@ -158,6 +158,7 @@ export class TonAgentKit {
       network: this.network,
       rpcUrl: this.rpcUrl,
       config: this.config as Record<string, string>,
+      runAction: (actionName, params) => this.runAction(actionName, params),
     };
 
     // Create methods proxy for convenient access.

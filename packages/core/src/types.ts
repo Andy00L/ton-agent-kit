@@ -88,6 +88,20 @@ export interface AgentContext {
   rpcUrl: string;
   /** Optional config (API keys, etc.) */
   config: Record<string, string>;
+  /**
+   * Run another registered action from inside an action handler.
+   *
+   * Thirteen call sites across three plugins reached for this through
+   * `(agent as any).runAction(...)`, which never existed on the context: every
+   * call was a TypeError swallowed by an empty catch, so delivery proofs were
+   * never stored, escrow ratings were never queued, and `get_delivery_proof`
+   * always answered `{ found: false }`. It is declared here so the compiler
+   * can see it.
+   *
+   * Optional because a caller may build a context by hand; a handler that uses
+   * it must check before calling.
+   */
+  runAction?: <TOutput = unknown>(actionName: string, params: unknown) => Promise<TOutput>;
 }
 
 // ============================================================

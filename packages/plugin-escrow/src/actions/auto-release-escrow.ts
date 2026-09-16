@@ -31,7 +31,7 @@ export const autoReleaseEscrowAction = defineAction({
 
     // Save pending bidirectional ratings (non-critical)
     try {
-      await (agent as any).runAction("save_context", {
+      await agent.runAction?.("save_context", {
         key: `pending_rating_${params.escrowId}_buyer`,
         namespace: "pending_ratings",
         value: JSON.stringify({
@@ -45,7 +45,7 @@ export const autoReleaseEscrowAction = defineAction({
       });
     } catch {}
     try {
-      await (agent as any).runAction("save_context", {
+      await agent.runAction?.("save_context", {
         key: `pending_rating_${params.escrowId}_seller`,
         namespace: "pending_ratings",
         value: JSON.stringify({

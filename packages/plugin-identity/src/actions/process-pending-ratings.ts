@@ -1,6 +1,22 @@
 import { z } from "zod";
 import { defineAction } from "@ton-agent-kit/core";
 
+/**
+ * What this action reads off the memory plugin's results. Another plugin's
+ * output is external to this package, so it is validated rather than trusted.
+ * sourceRef: packages/plugin-memory/src/actions/list-context.ts
+ */
+const ListContextResult = z.object({
+  entries: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+});
+
+/** sourceRef: packages/plugin-memory/src/actions/get-context.ts */
+const GetContextResult = z.object({
+  found: z.boolean().optional(),
+  value: z.string().optional(),
+});
+
+
 export const processPendingRatingsAction = defineAction({
   name: "process_pending_ratings",
   description:
@@ -13,12 +29,12 @@ export const processPendingRatingsAction = defineAction({
   }),
   handler: async (agent, params) => {
     // Load pending ratings from memory
-    let entries: any[] = [];
+    let entries: Array<{ key: string; value: string }> = [];
     try {
-      const r = await (agent as any).runAction("list_context", {
-        namespace: "pending_ratings",
-      });
-      entries = r.entries || [];
+      const listed = ListContextResult.safeParse(
+        await agent.runAction?.("list_context", { namespace: "pending_ratings" }),
+      );
+      entries = listed.success ? (listed.data.entries ?? []) : [];
     } catch {
       return {
         processed: 0,
@@ -71,7 +87,7 @@ export const processPendingRatingsAction = defineAction({
       try {
         // Find the target agent ID by address match in the registry
         // Use a simple name-based lookup: the target address is stored in the rating
-        await (agent as any).runAction("get_agent_reputation", {
+        await agent.runAction?.("get_agent_reputation", {
           agentId: rating.targetAddress,
           addTask: true,
           success: rating.suggestedSuccess,
@@ -79,7 +95,7 @@ export const processPendingRatingsAction = defineAction({
 
         // Delete the processed rating from memory
         try {
-          await (agent as any).runAction("delete_context", {
+          await agent.runAction?.("delete_context", {
             key: rating.memoryKey,
             namespace: "pending_ratings",
           });

@@ -64,6 +64,8 @@ jobs:
         run: bun packages/plugin-identity/test/message-bodies.test.mjs
       - name: The agent.methods proxy is not a thenable
         run: bun packages/core/test/methods-proxy.test.mjs
+      - name: Actions can reach other actions through the context
+        run: bun packages/core/test/context-run-action.test.mjs
 
   manifests:
     name: Package manifests
