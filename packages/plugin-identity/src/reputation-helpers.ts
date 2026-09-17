@@ -154,12 +154,21 @@ function parseBigInt(s: string): bigint {
   return BigInt(s);
 }
 
-function parseStackNum(item: any): number {
-  if (!item) return 0;
-  if (item.type === "num") {
+/**
+ * Read a TONAPI stack entry as a number. Anything that is not a readable `num`
+ * reads as 0.
+ *
+ * Exported because six call sites were open-coding the negative-hex handling
+ * inline, and four of the copies had it wrong: `"-" + "-0x10".slice(1)`
+ * rebuilds the string BigInt already refused, so it threw instead of parsing.
+ */
+export function parseStackNum(item: { type?: string; num?: string } | undefined): number {
+  if (!item || item.type !== "num" || !item.num) return 0;
+  try {
     return Number(parseBigInt(item.num));
+  } catch {
+    return 0;
   }
-  return 0;
 }
 
 function parseStackBool(item: any): boolean {

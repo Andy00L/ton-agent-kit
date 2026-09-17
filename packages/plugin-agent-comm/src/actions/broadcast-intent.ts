@@ -3,6 +3,7 @@ import { Address, toNano, fromNano, beginCell, internal } from "@ton/core";
 import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
 import { callContractGetter, resolveContractAddress, storeBroadcastIntent } from "@ton-agent-kit/plugin-identity";
 import { createHash } from "crypto";
+import { parseNum } from "../stack-parsers";
 
 function computeServiceHash(service: string): bigint {
   return BigInt("0x" + createHash("sha256").update(service).digest("hex"));
@@ -87,7 +88,7 @@ export const broadcastIntentAction = defineAction({
           );
           if (countRes?.stack?.[0]?.num) {
             const raw = countRes.stack[0].num;
-            intentIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
+            intentIndex = parseNum({ type: "num", num: raw }) - 1;
             if (intentIndex >= 0) break; // Success
           } else {
             onChainError = "Contract getter returned no data: the contract may be frozen or nonexistent";

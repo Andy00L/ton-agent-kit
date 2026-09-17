@@ -114,7 +114,7 @@ export const discoverIntentsAction = defineAction({
       let totalCount = 0;
       if (countRes?.stack?.[0]?.num) {
         const raw = countRes.stack[0].num;
-        totalCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
+        totalCount = parseNum({ type: "num", num: raw });
       }
 
       if (totalCount === 0) {

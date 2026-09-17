@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Address, toNano, fromNano, beginCell, internal } from "@ton/core";
 import { defineAction, describeError, sendTransaction } from "@ton-agent-kit/core";
 import { callContractGetter, resolveContractAddress, storeSendOffer } from "@ton-agent-kit/plugin-identity";
+import { parseNum } from "../stack-parsers";
 
 export const sendOfferAction = defineAction({
   name: "send_offer",
@@ -67,7 +68,7 @@ export const sendOfferAction = defineAction({
           );
           if (countRes?.stack?.[0]?.num) {
             const raw = countRes.stack[0].num;
-            offerIndex = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw)) - 1;
+            offerIndex = parseNum({ type: "num", num: raw }) - 1;
             if (offerIndex >= 0) break;
           }
         } catch {}

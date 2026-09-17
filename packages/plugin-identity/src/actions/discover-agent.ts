@@ -13,6 +13,7 @@ import {
   lookupAgentIndex,
   parseAgentDataFromStack,
   parseIndexCell,
+  parseStackNum,
 } from "../reputation-helpers";
 
 /** One agent as discover_agent reports it after on-chain enrichment. */
@@ -198,7 +199,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
           );
           if (countRes?.stack?.[0]?.num) {
             const raw = countRes.stack[0].num;
-            const agentCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
+            const agentCount = parseStackNum({ type: "num", num: raw });
             if (agentCount > SCAN_ALL_THRESHOLD) {
               return {
                 agents: [],
@@ -249,7 +250,7 @@ export function createDiscoverAgentAction(contractAddress?: string) {
           const countRes = await callContractGetter(apiBase, addr, "agentCount", [], agent.config.TONAPI_KEY);
           if (countRes?.stack?.[0]?.num) {
             const raw = countRes.stack[0].num;
-            const agentCount = Number(BigInt(raw.startsWith("-0x") ? "-" + raw.slice(1) : raw));
+            const agentCount = parseStackNum({ type: "num", num: raw });
             if (agentCount > 0 && agentCount <= SCAN_ALL_THRESHOLD) {
               const scanned: RegisteredAgent[] = [];
               for (let i = agentCount - 1; i >= 0 && scanned.length < limit; i--) {
