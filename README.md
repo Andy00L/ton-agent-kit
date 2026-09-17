@@ -766,20 +766,38 @@ Then `agent.use(MyPlugin)` and the action is available everywhere: `runAction`, 
 
 Stated here rather than found later.
 
-- **The escrow contract has three defects that need a redeployment to fix.**
-  They were found by running it, not by reading it, and each is pinned by a
-  check in `contracts/test/escrow.sandbox.test.mjs` named `KNOWN DEFECT`:
-  a buyer can confirm delivery and then refund itself the whole deal at any
-  point before the deadline, leaving the seller with nothing; a dispute cannot
-  seat a quorum because `JoinDispute` reserves the balance it is about to hold
-  and then sweeps the remainder back, so roughly every other arbiter loses its
-  stake to a failed action phase with no record of who sent it; and with fewer
-  arbiters than `minArbiters` no vote can be held at all, so every dispute
-  falls through to `FallbackSettle`, which the depositor controls. Do not rely
-  on the arbiter network.
-- **`contracts/reputation.tact` found no defects under the same treatment.**
-  Every guard it claims is enforced, including the one that stops an agent
-  bidding on its own intent to manufacture a reputation.
+- **Do not use `contracts/escrow.tact` to hold money you care about.** It has
+  three defects that a redeployment is required to fix, all found by running
+  the compiled contract rather than reading it, and each pinned by a check in
+  `contracts/test/escrow.sandbox.test.mjs`:
+  - **The buyer controls every exit.** A refund before the deadline does not
+    check `deliveryConfirmed` (the guard exists but sits in the branch reached
+    only after the deadline), `AutoRelease` requires a confirmation only the
+    buyer can give, and a no-quorum `FallbackSettle` defaults to a refund. A
+    buyer that never confirms takes the whole deal back. Measured: buyer +1.15
+    TON, seller 0, on a 1 TON deal the seller had opened a dispute over.
+  - **`JoinDispute` confiscates stakes.** Its `nativeReserve` grows by more
+    than the balance does, so roughly every other arbiter's action phase fails
+    with exit 37: the registration rolls back and the stake stays, with no
+    record of who sent it. Measured on a 1 TON deal with three arbiters at 0.6
+    TON: the buyer walked away with 1.577 TON, 0.727 of it arbiter money, and
+    0.621 TON was left in a contract with no owner and no recovery path.
+  - **`ClaimReward` pays the loser and strands the winners.** Measured: 85% of
+    the staked capital unrecoverable, and voting against the majority is the
+    dominant strategy.
+- **`contracts/reputation.tact` has two of its own.** `Register` and `Rate`
+  advertise a 0.01 TON fee in their own error message; the real minimums are
+  0.032 and 0.019 TON, and anything between is accepted, kept, and recorded
+  nowhere. The SDK attaches 0.12 TON so its callers are safe, but a client
+  following the contract's message is not. Separately, `Register` runs out of
+  gas somewhere around 240 to 300 intents and the registry then refuses every
+  new agent permanently, because it pins at the hard gas limit where no amount
+  of TON helps.
+- **Everything else in `reputation.tact` came through clean.** Every ownership
+  and authorization guard holds, including the one that stops an agent bidding
+  on its own intent to manufacture a reputation, and the loops that looked
+  unbounded are bounded. `npm run verify:contracts` proves the committed code
+  cells still compile from the committed sources, byte for byte.
 - **`npm audit` reports advisories that cannot be cleared today**, one of them
   critical (`protobufjs`, reached through `@ston-fi/omniston-sdk`). Clearing
   the tree means moving `ai` from 3 to 7 and `@ston-fi/sdk` from 1 to 2, both

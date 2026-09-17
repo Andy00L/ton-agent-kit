@@ -464,14 +464,29 @@ sweeping the balance, then upgrading.
    `npm run test:contracts`. The `tests/` tree is separate: `tests.ts` at the
    repository root is an interactive runner covering 28 suites, and 27 of them
    need a funded testnet wallet, so none of those run in CI.
-4. **The escrow contract has three proven defects.** `contracts/escrow.tact`
-   and `contracts/reputation.tact` now run under `@ton/sandbox` in CI, 27
-   checks between them, and the escrow suite names three of its checks
-   `KNOWN DEFECT`: a buyer can refund itself after confirming delivery, a
-   dispute cannot seat a quorum and confiscates roughly every other stake, and
-   no vote can therefore be held. All three need a redeployment, and the
-   testnet address is hardcoded in the published SDK. reputation.tact came
-   through the same treatment with nothing found.
+4. **The escrow contract has three proven defects, and the reputation
+   contract two.** Both now run under `@ton/sandbox` in CI, and
+   `npm run verify:contracts` proves the committed code cells still compile
+   from the committed sources byte for byte, so every fix below can be
+   compiled and tested before it is deployed.
+
+   Escrow: the buyer controls every exit, so a buyer that never confirms
+   delivery takes the whole deal back (measured: buyer +1.15 TON, seller 0);
+   `JoinDispute` confiscates roughly every other arbiter stake through a
+   reserve that outgrows the balance (measured: buyer +1.577 TON on a 1 TON
+   deal, 0.621 TON permanently stranded); and `ClaimReward` pays the loser
+   while stranding the winners, leaving 85% of staked capital unrecoverable
+   and making a minority vote the dominant strategy.
+
+   Reputation: `Register` and `Rate` advertise a 0.01 TON fee and silently keep
+   anything under the real minimums of 0.032 and 0.019 TON (the SDK attaches
+   0.12, so its callers are unaffected); and `Register` exhausts the hard gas
+   limit somewhere around 240 to 300 intents, after which the registry refuses
+   every new agent permanently and no amount of attached TON helps.
+
+   All of them need a redeployment, and the testnet address is hardcoded in
+   the published SDK. The one-line source changes are recorded in the audit
+   notes; each was compiled and executed before being written down.
 5. **`any` still exists outside the files this release touched**: 23 occurrences
    in `core/src/agent.ts`, 11 in `wallet-store`, 11 in
    `plugin-identity/src/reputation-helpers.ts`, and the generated Tact

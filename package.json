@@ -15,6 +15,7 @@
     "test": "npm test --workspaces --if-present",
     "test:contracts": "bun contracts/test/escrow.sandbox.test.mjs && bun contracts/test/reputation.sandbox.test.mjs",
     "typecheck:contracts": "tsc -p contracts --noEmit",
+    "verify:contracts": "node contracts/verify-build.mjs",
     "clean": "rm -rf packages/*/dist examples/*/dist node_modules"
   },
   "keywords": [
