@@ -426,7 +426,7 @@ Deployed per deal. Each `create_escrow` action deploys a fresh instance.
 
 ## 7. Multi-Agent Orchestrator
 
-Package: `@ton-agent-kit/orchestrator` v1.1.1.
+Package: `@ton-agent-kit/orchestrator`.
 
 **Components.**
 
@@ -465,11 +465,11 @@ When `parallel` is true, independent tasks run concurrently. Tasks with declared
 
 ## 8. x402 Middleware
 
-Package: `@ton-agent-kit/x402-middleware` v1.1.10.
+Package: `@ton-agent-kit/x402-middleware`.
 
 Express middleware that gates HTTP endpoints behind TON payments using the x402 protocol. When a request arrives without a valid payment proof, the middleware returns an HTTP 402 response with payment instructions. The client pays, attaches the proof header, and retries. The middleware verifies the proof and forwards the request.
 
-The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints` v1.0.1) lets agents open/close x402 endpoints at runtime. It provides 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
+The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints`) lets agents open/close x402 endpoints at runtime. It provides 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`.
 
 ---
 
@@ -535,7 +535,7 @@ Intent and offer lifecycle on the reputation contract:
 
 ## 12. Strategy Engine
 
-Package: `@ton-agent-kit/strategies` v1.0.1.
+Package: `@ton-agent-kit/strategies`.
 
 **Purpose.** Run scheduled, parameterized agent behaviors without LLM involvement.
 
@@ -567,7 +567,7 @@ graph LR
 
 ## 13. MCP Server
 
-Package: `@ton-agent-kit/mcp-server` v1.1.1.
+Package: `@ton-agent-kit/mcp-server`.
 
 **Transport.** Supports both stdio and SSE. SSE mode serves `/sse` and `/messages` with Bearer token auth.
 
@@ -584,15 +584,15 @@ AgentComm and Endpoints are not included by default.
 
 Three packages added since v1.1.0:
 
-### wallet-store (1.0.1)
+### wallet-store
 
 AES-256-GCM encrypted storage for wallet mnemonics and API keys. SQLite backend. Per-user key derivation using HMAC-SHA256. Used by the Telegram bot for multi-user wallet management. Also includes `FileStore` for file uploads (48h TTL, 10MB/file, 50MB/user). 5 LLM provider configs (OpenAI, OpenRouter, Groq, Together, Mistral).
 
-### plugin-endpoints (1.0.1)
+### plugin-endpoints
 
 Dynamic x402 endpoint management. 3 actions: `open_x402_endpoint`, `close_x402_endpoint`, `list_x402_endpoints`. Uses `MemoryReplayStore`. Endpoints do not persist across restarts.
 
-### network-mode (1.0.1)
+### network-mode
 
 CLI utility for choosing how the x402 server is accessed: local (localhost), public (auto-detect IP, verify port), or tunnel (ngrok/cloudflare, verify connectivity). Returns a URL string.
 

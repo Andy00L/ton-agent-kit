@@ -1,45 +1,57 @@
 /**
- * TON Agent Kit — Simple Example
+ * TON Agent Kit, simple example.
  *
- * Minimal example showing how to use TON Agent Kit
- * to perform blockchain operations with just a few lines of code.
+ * The smallest useful agent: a wallet, three plugins, and four calls.
+ *
+ * Run it with `bun index.ts` after putting TON_MNEMONIC in your environment.
  */
 
-import { TonAgentKit, KeypairWallet } from "@ton-agent-kit/core";
+import { TonAgentKit, KeypairWallet, RPC_ENDPOINTS } from "@ton-agent-kit/core";
 import TokenPlugin from "@ton-agent-kit/plugin-token";
 import DefiPlugin from "@ton-agent-kit/plugin-defi";
 import DnsPlugin from "@ton-agent-kit/plugin-dns";
 
-async function main() {
-  // 1. Create wallet from mnemonic
-  const mnemonic = process.env.TON_MNEMONIC!.split(" ");
-  const wallet = await KeypairWallet.fromMnemonic(mnemonic);
+/** Which chain this example talks to. */
+const NETWORK = "testnet";
 
-  // 2. Initialize agent with plugins
-  const agent = new TonAgentKit(
-    wallet,
-    "https://testnet-v4.tonhubapi.com", // testnet
-    {},
-    "testnet"
-  )
+async function main(): Promise<void> {
+  const phrase = process.env.TON_MNEMONIC;
+  if (!phrase) {
+    console.error("[main] Set TON_MNEMONIC to your 24 word seed phrase and run again.");
+    process.exit(1);
+  }
+
+  // The network belongs in the wallet config, not only in the agent. A v5
+  // wallet folds the network id into its wallet id, so leaving it out derives
+  // the mainnet address and then queries testnet with it: a funded wallet
+  // reads as empty and nothing says why.
+  const wallet = await KeypairWallet.fromMnemonic(phrase.split(" "), {
+    version: "V5R1",
+    network: NETWORK,
+  });
+
+  // The rpc url is optional: the agent falls back to RPC_ENDPOINTS for the
+  // network it was given.
+  const agent = new TonAgentKit(wallet, RPC_ENDPOINTS[NETWORK], {}, NETWORK)
     .use(TokenPlugin)
     .use(DefiPlugin)
     .use(DnsPlugin);
 
-  console.log(`Agent address: ${agent.address}`);
-  console.log(`Available actions: ${agent.actionCount}`);
+  console.log(`[main] agent address: ${agent.address}`);
+  console.log(`[main] available actions: ${agent.actionCount}`);
 
-  // 3. Check balance
   const balance = await agent.runAction("get_balance", {});
-  console.log(`Balance: ${balance.balance} TON`);
+  console.log(`[main] balance: ${balance.balance} TON`);
 
-  // 4. Resolve a .ton domain
   const dns = await agent.runAction("resolve_domain", { domain: "foundation.ton" });
-  console.log(`foundation.ton → ${dns.address}`);
+  console.log(`[main] foundation.ton resolves to ${dns.address}`);
 
-  // 5. Use methods proxy (shorthand)
-  const balance2 = await agent.methods.get_balance({});
-  console.log(`Balance (via methods): ${balance2.balance} TON`);
+  // The methods proxy is shorthand for runAction with the same name.
+  const viaProxy = await agent.methods.get_balance({});
+  console.log(`[main] balance via the proxy: ${viaProxy.balance} TON`);
 }
 
-main().catch(console.error);
+main().catch((caught: unknown) => {
+  console.error("[main] failed:", caught instanceof Error ? caught.message : String(caught));
+  process.exitCode = 1;
+});

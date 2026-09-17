@@ -261,7 +261,8 @@ closes.
 - `packages/wallet-store/test/file-store.test.mjs`, 7 checks. The first deletes
   a blob out from under a live row and asserts the row still goes and the quota
   comes back to zero.
-- CI runs all of these: 68 checks across ten files. The Bun job installs
+- CI runs all of these: 95 checks across twelve files, including the two
+  contract sandbox suites added after this entry was first written. The Bun job installs
   dependencies and covers `wallet-store`, `plugin-identity` and the two core
   suites that need it; the Node 22 job covers `core`, `x402-middleware`,
   `strategies` and `orchestrator`.
@@ -455,18 +456,22 @@ sweeping the balance, then upgrading.
 2. **`@ton/ton` 16.3.0 has not been adopted.** The range stays `^16.2.2`. The
    release changes the wallet v5 types and the shape of
    `account.balance.coins`, so it needs a pass with on-chain tests.
-3. **16 of the 21 packages have no `test` script**, which is honest: no package
+3. **14 of the 21 packages have no `test` script**, which is honest: no package
    declares a runner it does not have, and the `"test": "jest"` entries with no
    jest configuration are gone. `core`, `x402-middleware`, `strategies`,
-   `wallet-store` and `plugin-identity` run real checks through `npm test`, all
-   of them in CI. The `tests/` tree is separate: `tests.ts` at the repository
-   root is an interactive runner covering 28 suites, and 27 of them need a
-   funded testnet wallet, so none of those run in CI.
-4. **The contracts have no test harness.** `tests/20-x402-security.ts` covers
-   replay and the wrong recipient but never an underpayment, which is why the
-   paywall bypass fixed in 1.2.0 survived it. There is no `@ton/sandbox` or
-   Blueprint setup, so `contracts/escrow.tact` and `contracts/reputation.tact`,
-   which hold funds, are covered only by scripts that run against live testnet.
+   `orchestrator`, `wallet-store`, `plugin-identity` and `plugin-agent-comm`
+   run real checks through `npm test`, all of them in CI, alongside
+   `npm run test:contracts`. The `tests/` tree is separate: `tests.ts` at the
+   repository root is an interactive runner covering 28 suites, and 27 of them
+   need a funded testnet wallet, so none of those run in CI.
+4. **The escrow contract has three proven defects.** `contracts/escrow.tact`
+   and `contracts/reputation.tact` now run under `@ton/sandbox` in CI, 27
+   checks between them, and the escrow suite names three of its checks
+   `KNOWN DEFECT`: a buyer can refund itself after confirming delivery, a
+   dispute cannot seat a quorum and confiscates roughly every other stake, and
+   no vote can therefore be held. All three need a redeployment, and the
+   testnet address is hardcoded in the published SDK. reputation.tact came
+   through the same treatment with nothing found.
 5. **`any` still exists outside the files this release touched**: 23 occurrences
    in `core/src/agent.ts`, 11 in `wallet-store`, 11 in
    `plugin-identity/src/reputation-helpers.ts`, and the generated Tact

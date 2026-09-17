@@ -2,7 +2,7 @@
 
 HTTP 402 Payment Required middleware for Express. Gates API endpoints behind TON payments.
 
-**Package:** `@ton-agent-kit/x402-middleware` v1.1.10
+**Package:** `@ton-agent-kit/x402-middleware`
 
 ---
 
@@ -64,7 +64,7 @@ const result = await agent.runAction("pay_for_resource", {
 
 ## Binary Response Handling
 
-Since v1.0.18, `pay_for_resource` detects the response `Content-Type` and handles binary data (images, audio, video, PDF). It also unwraps JSON-wrapped binary from servers that use `res.json()` by detecting `{type:"Buffer",data:[...]}` patterns.
+`pay_for_resource` detects the response `Content-Type` and handles binary data (images, audio, video, PDF). It also unwraps JSON-wrapped binary from servers that use `res.json()` by detecting `{type:"Buffer",data:[...]}` patterns.
 
 ```mermaid
 graph TD
@@ -135,7 +135,7 @@ paid routes and no explicit store gets one store, not one per route.
 
 ## Dynamic Endpoints (EndpointPlugin)
 
-**Package:** `@ton-agent-kit/plugin-endpoints` v1.0.1
+**Package:** `@ton-agent-kit/plugin-endpoints`
 
 The `EndpointPlugin` lets agents open and close paywall endpoints at runtime. It is a separate npm package.
 

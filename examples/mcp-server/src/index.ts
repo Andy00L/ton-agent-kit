@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * TON Agent Kit — MCP Server
+ * TON Agent Kit, MCP Server
  *
  * Exposes all TON Agent Kit actions as MCP tools.
  * Compatible with Claude Desktop, Cursor, Windsurf, and any MCP client.
@@ -55,7 +55,7 @@ function createAgent(): TonAgentKit {
   let wallet: KeypairWallet;
 
   if (mnemonic) {
-    // Will be initialized async — handled in main()
+    // Will be initialized async, handled in main()
     throw new Error("Use fromMnemonic in async context");
   } else if (privateKey) {
     wallet = KeypairWallet.fromSecretKey(Buffer.from(privateKey, "base64"));
@@ -95,7 +95,7 @@ function actionsToMcpTools(agent: TonAgentKit): Tool[] {
 }
 
 // ============================================================
-// Main — start MCP server
+// Main, start MCP server
 // ============================================================
 
 async function main() {

@@ -5,6 +5,28 @@ import { definePlugin, defineAction, sendTransaction } from "@ton-agent-kit/core
 import { createHash } from "crypto";
 
 /**
+ * Media types whose bodies must stay bytes.
+ *
+ * One list, because the free path and the paid path used to carry different
+ * ones: video/ was in the second and missing from the first, so an unpaid video
+ * response was run through JSON.parse and returned mangled while a paid one
+ * came back intact.
+ */
+const BINARY_MEDIA_PREFIXES = [
+  "image/",
+  "audio/",
+  "video/",
+  "application/pdf",
+  "application/octet-stream",
+];
+
+/** Does this content type carry bytes rather than text? */
+function isBinaryMediaType(contentType: string): boolean {
+  return BINARY_MEDIA_PREFIXES.some((prefix) => contentType.startsWith(prefix));
+}
+
+
+/**
  * What this action reads off the memory plugin's results. Another plugin's
  * output is external to this package, so it is validated rather than trusted.
  * sourceRef: packages/plugin-memory/src/actions/list-context.ts
@@ -51,12 +73,7 @@ const payForResourceAction = defineAction({
     if (initialResponse.status !== 402) {
       const ct = initialResponse.headers.get("content-type") || "application/json";
       let data: any;
-      if (
-        ct.startsWith("image/") ||
-        ct.startsWith("audio/") ||
-        ct.startsWith("application/pdf") ||
-        ct.startsWith("application/octet-stream")
-      ) {
+      if (isBinaryMediaType(ct)) {
         data = {
           contentType: ct.split(";")[0].trim(),
           data: Buffer.from(await initialResponse.arrayBuffer()),
@@ -223,13 +240,7 @@ const payForResourceAction = defineAction({
     }
     const ct = contentType || "application/json";
     let data: any;
-    if (
-      ct.startsWith("image/") ||
-      ct.startsWith("audio/") ||
-      ct.startsWith("video/") ||
-      ct.startsWith("application/pdf") ||
-      ct.startsWith("application/octet-stream")
-    ) {
+    if (isBinaryMediaType(ct)) {
       data = {
         contentType: ct.split(";")[0].trim(),
         data: contentBuffer,

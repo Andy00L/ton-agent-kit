@@ -2,9 +2,9 @@ import express from "express";
 import { readFileSync } from "fs";
 import {
   createPaymentServer,
+  defaultReplayStore,
   tonPaywall,
   FileReplayStore,
-  MemoryReplayStore,
 } from "@ton-agent-kit/x402-middleware";
 import {
   TonAgentKit,
@@ -18,10 +18,16 @@ import AnalyticsPlugin from "@ton-agent-kit/plugin-analytics";
 import { z } from "zod";
 
 // ============================================================
-// Config (manual .env parsing — no dotenv needed)
+// Config (manual .env parsing, no dotenv needed)
 // ============================================================
 
-const envContent = readFileSync(".env", "utf-8");
+let envContent = "";
+try {
+  envContent = readFileSync(".env", "utf-8");
+} catch {
+  // No .env is fine: the checks below name what is missing. Reading it at
+  // module scope used to throw ENOENT before any of them could run.
+}
 const getEnv = (key: string) =>
   envContent
     .split("\n")
@@ -32,7 +38,6 @@ const getEnv = (key: string) =>
 const RECIPIENT = getEnv("TON_RECIPIENT") || getEnv("TON_ADDRESS");
 const NETWORK = (getEnv("TON_NETWORK") as "testnet" | "mainnet") || "testnet";
 const PORT = parseInt(getEnv("PORT") || "3402", 10);
-const X402_PORT = parseInt(getEnv("X402_PORT") || String(PORT), 10);
 const MNEMONIC = getEnv("TON_MNEMONIC");
 const RPC_URL = getEnv("TON_RPC_URL") || "https://testnet-v4.tonhubapi.com";
 
@@ -47,7 +52,7 @@ if (!MNEMONIC) {
 }
 
 // ============================================================
-// Main — async for agent initialization
+// Main, async for agent initialization
 // ============================================================
 
 async function main() {
@@ -61,7 +66,7 @@ async function main() {
     .use(AnalyticsPlugin);
 
   // ============================================================
-  // Option 1: createPaymentServer() — quickest setup
+  // Option 1: createPaymentServer(), quickest setup
   // ============================================================
 
   const app = createPaymentServer({
@@ -75,7 +80,7 @@ async function main() {
         handler: async (_req, res) => {
           try {
             const priceData = await agent.runAction("get_price", {
-              tokenAddress:
+              token:
                 "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
             });
             res.json({
@@ -119,7 +124,7 @@ async function main() {
   });
 
   // ============================================================
-  // Option 2: Standalone tonPaywall() — for existing Express apps
+  // Option 2: Standalone tonPaywall(), for existing Express apps
   // ============================================================
 
   const replayStore = new FileReplayStore(".x402-premium-hashes.json");
@@ -139,7 +144,7 @@ async function main() {
         const [balance, priceData, txHistory] = await Promise.all([
           agent.runAction("get_balance", {}),
           agent.runAction("get_price", {
-            tokenAddress:
+            token:
               "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
           }),
           agent.runAction("get_transaction_history", {
@@ -171,7 +176,7 @@ async function main() {
   );
 
   // ============================================================
-  // Option 3: Dynamic x402 Endpoints — LLM-controlled
+  // Option 3: Dynamic x402 Endpoints, LLM-controlled
   // ============================================================
   //
   // Instead of hardcoding routes, the LLM opens/closes endpoints
@@ -188,7 +193,7 @@ async function main() {
   }
 
   const endpointRoutes = new Map<string, EndpointConfig>();
-  const dynamicReplayStore = new MemoryReplayStore();
+  const dynamicReplayStore = defaultReplayStore(".x402-dynamic-hashes.json");
 
   // Auto-detect public URL
   let BASE_URL: string;
@@ -197,13 +202,13 @@ async function main() {
   if (publicUrl) {
     BASE_URL = publicUrl;
   } else if (localMode) {
-    BASE_URL = `http://localhost:${X402_PORT}`;
+    BASE_URL = `http://localhost:${PORT}`;
   } else {
     try {
       const res = await fetch("https://api.ipify.org");
-      BASE_URL = `http://${(await res.text()).trim()}:${X402_PORT}`;
+      BASE_URL = `http://${(await res.text()).trim()}:${PORT}`;
     } catch {
-      BASE_URL = `http://localhost:${X402_PORT}`;
+      BASE_URL = `http://localhost:${PORT}`;
     }
   }
 
@@ -216,7 +221,11 @@ async function main() {
           "Open a paid x402 endpoint. Other agents pay TON for live blockchain data.",
         schema: z.object({
           path: z.string().describe("URL path starting with /"),
-          price: z.string().describe("Price in TON per request"),
+          price: z
+            .string()
+            .regex(/^\d+(\.\d+)?$/, "price must be a plain decimal number of TON")
+            .refine((value) => parseFloat(value) > 0, "price must be greater than zero")
+            .describe("Price in TON per request, as a plain decimal string"),
           dataAction: z.string().describe("SDK action name for data"),
           dataParams: z
             .string()
@@ -300,13 +309,27 @@ async function main() {
     const route = endpointRoutes.get(req.path);
     if (!route) return next();
 
-    tonPaywall({
-      amount: route.price,
-      recipient: RECIPIENT,
-      network: NETWORK,
-      description: route.description,
-      replayStore: dynamicReplayStore,
-    })(req, res, async () => {
+    // tonPaywall validates its configuration and throws. Inside an async
+    // handler that would be an unhandled rejection, so it is caught here and
+    // answered rather than taking the process down.
+    let paywall: ReturnType<typeof tonPaywall>;
+    try {
+      paywall = tonPaywall({
+        amount: route.price,
+        recipient: RECIPIENT,
+        network: NETWORK,
+        description: route.description,
+        replayStore: dynamicReplayStore,
+      });
+    } catch (caught: unknown) {
+      res.status(500).json({
+        error: "Endpoint misconfigured",
+        message: caught instanceof Error ? caught.message : String(caught),
+      });
+      return;
+    }
+
+    paywall(req, res, async () => {
       try {
         const merged: Record<string, any> = { ...route.dataParams };
         for (const [k, v] of Object.entries(req.query)) {
@@ -336,7 +359,7 @@ async function main() {
     price: "0.002",
     dataAction: "get_price",
     dataParams: JSON.stringify({
-      tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+      token: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
     }),
     description: "Dynamic price endpoint (opened programmatically)",
   });
@@ -354,14 +377,14 @@ async function main() {
     console.log(`  🌍 Public: ${BASE_URL}`);
     console.log(`${"━".repeat(44)}`);
     console.log(`\n  Static endpoints:`);
-    console.log(`    GET /api/price      — 0.001 TON`);
-    console.log(`    GET /api/analytics  — 0.01  TON`);
-    console.log(`    GET /api/premium    — 0.05  TON`);
+    console.log(`    GET /api/price     , 0.001 TON`);
+    console.log(`    GET /api/analytics , 0.01  TON`);
+    console.log(`    GET /api/premium   , 0.05  TON`);
     console.log(`\n  Dynamic endpoints:`);
     for (const [p, c] of endpointRoutes)
-      console.log(`    GET ${p.padEnd(20)} — ${c.price} TON (${c.dataAction})`);
+      console.log(`    GET ${p.padEnd(20)}, ${c.price} TON (${c.dataAction})`);
     console.log(`\n  Free endpoints:`);
-    console.log(`    GET /               — server info\n`);
+    console.log(`    GET /              , server info\n`);
   });
 }
 

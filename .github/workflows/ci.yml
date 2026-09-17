@@ -45,6 +45,9 @@ jobs:
       - name: Task dispatch regression checks
         if: matrix.node == '22'
         run: npm test -w packages/orchestrator
+      - name: TVM stack parsing regression checks
+        if: matrix.node == '22'
+        run: npm test -w packages/plugin-agent-comm
 
   bun-checks:
     name: Regression checks that need Bun

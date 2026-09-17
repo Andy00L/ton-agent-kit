@@ -2,7 +2,7 @@
 
 Model Context Protocol server that exposes TON Agent Kit actions as tools for Claude Desktop, Cursor, and other MCP clients.
 
-**Package:** `@ton-agent-kit/mcp-server` v1.1.1
+**Package:** `@ton-agent-kit/mcp-server`
 **SDK:** `@modelcontextprotocol/sdk`
 
 ---

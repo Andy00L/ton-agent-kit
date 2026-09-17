@@ -510,7 +510,7 @@ Anti-replay protection with 3 store backends: `FileReplayStore`, `RedisReplaySto
 A custom store implements `has(hash)` and `add(hash)`, and should implement `claim(hash)` too: `claim`
 records the hash and reports whether the caller was first, in one atomic step. Without it the middleware
 falls back to `has` then `add`, and two requests carrying the same payment can both pass `has` before
-either reaches `add`. Version 2.0.0 fixed that race and a paywall bypass; see [SECURITY.md](SECURITY.md).
+either reaches `add`. Version 2.0.0 fixed that race and a paywall bypass, and 3.0.0 added a budget so one payment cannot serve unlimited responses. Both are in [CHANGELOG.md](./CHANGELOG.md).
 
 The `EndpointPlugin` (`@ton-agent-kit/plugin-endpoints`) lets agents open/close x402 endpoints at runtime. Endpoints are advertised in offers via the on-chain `endpoint` field.
 
@@ -594,8 +594,10 @@ Full docs: [docs/strategies.md](docs/strategies.md)
 
 Everything below the Quick Start needs the repository, not just the published
 packages. Requirements: Node 20 or 22 with npm 9 or later for the build, and
-[Bun](https://bun.sh) to run the test runner and `@ton-agent-kit/wallet-store`,
-which imports `bun:sqlite`.
+[Bun](https://bun.sh) to run the test runner, the contract suites and
+`@ton-agent-kit/wallet-store`, which imports `bun:sqlite`. The three `npm test`
+commands below strip TypeScript types with `--experimental-strip-types`, which
+needs Node 22.6 or later; CI gates them on Node 22 for that reason.
 
 ```bash
 git clone https://github.com/Andy00L/ton-agent-kit.git
@@ -605,15 +607,22 @@ npm run build
 ```
 
 `npm run build` typechecks and compiles all 21 packages. Success is exit 0 with
-no TypeScript diagnostics; it takes about 90 seconds from cold. CI runs it on
-Node 20 and Node 22 on every push, along with the regression suites below.
+no TypeScript diagnostics. CI runs it on Node 20 and Node 22 for every push to
+`main` and every pull request against it; the regression suites below run on
+Node 22 only.
 
 ```bash
-npm test -w packages/core             # token amounts, action cache
-npm test -w packages/x402-middleware  # paywall floor, replay claims
-npm test -w packages/strategies       # scheduling, template action names
+npm test -w packages/core              # token amounts, action cache
+npm test -w packages/x402-middleware   # paywall floor, replay claims
+npm test -w packages/strategies        # scheduling, template action names
+npm test -w packages/orchestrator      # task dispatch
+npm test -w packages/plugin-agent-comm # TVM stack parsing
+npm run test:contracts                 # both Tact contracts, in a sandbox
 bun packages/wallet-store/test/secret.test.mjs
+bun packages/wallet-store/test/file-store.test.mjs
 bun packages/plugin-identity/test/message-bodies.test.mjs
+bun packages/core/test/methods-proxy.test.mjs
+bun packages/core/test/context-run-action.test.mjs
 ```
 
 These run offline, with no wallet and no API key. Each prints `n/n passed` and
@@ -757,12 +766,20 @@ Then `agent.use(MyPlugin)` and the action is available everywhere: `runAction`, 
 
 Stated here rather than found later.
 
-- **The two Tact contracts have no test harness.** `contracts/escrow.tact` and
-  `contracts/reputation.tact` hold funds, and their only coverage is scripts
-  that run against live testnet with a funded wallet. There is no
-  `@ton/sandbox` or Blueprint setup, although `@ton/sandbox` is already a dev
-  dependency of `@ton-agent-kit/core`. This is the largest open gap in the
-  repository.
+- **The escrow contract has three defects that need a redeployment to fix.**
+  They were found by running it, not by reading it, and each is pinned by a
+  check in `contracts/test/escrow.sandbox.test.mjs` named `KNOWN DEFECT`:
+  a buyer can confirm delivery and then refund itself the whole deal at any
+  point before the deadline, leaving the seller with nothing; a dispute cannot
+  seat a quorum because `JoinDispute` reserves the balance it is about to hold
+  and then sweeps the remainder back, so roughly every other arbiter loses its
+  stake to a failed action phase with no record of who sent it; and with fewer
+  arbiters than `minArbiters` no vote can be held at all, so every dispute
+  falls through to `FallbackSettle`, which the depositor controls. Do not rely
+  on the arbiter network.
+- **`contracts/reputation.tact` found no defects under the same treatment.**
+  Every guard it claims is enforced, including the one that stops an agent
+  bidding on its own intent to manufacture a reputation.
 - **`npm audit` reports advisories that cannot be cleared today**, one of them
   critical (`protobufjs`, reached through `@ston-fi/omniston-sdk`). Clearing
   the tree means moving `ai` from 3 to 7 and `@ston-fi/sdk` from 1 to 2, both

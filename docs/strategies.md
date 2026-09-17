@@ -2,7 +2,7 @@
 
 Strategies are deterministic, multi-step workflows that run on a schedule. They are not LLM-driven. Each step calls a specific agent action with predefined or context-derived parameters.
 
-Package: `@ton-agent-kit/strategies` v1.0.1
+Package: `@ton-agent-kit/strategies`
 
 ## Core Concepts
 

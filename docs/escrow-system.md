@@ -154,6 +154,11 @@ On a release settlement, the seller gets back their stake plus the deal amount. 
 - Before deadline: only `depositor` can call.
 - After deadline with no delivery confirmed: anyone can trigger.
 - After deadline with delivery confirmed: blocked. Must open a dispute instead.
+- **Before the deadline, a confirmed delivery does not block the refund.** The
+  guard exists but sits in the branch reachable only after the deadline, so the
+  buyer can confirm delivery and then refund itself in full while the seller
+  receives nothing. Measured in `contracts/test/escrow.sandbox.test.mjs`. Fixing
+  it needs a contract change and therefore a redeployment.
 - Sets `refunded = true`, sends entire balance to `depositor` with `SendRemainingBalance`.
 
 ## Delivery Confirmation and x402 Proof Hash

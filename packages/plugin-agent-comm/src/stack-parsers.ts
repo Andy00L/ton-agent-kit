@@ -9,14 +9,19 @@ export interface TvmStackItem {
   num?: string;
   cell?: string;
   slice?: string;
+  /** Present when `type` is `"bool"`. */
+  value?: boolean;
   tuple?: TvmStackItem[];
 }
 
 /**
  * Read a `num` entry as a JavaScript number.
  *
- * TVM serializes negative numbers as `-0x...`, which `BigInt` refuses, so the
- * sign is moved in front of the `0x` prefix before parsing.
+ * TVM serializes negative numbers as `-0x...`, which `BigInt` refuses. The
+ * magnitude is parsed on its own and negated. An earlier version moved the
+ * sign with `"-" + literal.slice(1)`, which rebuilds the same string BigInt
+ * had already rejected, so the catch below swallowed it and every negative
+ * number read as zero.
  */
 export function parseNum(item: TvmStackItem | undefined): number {
   const value = parseBigNum(item);
@@ -26,18 +31,18 @@ export function parseNum(item: TvmStackItem | undefined): number {
 /** Read a `num` entry as a bigint. Anything else reads as `0n`. */
 export function parseBigNum(item: TvmStackItem | undefined): bigint {
   if (item?.type !== "num" || !item.num) return 0n;
-  const literal = item.num.startsWith("-0x")
-    ? "-" + item.num.slice(1)
-    : item.num;
+  const literal = item.num;
+  const isNegativeHex = literal.startsWith("-0x") || literal.startsWith("-0X");
   try {
-    return BigInt(literal);
+    return isNegativeHex ? -BigInt(literal.slice(1)) : BigInt(literal);
   } catch {
     return 0n;
   }
 }
 
-/** Read a `num` entry as a boolean. Anything non-zero is true. */
+/** Read a `num` or `bool` entry as a boolean. Anything non-zero is true. */
 export function parseBool(item: TvmStackItem | undefined): boolean {
+  if (item?.type === "bool") return Boolean(item.value);
   return parseBigNum(item) !== 0n;
 }
 
