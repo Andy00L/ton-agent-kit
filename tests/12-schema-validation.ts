@@ -13,7 +13,7 @@ export async function run(): Promise<TestResult> {
     { name: "transfer_nft", params: { nftAddress: "0:abc", to: "0:def" } },
     { name: "deploy_jetton", params: { name: "Test", symbol: "TST", supply: "1000000" } },
     { name: "swap_dedust", params: { fromToken: "TON", toToken: "0:abc", amount: "10", slippage: 1 } },
-    { name: "swap_stonfi", params: { fromToken: "TON", toToken: "0:abc", amount: "5", slippage: 0.5 } },
+    { name: "swap_stonfi", params: { fromToken: "TON", toToken: "0:abc", amount: "5", minReceived: "4.9" } },
     { name: "swap_best_price", params: { fromToken: "TON", toToken: "USDT", amount: "1" } },
     { name: "stake_ton", params: { poolAddress: "0:abc", amount: "10" } },
     { name: "unstake_ton", params: { poolAddress: "0:abc" } },

@@ -100,7 +100,7 @@ async function runTest(
     return { ...result, logs: capture.logs };
   } catch (err: any) {
     capture.restore();
-    return { passed: 0, failed: 1, errors: [`${name}: CRASH \u2014 ${err.message}`], duration: 0, logs: capture.logs };
+    return { passed: 0, failed: 1, errors: [`${name}: CRASH, ${err.message}`], duration: 0, logs: capture.logs };
   }
 }
 
@@ -118,7 +118,7 @@ async function main() {
     }
   } else {
     // Interactive: show menu
-    process.stdout.write("\n  \x1b[1mTON Agent Kit \u2014 Test Runner\x1b[0m\n\n");
+    process.stdout.write("\n  \x1b[1mTON Agent Kit: Test Runner\x1b[0m\n\n");
     for (const [num, name] of TESTS) {
       process.stdout.write(`  [\x1b[36m${String(num).padStart(2)}\x1b[0m] ${name}\n`);
     }
@@ -190,7 +190,7 @@ async function main() {
   const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const logPath = `tests/results/${ts}.log`;
 
-  let log = `TON Agent Kit \u2014 Test Results\n`;
+  let log = `TON Agent Kit: Test Results\n`;
   log += `Date: ${new Date().toISOString()}\n`;
   log += `Tests: ${selected.join(", ")}\n`;
   log += `Total: ${totalPassed} passed, ${totalFailed} failed\n`;

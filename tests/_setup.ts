@@ -72,7 +72,7 @@ export function createTestContext() {
     await delay(RATE_MS);
     try {
       await fn();
-      console.log(`  \u274C ${name} \u2014 should have thrown`);
+      console.log(`  \u274C ${name}, should have thrown`);
       failed++;
       errors.push(`${name}: did not throw`);
     } catch (err: any) {
@@ -80,16 +80,16 @@ export function createTestContext() {
         console.log(`  \u2705 ${name}`);
         passed++;
       } else {
-        console.log(`  \u274C ${name} \u2014 wrong error`);
+        console.log(`  \u274C ${name}, wrong error`);
         console.log(`     Expected "${expectedMsg}" got "${err.message.slice(0, 80)}"`);
         failed++;
-        errors.push(`${name}: wrong error \u2014 ${err.message.slice(0, 80)}`);
+        errors.push(`${name}: wrong error, ${err.message.slice(0, 80)}`);
       }
     }
   }
 
   function skip(name: string, reason: string) {
-    console.log(`  \u23ED\uFE0F  ${name} \u2014 ${reason}`);
+    console.log(`  \u23ED\uFE0F  ${name}, ${reason}`);
   }
 
   function result(startMs: number): TestResult {

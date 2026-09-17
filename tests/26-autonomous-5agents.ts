@@ -463,7 +463,7 @@ async function main() {
     tonPaywall({ amount: "0.005", recipient: addrA, network: "testnet", description: "Real-time TON price", replayStore: new MemoryReplayStore() }),
     async (_req: express.Request, res: express.Response) => {
       try {
-        const priceData = await agentA.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" });
+        const priceData = await agentA.runAction("get_price", { token: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" });
         res.json({ source: "price-oracle", fetchedAt: new Date().toISOString(), ...(priceData as any) });
       } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -475,8 +475,8 @@ async function main() {
     async (_req: express.Request, res: express.Response) => {
       try {
         const [usdt, not, balance] = await Promise.all([
-          agentA.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
-          agentA.runAction("get_price", { tokenAddress: "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT" }),
+          agentA.runAction("get_price", { token: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
+          agentA.runAction("get_price", { token: "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT" }),
           agentA.runAction("get_balance", {}),
         ]);
         res.json({ source: "price-oracle", fetchedAt: new Date().toISOString(), oracleBalance: balance, prices: [{ token: "USDT", ...(usdt as any) }, { token: "NOT", ...(not as any) }] });
@@ -514,7 +514,7 @@ async function main() {
     async (_req: express.Request, res: express.Response) => {
       try {
         const [priceData, balance] = await Promise.all([
-          agentC.runAction("get_price", { tokenAddress: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
+          agentC.runAction("get_price", { token: "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs" }),
           agentC.runAction("get_balance", {}),
         ]);
         const price = (priceData as any)?.price ?? (priceData as any)?.usd ?? 0;

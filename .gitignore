@@ -36,3 +36,8 @@ packages/*/src/**/*.map
 contracts/output/*.ts
 contracts/output/*.fc
 contracts/output/*.fif
+
+# Test run output. tests.ts writes a log per run and suite 26 dumps
+# interaction records, both into the tree.
+tests/results/
+logs/

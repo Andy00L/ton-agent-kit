@@ -33,7 +33,7 @@ export async function run(): Promise<TestResult> {
   await testError(
     "transfer_ton (empty address, rejects)",
     () => agent.runAction("transfer_ton", { to: "", amount: "0.01" }),
-    "",
+    "Unknown address",
   );
 
   return result(start);
